@@ -136,6 +136,34 @@ def create_app(
         except Exception:
             PUSH_LOGGER.exception("protection push failed session=%s", session_id)
 
+    def notify_assessment(
+        token: str,
+        session_id: str,
+        previous: ProtectionSessionSnapshot,
+        snapshot: ProtectionSessionSnapshot,
+    ) -> None:
+        alert, should_notify_guardians = pilots.upsert_protection_alert(token, session_id)
+        if alert is not None and should_notify_guardians:
+            guardian_targets = pilots.protection_notification_tokens(
+                token, session_id, "guardian", push_environment
+            )
+            if guardian_targets:
+                try:
+                    pushes.send(
+                        guardian_targets,
+                        f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
+                        "Ketuk untuk melihat kalimat pemicu dan memutuskan.",
+                        str(alert.id),
+                    )
+                except Exception:
+                    PUSH_LOGGER.exception("guardian push failed session=%s", session_id)
+        if _risk_increased(previous, snapshot):
+            targets = pilots.protection_notification_tokens(
+                token, session_id, "parent", push_environment
+            )
+            title, body = _protection_warning(snapshot)
+            send_protection_warning(targets, title, body, str(snapshot.call_id), snapshot.id)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         nonlocal demo_service, protection
@@ -409,7 +437,6 @@ def create_app(
             raise HTTPException(status_code=413, detail="Potongan audio melebihi batas 1 MB.")
         try:
             token = token_from(authorization)
-            previous = protections().get_puck_session(token, session_id)
             snapshot = protections().process_chunk(
                 token,
                 session_id,
@@ -417,34 +444,11 @@ def create_app(
                 x_rambu_final == "true",
                 audio,
             )
-            alert, should_notify_guardians = pilots.upsert_protection_alert(
-                token, session_id
+            protections().analyze_latest(
+                token,
+                session_id,
+                lambda previous, current: notify_assessment(token, session_id, previous, current),
             )
-            if alert is not None and should_notify_guardians:
-                guardian_targets = pilots.protection_notification_tokens(
-                    token, session_id, "guardian", push_environment
-                )
-                if guardian_targets:
-                    background_tasks.add_task(
-                        pushes.send,
-                        guardian_targets,
-                        f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
-                        "Ketuk untuk melihat kalimat pemicu dan memutuskan.",
-                        str(alert.id),
-                    )
-            if _risk_increased(previous, snapshot):
-                targets = pilots.protection_notification_tokens(
-                    token, session_id, "parent", push_environment
-                )
-                title, body = _protection_warning(snapshot)
-                background_tasks.add_task(
-                    send_protection_warning,
-                    targets,
-                    title,
-                    body,
-                    str(snapshot.call_id),
-                    snapshot.id,
-                )
             return snapshot
         except HTTPException:
             raise

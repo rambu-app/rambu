@@ -9,7 +9,7 @@ from rambu_api.models import CreateProtectionSessionRequest, RiskAssessment
 from rambu_api.pilot import PilotError, PilotStore
 from rambu_api.protection import ProtectionService
 
-from .conftest import wav_bytes
+from .conftest import ImmediateExecutor, wav_bytes
 
 
 class QueueTranscriber:
@@ -91,7 +91,9 @@ def configured_service(
     store = PilotStore(":memory:")
     parent = store.create_family("Ibu Ratna")
     puck = store.pair_puck(parent.invite_code or "", "Mac")
-    service = ProtectionService(store, QueueTranscriber(texts), analyzer or RecordingAnalyzer())
+    service = ProtectionService(
+        store, QueueTranscriber(texts), analyzer or RecordingAnalyzer(), ImmediateExecutor()
+    )
     session = service.create_session(
         parent.access_token,
         CreateProtectionSessionRequest(
@@ -103,14 +105,20 @@ def configured_service(
     return service, store, parent.access_token, puck.access_token, session.id
 
 
+def process(service, puck_token, session_id, sequence, final, audio):
+    service.process_chunk(puck_token, session_id, sequence, final, audio)
+    service.analyze_latest(puck_token, session_id, lambda previous, current: None)
+    return service.get_puck_session(puck_token, session_id)
+
+
 def test_chunks_are_masked_persisted_and_analyzed_cumulatively() -> None:
     analyzer = RecordingAnalyzer()
     service, store, parent_token, puck_token, session_id = configured_service(
         ["Nomor saya 081234567890.", "Kode OTP 123456."], analyzer
     )
 
-    first = service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
-    second = service.process_chunk(puck_token, session_id, 1, False, wav_bytes())
+    first = process(service, puck_token, session_id, 0, False, wav_bytes())
+    second = process(service, puck_token, session_id, 1, False, wav_bytes())
 
     assert analyzer.calls == [
         ("Nomor saya [NOMOR_TELEPON].", False),
@@ -184,7 +192,7 @@ def test_contract_failure_retries_once_and_records_the_valid_result(
     )
     caplog.set_level(logging.WARNING, logger="uvicorn.error.rambu.analysis")
 
-    snapshot = service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
+    snapshot = process(service, puck_token, session_id, 0, False, wav_bytes())
 
     assert len(analyzer.calls) == 2
     assert snapshot.status == "listening"
@@ -201,11 +209,9 @@ def test_repeated_contract_failure_preserves_previous_risk_and_completes() -> No
     service, _, _, puck_token, session_id = configured_service(
         ["informasi SMS", "ucapan tidak jelas"], analyzer
     )
-    first = service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
+    first = process(service, puck_token, session_id, 0, False, wav_bytes())
 
-    completed = service.process_chunk(
-        puck_token, session_id, 1, True, wav_bytes(seconds=2)
-    )
+    completed = process(service, puck_token, session_id, 1, True, wav_bytes(seconds=2))
 
     assert first.assessment is not None
     assert first.assessment.risk_level == "high_risk"
@@ -221,11 +227,9 @@ def test_risk_never_downgrades_after_a_valid_higher_assessment() -> None:
     service, _, _, puck_token, session_id = configured_service(
         ["informasi SMS", "percakapan selesai"], analyzer
     )
-    service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
+    process(service, puck_token, session_id, 0, False, wav_bytes())
 
-    completed = service.process_chunk(
-        puck_token, session_id, 1, True, wav_bytes(seconds=2)
-    )
+    completed = process(service, puck_token, session_id, 1, True, wav_bytes(seconds=2))
 
     assert completed.status == "completed"
     assert completed.assessment is not None
@@ -253,8 +257,11 @@ def test_dependency_failure_is_persisted_and_propagated(
             [dependency_error]
         )
 
-    with pytest.raises(type(dependency_error), match=str(dependency_error)):
-        service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
+    if isinstance(dependency_error, LangflowFailure):
+        process(service, puck_token, session_id, 0, False, wav_bytes())
+    else:
+        with pytest.raises(type(dependency_error), match=str(dependency_error)):
+            service.process_chunk(puck_token, session_id, 0, False, wav_bytes())
 
     failed = store.get_protection_session(parent_token, session_id)
     assert failed.status == "error"

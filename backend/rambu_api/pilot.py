@@ -23,6 +23,9 @@ from .models import (
 )
 
 
+RISK_RANK = {"low": 0, "needs_review": 1, "high_risk": 2}
+
+
 class PilotError(RuntimeError):
     pass
 
@@ -552,7 +555,7 @@ class PilotStore:
                 status = row["status"]
                 if final:
                     status = "completed"
-                    outcome = "analyzed" if assessment is not None else "no_speech"
+                    outcome = "analyzed" if assessment is not None or masked_transcript else "no_speech"
                     ended_at = _iso(_now())
                 self._connection.execute(
                     """
@@ -587,6 +590,37 @@ class PilotStore:
                 if self._connection.in_transaction:
                     self._connection.rollback()
                 raise
+            row = self._connection.execute(
+                "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+        return self._protection_snapshot(row)
+
+    def update_protection_assessment(
+        self, token: str, session_id: str, assessment: RiskAssessment
+    ) -> ProtectionSessionSnapshot:
+        puck = self.authenticate_puck(token)
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+            if row is None:
+                raise MissingProtectionSessionError("Sesi perlindungan tidak ditemukan.")
+            if row["family_id"] != puck["family_id"] or row["puck_id"] != puck["id"]:
+                raise AuthorizationError("Sesi perlindungan berasal dari keluarga lain.")
+            if row["status"] != "error":
+                if row["assessment_json"]:
+                    stored = RiskAssessment.model_validate_json(row["assessment_json"])
+                    if RISK_RANK[stored.risk_level] > RISK_RANK[assessment.risk_level]:
+                        assessment = stored
+                with self._connection:
+                    self._connection.execute(
+                        """
+                        UPDATE protection_sessions
+                        SET assessment_json = ?, revision = revision + 1
+                        WHERE id = ?
+                        """,
+                        (json.dumps(assessment.model_dump(mode="json"), ensure_ascii=False), session_id),
+                    )
             row = self._connection.execute(
                 "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
             ).fetchone()

@@ -1,3 +1,5 @@
+import threading
+import time
 from pathlib import Path
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
@@ -10,7 +12,7 @@ from rambu_api.models import ProtectionFailure, RiskAssessment
 from rambu_api.pilot import PilotStore
 from rambu_api.protection import ProtectionService
 
-from .conftest import wav_bytes
+from .conftest import ImmediateExecutor, wav_bytes
 from .test_api import StubDemoService
 
 
@@ -64,6 +66,15 @@ class SequenceAnalyzer:
         return value
 
 
+class BlockingAnalyzer:
+    def __init__(self) -> None:
+        self.release = threading.Event()
+
+    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+        self.release.wait(timeout=5)
+        return danger_assessment()
+
+
 class RecordingProtectionPushSender:
     def __init__(self) -> None:
         self.sent: list[tuple[list[str], str, str, str]] = []
@@ -88,12 +99,18 @@ def session_payload(call_id: str = "7f011753-8f09-4a45-8812-8a4591a96b3c") -> di
 
 
 def build_client(
-    *, analyzer: LowRiskAnalyzer | HighRiskAnalyzer | SequenceAnalyzer | None = None,
+    *, analyzer: LowRiskAnalyzer | HighRiskAnalyzer | SequenceAnalyzer | BlockingAnalyzer | None = None,
     push_sender: RecordingProtectionPushSender | None = None,
+    threaded_analysis: bool = False,
 ) -> tuple[TestClient, PilotStore, TextTranscriber, ProtectionService]:
     store = PilotStore(":memory:")
     transcriber = TextTranscriber()
-    protection = ProtectionService(store, transcriber, analyzer or LowRiskAnalyzer())
+    protection = ProtectionService(
+        store,
+        transcriber,
+        analyzer or LowRiskAnalyzer(),
+        None if threaded_analysis else ImmediateExecutor(),
+    )
     app = create_app(
         service=StubDemoService(),
         pilot_store=store,
@@ -373,7 +390,7 @@ def test_terminal_chunk_and_analysis_failure_end_existing_alert() -> None:
     ).status_code == 200
     assert upload_chunk(
         failed_client, failed_puck.access_token, failed_session.id, sequence=1
-    ).status_code == 502
+    ).status_code == 200
     failed_alert = failed_client.get(
         "/api/pilot/alerts", headers=auth(failed_guardian.access_token)
     ).json()[0]
@@ -940,14 +957,16 @@ def test_langflow_failure_returns_sanitized_502_without_fallback() -> None:
         content=wav_bytes(),
     )
 
-    assert response.status_code == 502
-    assert response.json() == {
-        "detail": {
-            "code": "analysis_timeout",
-            "message": "Langflow tidak merespons sebelum batas waktu.",
-        }
+    assert response.status_code == 200
+    failed = client.get(
+        f"/api/protection/sessions/{session.id}", headers=auth(parent.access_token)
+    )
+    assert failed.json()["status"] == "error"
+    assert failed.json()["failure"] == {
+        "code": "analysis_timeout",
+        "message": "Langflow tidak merespons sebelum batas waktu.",
     }
-    assert "secret.internal" not in response.text
+    assert "secret.internal" not in failed.text
 
 
 def test_untyped_analyzer_failure_uses_persisted_analysis_error_not_transcription_error() -> None:
@@ -975,9 +994,122 @@ def test_untyped_analyzer_failure_uses_persisted_analysis_error_not_transcriptio
         content=wav_bytes(),
     )
 
-    assert response.status_code == 502
-    assert response.json()["detail"] == {
+    assert response.status_code == 200
+    failed = client.get(
+        f"/api/protection/sessions/{session.id}", headers=auth(parent.access_token)
+    )
+    assert failed.json()["status"] == "error"
+    assert failed.json()["failure"] == {
         "code": "analysis_failed",
         "message": "Analisis panggilan gagal.",
     }
-    assert "provider implementation crashed" not in response.text
+    assert "provider implementation crashed" not in failed.text
+
+
+SCAM_TEXT = "Saya dari bank, sebutkan kode OTP dan transfer sekarang."
+
+
+def timed_upload_chunk(client, puck_token, session_id, *, sequence, final=False):
+    started = time.monotonic()
+    response = upload_chunk(
+        client, puck_token, session_id, sequence=sequence, final=final
+    )
+    return response, time.monotonic() - started
+
+
+def poll_parent_session(client, parent_token, session_id, done):
+    deadline = time.monotonic() + 5
+    snapshot = client.get(
+        f"/api/protection/sessions/{session_id}", headers=auth(parent_token)
+    ).json()
+    while not done(snapshot) and time.monotonic() < deadline:
+        time.sleep(0.05)
+        snapshot = client.get(
+            f"/api/protection/sessions/{session_id}", headers=auth(parent_token)
+        ).json()
+    return snapshot
+
+
+def blocking_analysis_setup():
+    pushes = RecordingProtectionPushSender()
+    analyzer = BlockingAnalyzer()
+    client, store, transcriber, _ = build_client(
+        analyzer=analyzer, push_sender=pushes, threaded_analysis=True
+    )
+    transcriber.text = SCAM_TEXT
+    parent = store.create_family("Ibu Ratna")
+    store.register_push_token(parent.access_token, "aa" * 32, "sandbox")
+    puck = store.pair_puck(parent.invite_code or "", "Mac")
+    session = store.create_protection_session(
+        parent.access_token,
+        session_payload()["call_id"],
+        datetime.fromisoformat("2026-10-01T10:00:00+00:00"),
+        "cellular",
+    )
+    store.active_protection_session(puck.access_token)
+    return client, analyzer, pushes, parent, puck, session
+
+
+def test_chunk_upload_responds_before_slow_analysis_and_analysis_completes_later() -> None:
+    client, analyzer, pushes, parent, puck, session = blocking_analysis_setup()
+
+    try:
+        response, elapsed = timed_upload_chunk(
+            client, puck.access_token, session.id, sequence=0
+        )
+    finally:
+        analyzer.release.set()
+
+    assert elapsed < 1, f"chunk upload blocked on analysis for {elapsed:.2f}s"
+    assert response.status_code == 200
+    assert "transfer sekarang" in response.json()["masked_transcript"]
+
+    snapshot = poll_parent_session(
+        client,
+        parent.access_token,
+        session.id,
+        lambda value: (value["assessment"] or {}).get("risk_level") == "high_risk"
+        and pushes.sent,
+    )
+    assert snapshot["assessment"]["risk_level"] == "high_risk"
+    assert pushes.sent == [
+        (
+            ["aa" * 32],
+            "Bahaya: terindikasi penipuan",
+            "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+            session_payload()["call_id"],
+        )
+    ]
+
+
+def test_final_chunk_during_pending_analysis_ends_with_analyzed_assessment() -> None:
+    client, analyzer, _, parent, puck, session = blocking_analysis_setup()
+
+    try:
+        first, first_elapsed = timed_upload_chunk(
+            client, puck.access_token, session.id, sequence=0
+        )
+        assert first_elapsed < 1, (
+            f"chunk upload blocked on analysis for {first_elapsed:.2f}s"
+        )
+        final, final_elapsed = timed_upload_chunk(
+            client, puck.access_token, session.id, sequence=1, final=True
+        )
+        assert final_elapsed < 1, (
+            f"final chunk upload blocked on analysis for {final_elapsed:.2f}s"
+        )
+    finally:
+        analyzer.release.set()
+
+    assert first.status_code == 200
+    assert final.status_code == 200
+
+    snapshot = poll_parent_session(
+        client,
+        parent.access_token,
+        session.id,
+        lambda value: value["outcome"] == "analyzed"
+        and (value["assessment"] or {}).get("risk_level") == "high_risk",
+    )
+    assert snapshot["outcome"] == "analyzed"
+    assert snapshot["assessment"]["risk_level"] == "high_risk"
