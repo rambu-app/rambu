@@ -107,9 +107,7 @@ private struct DecisionBar: View {
     let alert: FamilyAlert
     @Environment(AppState.self) private var model
     @Environment(AppViewModel.self) private var app
-    @Environment(\.openURL) private var openURL
     @State private var confirmSafe = false
-    @State private var callInfo = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -133,17 +131,11 @@ private struct DecisionBar: View {
         } message: {
             Text("\(alert.parent.name) akan diberi tahu.")
         }
-        .alert("Telepon \(alert.parent.name)", isPresented: $callInfo) {
-            Button("Oke", role: .cancel) {}
-        } message: {
-            Text("Panggilan tidak dapat dibuka. Coba melalui aplikasi Telepon; simulator tidak mendukung panggilan.")
-        }
     }
 
     @ViewBuilder
     private func decidedContent(_ decision: GuardianDecision) -> some View {
         let mine = decision.by == model.currentPerson
-        let scam = decision.verdict == .scam
         HStack(spacing: 12) {
             Group {
                 if mine {
@@ -169,16 +161,6 @@ private struct DecisionBar: View {
         .background(.white, in: .rect(cornerRadius: 20, style: .continuous))
         .shadow(color: Brand.ink.opacity(0.08), radius: 12, y: 4)
         .accessibilityElement(children: .combine)
-
-        let parent = model.parent.id == alert.parent.id ? model.parent : alert.parent
-        if let url = parent.telephoneURL {
-            Button {
-                openURL(url) { accepted in if !accepted { callInfo = true } }
-            } label: {
-                WideLabel(title: "Telepon \(parent.name)", systemImage: "phone.fill")
-            }
-            .primaryAction(scam ? Brand.danger : Brand.teal)
-        }
     }
 }
 

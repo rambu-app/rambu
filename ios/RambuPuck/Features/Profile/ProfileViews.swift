@@ -10,13 +10,11 @@ struct ProfileView: View {
 
     @State private var name = ""
     @State private var relation = "Anak"
-    @State private var phoneNumber = ""
-    @State private var savingPhone = false
-    @State private var phoneError: String?
     @State private var showInvite = false
     @State private var showJoin = false
     @State private var showTutorial = false
     @State private var showPilot = false
+    @State private var showPractice = false
     @State private var confirmClear = false
     @State private var confirmReset = false
 
@@ -37,59 +35,26 @@ struct ProfileView: View {
                     .listRowBackground(Color.clear)
                 }
 
-                Section("Nama") {
-                    if model.pilotConnected {
-                        Text(me.name)
-                    } else {
-                    TextField("Nama panggilan", text: $name)
-                        .font(.body.weight(.semibold))
-                        .textInputAutocapitalization(.words)
-                        .submitLabel(.done)
-                        .onSubmit(saveName)
-                    if !model.persona.isParent {
-                        Picker("Hubungan", selection: $relation) {
-                            ForEach(relations, id: \.self) { Text($0) }
-                        }
-                        .onChange(of: relation) { saveName() }
-                    }
-                    }
-                }
-
-                if model.pilotConnected {
-                    Section {
-                        TextField("Contoh: 081234567890", text: $phoneNumber)
-                            .keyboardType(.phonePad)
-                            .textContentType(.telephoneNumber)
-                            .autocorrectionDisabled()
-                            .accessibilityLabel("Nomor telepon Anda")
-                        Button(savingPhone ? "Menyimpan…" : "Simpan nomor") {
-                            Task {
-                                savingPhone = true
-                                phoneError = nil
-                                if await app.pilot.savePhoneNumber(phoneNumber) {
-                                    phoneNumber = model.currentPerson.phoneNumber ?? ""
-                                } else {
-                                    phoneError = model.pilotError
+                Section {
+                    Button { showPilot = true } label: {
+                        HStack {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Keluarga").font(.headline).foregroundStyle(Brand.ink)
+                                    Text(model.pilotConnected ? "Tergabung" : "Belum terhubung")
+                                        .font(.subheadline)
+                                        .foregroundStyle(model.pilotConnected ? Brand.safeInk : Brand.ink3)
                                 }
-                                savingPhone = false
+                            } icon: {
+                                Image(systemName: "person.2.fill").foregroundStyle(Brand.teal)
                             }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Brand.ink3)
                         }
-                        .disabled(savingPhone || phoneNumber == (me.phoneNumber ?? ""))
-                        if let phoneError {
-                            Text(phoneError).font(.subheadline).foregroundStyle(Brand.dangerInk)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    } header: {
-                        Text("Nomor telepon (opsional)")
-                    } footer: {
-                        Text("Dibagikan kepada keluarga yang terhubung agar mereka bisa menelepon Anda. Kosongkan dan simpan untuk menghapus nomor.")
                     }
-                }
-
-                if model.allowsDemoControls && model.persona.isParent {
-                    guardiansSection
-                } else if model.allowsDemoControls {
-                    parentsSection
+                    if model.pilotConnected { ServerConnectionLabel() }
                 }
 
                 Section("Peringatan") {
@@ -109,32 +74,46 @@ struct ProfileView: View {
                     .tint(Brand.teal)
                 }
 
-                Section {
-                    Button { showPilot = true } label: {
-                        HStack {
-                            Label("Keluarga", systemImage: "person.2")
-                            Spacer()
-                            Text(model.pilotConnected ? "Tergabung" : "Belum")
-                                .foregroundStyle(model.pilotConnected ? Brand.safeInk : Brand.ink3)
+                if !model.pilotConnected {
+                    Section("Nama") {
+                        TextField("Nama panggilan", text: $name)
+                            .font(.body.weight(.semibold))
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit(saveName)
+                        if !model.persona.isParent {
+                            Picker("Hubungan", selection: $relation) {
+                                ForEach(relations, id: \.self) { Text($0) }
+                            }
+                            .onChange(of: relation) { saveName() }
                         }
                     }
-                    if model.pilotConnected { ServerConnectionLabel() }
-                } header: {
-                    Text("Hubungkan keluarga")
-                } footer: {
-                    Text("Orang tua membuat kode undangan. Pendamping memasukkan kode itu di HP-nya.")
+                }
+
+                if model.allowsDemoControls && model.persona.isParent {
+                    guardiansSection
+                } else if model.allowsDemoControls {
+                    parentsSection
+                }
+
+                if model.persona.isParent {
+                    Section("Bantuan") {
+                        Button { showPractice = true } label: {
+                            Label("Ulangi latihan telepon", systemImage: "phone.arrow.down.left")
+                        }
+                    }
                 }
 
                 if model.allowsDemoControls {
-                    Section("Bantuan") {
-                    Button { showTutorial = true } label: {
-                        Label("Ulangi tutorial", systemImage: "play.circle.fill")
-                    }
-                    if model.persona.isParent {
-                        Button(role: .destructive) { confirmClear = true } label: {
-                            Label("Hapus riwayat", systemImage: "trash")
+                    Section("Demo") {
+                        Button { showTutorial = true } label: {
+                            Label("Ulangi tutorial", systemImage: "play.circle.fill")
                         }
-                    }
+                        if model.persona.isParent {
+                            Button(role: .destructive) { confirmClear = true } label: {
+                                Label("Hapus riwayat", systemImage: "trash")
+                            }
+                        }
                     }
                 }
 
@@ -157,17 +136,16 @@ struct ProfileView: View {
                         saveName()
                         dismiss()
                     }
-                    .disabled(savingPhone)
                 }
             }
             .onAppear {
                 name = me.name
                 relation = me.relation
-                phoneNumber = me.phoneNumber ?? ""
             }
             .sheet(isPresented: $showInvite) { InviteSheet() }
             .sheet(isPresented: $showJoin) { JoinParentSheet() }
             .sheet(isPresented: $showPilot) { PilotSetupView() }
+            .fullScreenCover(isPresented: $showPractice) { PracticeCallView() }
             .fullScreenCover(isPresented: $showTutorial) {
                 TutorialCarousel(isParent: model.persona.isParent) { showTutorial = false }
             }

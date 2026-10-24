@@ -165,49 +165,6 @@ struct PilotViewModelTests {
         #expect(try decoder.decode(TranscriptLine.self, from: JSONEncoder().encode(saved)) == saved)
     }
 
-    @Test("A family member's saved contact number reaches the dialable app profile")
-    func familyProfileRetainsPhoneNumber() throws {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let member = try decoder.decode(PilotPersonDTO.self, from: Data(#"{"id":"parent-1","name":"Ibu","relation":"Ibu","role":"parent","phone_number":"+6281234567890"}"#.utf8))
-        let stored = try JSONEncoder().encode(member.person)
-        let values = try #require(JSONSerialization.jsonObject(with: stored) as? [String: Any])
-        #expect(values["phoneNumber"] as? String == "+6281234567890")
-        #expect(member.person.telephoneURL?.absoluteString == "tel:+6281234567890")
-        #expect(member.person.renamed("Ibu Baru").telephoneURL?.absoluteString == "tel:+6281234567890")
-    }
-
-    @Test("Call URLs contain only valid international numbers, never dummy or control characters")
-    func callURLValidationAndLegacyProfiles() throws {
-        for input in ["", "112", "tel:123", "+62812;123456", "+62812#123456", "+" + String(repeating: "1", count: 16)] {
-            #expect(PhoneNumber.normalized(input) == nil)
-        }
-        #expect(PhoneNumber.normalized("0812-3456-7890") == "+6281234567890")
-        #expect(PhoneNumber.normalized("+1 (415) 555-0123") == "+14155550123")
-        #expect(Person.ratna.telephoneURL == nil)
-        let legacy = try JSONDecoder().decode(Person.self, from: JSONEncoder().encode(Person.ratna))
-        #expect(legacy.telephoneURL == nil)
-    }
-
-    @Test("Updating the own contact sends PUT and retains server membership")
-    func syncSavesOwnNumberAndCanClearIt() async throws {
-        let credentialStore = PilotCredentialStore()
-        let previous = credentialStore.load()
-        defer { if let previous { credentialStore.save(previous) } else { credentialStore.clear() } }
-        let response = Self.profileJSON.replacingOccurrences(of: "\"role\": \"guardian\"", with: "\"role\": \"guardian\", \"phone_number\": \"+6281234567890\"")
-        let stub = PilotHTTPStub(responses: ["/api/pilot/profile": response])
-        let sync = PilotSync(session: stub, initialCredentials: Self.credentials)
-        let updated = try await sync.updatePhoneNumber("+6281234567890")
-        #expect(updated.member.phoneNumber == "+6281234567890")
-        #expect(sync.credentials?.member.phoneNumber == "+6281234567890")
-        #expect(await stub.method(for: "/api/pilot/profile") == "PUT")
-        let first = try #require(await stub.body(for: "/api/pilot/profile"))
-        #expect((try JSONSerialization.jsonObject(with: first) as? [String: String])?["phone_number"] == "+6281234567890")
-        _ = try await sync.updatePhoneNumber("")
-        let cleared = try #require(await stub.body(for: "/api/pilot/profile"))
-        #expect((try JSONSerialization.jsonObject(with: cleared) as? [String: String])?["phone_number"] == "")
-    }
-
     @Test("An empty server history removes cached pilot call records after a reset")
     func emptyServerHistoryClearsConnectedCache() {
         let (state, pilot) = makePilot()

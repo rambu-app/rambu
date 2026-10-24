@@ -22,7 +22,6 @@
 		31C9F5F79F53B7D2F19C60EE /* BrandTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DFED1BBE7FF071A75558A4 /* BrandTokens.swift */; };
 		3519E3A6F3941C4AD79CE49B /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EDEA58598842DF751D6C31 /* Domain.swift */; };
 		35817BCFA820B9F66CFE3B9B /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ACD2EF6AD903547E9A034E /* AppStateTests.swift */; };
-		3BA1CE3A7FC7411FC0D4B796 /* QuickCallGuardians.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D33791D1EB9FEAA1608D50 /* QuickCallGuardians.swift */; };
 		3BAEBDB7399E26DC1AE84FEE /* CallActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91303AE084840EFA17FD0C49 /* CallActivityAttributes.swift */; };
 		3CFBAB7D6A0A3A3C1D64C2F0 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0D0F2E26B21F780934FE07 /* OnboardingViewModel.swift */; };
 		42963518B268AEDBABD2A1EE /* PilotViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6197E4EFD4B427356A6CE399 /* PilotViewModelTests.swift */; };
@@ -145,7 +144,6 @@
 		9E1C235124B472B6340D7ACB /* GuardianOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianOnboarding.swift; sourceTree = "<group>"; };
 		A14FC06D1DC47049CD2579C5 /* TutorialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialViews.swift; sourceTree = "<group>"; };
 		A341DD11FE777AEBCF01573B /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
-		A7D33791D1EB9FEAA1608D50 /* QuickCallGuardians.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCallGuardians.swift; sourceTree = "<group>"; };
 		AC01F61E0E715FC4C1E3A6CB /* RambuPuckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RambuPuckApp.swift; sourceTree = "<group>"; };
 		AC43E5662306F9A230B35F44 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
 		ACFB9A3C7BA8CA1AC410629D /* FamilyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewModel.swift; sourceTree = "<group>"; };
@@ -212,7 +210,6 @@
 				DA7D248A50874923A5773C5B /* DemoViews.swift */,
 				8B2564934BEF6BC601943839 /* HistoryViews.swift */,
 				44B119C571D30C720BA86A00 /* IssueViews.swift */,
-				A7D33791D1EB9FEAA1608D50 /* QuickCallGuardians.swift */,
 				5388DEE6DA8A8DCC072B05AF /* ToastOverlay.swift */,
 			);
 			path = Common;
@@ -535,7 +532,6 @@
 				FE82FF0316C631667D189263 /* ProtectionAPI.swift in Sources */,
 				A609E87338AA956CFD2AAFA6 /* ProtectionCallAnalysisSource.swift in Sources */,
 				4F2CE3D39E879D0D3F80A419 /* PushBanner.swift in Sources */,
-				3BA1CE3A7FC7411FC0D4B796 /* QuickCallGuardians.swift in Sources */,
 				AB064A7B899635EFC2A78A56 /* RambuAppDelegate.swift in Sources */,
 				B3E832FFCAE34EF8F6054722 /* RambuPuckApp.swift in Sources */,
 				F0C994ACE12B207214E1DC7A /* RiskViews.swift in Sources */,

@@ -70,26 +70,6 @@ final class PilotViewModel {
         }
     }
 
-    func savePhoneNumber(_ input: String) async -> Bool {
-        guard let pilot, state.pilotConnected else {
-            state.pilotError = "Hubungkan keluarga sebelum menyimpan nomor telepon."
-            return false
-        }
-        let number = PhoneNumber.normalized(input)
-        guard input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || number != nil else {
-            state.pilotError = "Nomor belum valid. Gunakan 08… atau kode negara seperti +62… tanpa simbol tambahan."
-            return false
-        }
-        state.pilotError = nil
-        do {
-            applyProfile(try await pilot.updatePhoneNumber(number ?? ""))
-            return true
-        } catch {
-            state.pilotError = "Nomor belum tersimpan. \(PilotAPIError.displayMessage(for: error))"
-            return false
-        }
-    }
-
     func renewInvite() async {
         guard let pilot else { return }
         state.pilotError = nil
