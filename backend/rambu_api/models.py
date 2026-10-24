@@ -90,6 +90,12 @@ class ChunkAnalysisResponse(BaseModel):
     assessment: RiskAssessment | None
 
 
+class PairFamilyPuckRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    display_name: str
+
+
 class PairPuckRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 

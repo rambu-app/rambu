@@ -145,7 +145,10 @@ private struct PuckStatusCard: View {
 private struct PuckWifiCard: View {
     let pairing: BluetoothPuckPairing
     @Environment(AppState.self) private var model
+    @Environment(AppViewModel.self) private var app
     @AppStorage("puckWifiName") private var savedName = ""
+    @State private var preparing = false
+    @State private var tokenError: String?
     @State private var editing = false
     @State private var name = ""
     @State private var password = ""
@@ -198,6 +201,12 @@ private struct PuckWifiCard: View {
                 .padding(14)
                 .background(Brand.canvas, in: .rect(cornerRadius: 14, style: .continuous))
 
+            if let tokenError {
+                Label(tokenError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.dangerInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             switch pairing.wifiStatus {
             case .sending:
                 Label("Puck sedang masuk Wi-Fi…", systemImage: "wifi")
@@ -210,13 +219,11 @@ private struct PuckWifiCard: View {
                 EmptyView()
             }
 
-            Button {
-                pairing.sendWifi(name: name, password: password, serverURL: model.pilotServerURL)
-            } label: {
+            Button { Task { await connect() } } label: {
                 WideLabel(title: "Sambungkan puck ke Wi-Fi", systemImage: "wifi")
             }
             .secondaryAction()
-            .disabled(name.isEmpty || pairing.wifiStatus == .sending)
+            .disabled(name.isEmpty || preparing || pairing.wifiStatus == .sending)
 
             if editing {
                 Button("Batal") { editing = false }
@@ -225,6 +232,17 @@ private struct PuckWifiCard: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
         }
+    }
+
+    private func connect() async {
+        preparing = true
+        tokenError = nil
+        defer { preparing = false }
+        guard let token = await app.pilot.puckToken() else {
+            tokenError = "Hubungkan keluarga dulu di Beranda, lalu coba lagi."
+            return
+        }
+        pairing.sendWifi(name: name, password: password, serverURL: model.pilotServerURL, puckToken: token)
     }
 }
 

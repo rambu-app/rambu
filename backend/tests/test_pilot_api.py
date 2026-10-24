@@ -25,6 +25,22 @@ def authorization(token: str) -> dict[str, str]:
     return {"authorization": f"Bearer {token}"}
 
 
+def test_parent_pairs_a_puck_without_an_invite_code() -> None:
+    store = PilotStore(":memory:")
+    parent = store.create_family("Ibu")
+    child = store.join_family(parent.invite_code, "Anak", "Anak")
+    with TestClient(create_app(service=StubDemoService(), pilot_store=store)) as client:
+        paired = client.post("/api/pilot/pucks", headers=authorization(parent.access_token),
+                             json={"display_name": "Rambu Puck"})
+        assert paired.status_code == 201
+        assert paired.json()["family_id"] == parent.family_id
+        puck_token = paired.json()["access_token"]
+        assert store.authenticate_puck(puck_token)["family_id"] == parent.family_id
+        assert client.post("/api/pilot/pucks", headers=authorization(child.access_token),
+                           json={"display_name": "Rambu Puck"}).status_code == 403
+        assert client.post("/api/pilot/pucks", json={"display_name": "Rambu Puck"}).status_code == 401
+
+
 def test_family_profile_reports_server_session_without_cross_family_leak() -> None:
     store = PilotStore(":memory:")
     parent = store.create_family("Ibu")

@@ -156,11 +156,11 @@ final class BluetoothPuckPairing: NSObject {
         start(.pair)
     }
 
-    func sendWifi(name: String, password: String, serverURL: String) {
+    func sendWifi(name: String, password: String, serverURL: String, puckToken: String) {
         let server = URL(string: serverURL)
         let https = server?.scheme == "https"
         let port = server?.port ?? (https ? 443 : 80)
-        let config = [name, password, server?.host() ?? "", String(port), https ? "1" : "0"].joined(separator: "\n")
+        let config = [name, password, server?.host() ?? "", String(port), https ? "1" : "0", puckToken].joined(separator: "\n")
         wifiStatus = .sending
         start(.wifi(Data(config.utf8)))
     }

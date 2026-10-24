@@ -236,6 +236,8 @@ private struct CreateFamilyBody: Encodable { let parentName: String }
 private struct JoinFamilyBody: Encodable { let code: String; let name: String; let relation: String }
 private struct DecisionBody: Encodable { let verdict: String }
 private struct PushTokenBody: Encodable { let token: String; let environment: String }
+private struct PuckNameBody: Encodable { let displayName: String }
+struct PuckPairingDTO: Codable, Sendable { let accessToken: String }
 private struct APIMessage: Decodable { let detail: String }
 
 enum PilotAPIError: LocalizedError {
@@ -293,6 +295,10 @@ struct PilotAPI: Sendable {
 
     func renewInvite(token: String) async throws -> PilotInviteDTO {
         try await request("api/pilot/invites", method: "POST", token: token, body: Optional<String>.none)
+    }
+
+    func pairPuck(token: String) async throws -> PuckPairingDTO {
+        try await request("api/pilot/pucks", method: "POST", token: token, body: PuckNameBody(displayName: "Rambu Puck"))
     }
 
     func alerts(token: String) async throws -> [PilotAlertDTO] {
@@ -464,6 +470,12 @@ final class PilotSync {
         self.credentials = credentials
         credentialStore.save(credentials)
         return invite.code
+    }
+
+    func pairPuck() async throws -> String {
+        guard let credentials else { throw PilotAPIError.server("Hubungkan keluarga terlebih dahulu.") }
+        return try await PilotAPI(serverURL: credentials.serverURL, session: session)
+            .pairPuck(token: credentials.accessToken).accessToken
     }
 
     func disconnect() {

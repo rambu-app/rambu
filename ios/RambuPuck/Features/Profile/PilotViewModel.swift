@@ -81,6 +81,12 @@ final class PilotViewModel {
         }
     }
 
+    /// Token baru untuk puck keluarga ini. Dikirim ke puck lewat Bluetooth, bukan ditulis di firmware.
+    func puckToken() async -> String? {
+        guard let pilot, state.pilotConnected, state.persona.isParent else { return nil }
+        return try? await pilot.pairPuck()
+    }
+
     func disconnect() {
         pilot?.disconnect()
         state.pilotConnected = false

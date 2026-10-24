@@ -280,21 +280,31 @@ class PilotStore:
                 raise InviteError("Kode undangan tidak ditemukan.")
             if datetime.fromisoformat(family["invite_expires_at"]) <= _now():
                 raise InviteError("Kode undangan sudah kedaluwarsa.")
-            puck_id = uuid4().hex
-            token = secrets.token_urlsafe(32)
-            now = _iso(_now())
-            with self._connection:
-                self._connection.execute(
-                    """
-                    INSERT INTO pucks (
-                        id, family_id, display_name, token_hash, created_at, last_seen_at
-                    ) VALUES (?, ?, ?, ?, ?, NULL)
-                    """,
-                    (puck_id, family["id"], name, _token_hash(token), now),
-                )
+            return self._insert_puck(family["id"], name)
+
+    def pair_puck_for_parent(self, token: str, display_name: str) -> PairPuckResponse:
+        member = self.authenticate(token)
+        if member["role"] != "parent":
+            raise AuthorizationError("Hanya orang tua yang dapat memasangkan puck.")
+        name = self._required(display_name, "Nama puck")
+        with self._lock:
+            return self._insert_puck(member["family_id"], name)
+
+    def _insert_puck(self, family_id: str, name: str) -> PairPuckResponse:
+        puck_id = uuid4().hex
+        token = secrets.token_urlsafe(32)
+        with self._connection:
+            self._connection.execute(
+                """
+                INSERT INTO pucks (
+                    id, family_id, display_name, token_hash, created_at, last_seen_at
+                ) VALUES (?, ?, ?, ?, ?, NULL)
+                """,
+                (puck_id, family_id, name, _token_hash(token), _iso(_now())),
+            )
         return PairPuckResponse(
             puck_id=puck_id,
-            family_id=family["id"],
+            family_id=family_id,
             display_name=name,
             access_token=token,
         )

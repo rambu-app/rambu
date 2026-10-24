@@ -26,6 +26,7 @@ from .models import (
     PilotInvite,
     PilotProfile,
     PilotSession,
+    PairFamilyPuckRequest,
     PairPuckRequest,
     PairPuckResponse,
     ProtectionFailure,
@@ -294,6 +295,17 @@ def create_app(
             return protections().pair_puck(value.code, value.display_name)
         except Exception as error:
             raise protection_error(error) from error
+
+    @app.post("/api/pilot/pucks", response_model=PairPuckResponse, status_code=201)
+    def pair_family_puck(
+        value: PairFamilyPuckRequest, authorization: str | None = Header(default=None)
+    ) -> PairPuckResponse:
+        try:
+            return pilots.pair_puck_for_parent(token_from(authorization), value.display_name)
+        except HTTPException:
+            raise
+        except Exception as error:
+            raise pilot_error(error) from error
 
     @app.post(
         "/api/protection/sessions",

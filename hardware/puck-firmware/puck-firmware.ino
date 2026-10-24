@@ -7,10 +7,6 @@
 #include <time.h>
 #include <esp_bt.h>
 
-const char *SERVER_HOST = "192.168.1.10";
-const int SERVER_PORT = 8000;
-const char *PUCK_TOKEN = "paste-token-from-pair-command";
-
 const int MIC_SCK = 32;
 const int MIC_WS = 25;
 const int MIC_SD = 33;
@@ -56,6 +52,7 @@ volatile bool recording = false;
 volatile bool stopRequested = false;
 
 String serverHost;
+String puckToken;
 int serverPort;
 bool useHttps;
 volatile bool wifiChanged = false;
@@ -77,8 +74,8 @@ volatile bool incomingCall = false;
 volatile bool callEnded = false;
 
 void saveWifi(String config) {
-  String parts[5];
-  for (int i = 0; i < 5; i++) {
+  String parts[6];
+  for (int i = 0; i < 6; i++) {
     int end = config.indexOf('\n');
     parts[i] = end < 0 ? config : config.substring(0, end);
     config = end < 0 ? "" : config.substring(end + 1);
@@ -91,6 +88,9 @@ void saveWifi(String config) {
     settings.putString("host", parts[2]);
     settings.putInt("port", parts[3].toInt());
     settings.putBool("https", parts[4] == "1");
+  }
+  if (parts[5].length()) {
+    settings.putString("token", parts[5]);
   }
   settings.end();
   wifiChanged = true;
@@ -332,7 +332,7 @@ int httpRequest(const char *method, String path, String extraHeaders, uint32_t b
     }
     client.print(String(method) + " " + path + " HTTP/1.1\r\n" +
                  "Host: " + serverHost + "\r\n" +
-                 "Authorization: Bearer " + PUCK_TOKEN + "\r\n" +
+                 "Authorization: Bearer " + puckToken + "\r\n" +
                  "Connection: keep-alive\r\n" +
                  "Content-Length: " + bodyLength + "\r\n" +
                  extraHeaders + "\r\n");
@@ -479,16 +479,17 @@ void connectWifi() {
   settings.begin("puck", true);
   String ssid = settings.getString("ssid", "");
   String password = settings.getString("password", "");
-  serverHost = settings.getString("host", SERVER_HOST);
-  serverPort = settings.getInt("port", SERVER_PORT);
-  useHttps = settings.getBool("https", false);
+  serverHost = settings.getString("host", "");
+  serverPort = settings.getInt("port", 443);
+  useHttps = settings.getBool("https", true);
+  puckToken = settings.getString("token", "");
   settings.end();
 
   secureClient.stop();
   plainClient.stop();
   WiFi.disconnect();
-  if (ssid.isEmpty()) {
-    Serial.println("No Wi-Fi yet. Set it from the Rambu app, Puck tab.");
+  if (ssid.isEmpty() || serverHost.isEmpty() || puckToken.isEmpty()) {
+    Serial.println("Not set up yet. Pair it from the Rambu app, Puck tab.");
     wifiStartedAt = 0;
     return;
   }
