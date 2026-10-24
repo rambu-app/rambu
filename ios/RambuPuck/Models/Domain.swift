@@ -319,7 +319,7 @@ struct FamilyAlert: Identifiable, Hashable, Sendable {
     var callEnded = false
 
     var title: String {
-        level == .danger ? "\(parent.name) mungkin sedang ditipu" : "Telepon \(parent.name) mencurigakan"
+        "\(parent.name) mungkin sedang ditipu"
     }
 }
 

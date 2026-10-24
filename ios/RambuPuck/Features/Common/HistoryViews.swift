@@ -28,8 +28,6 @@ struct HistoryList: View {
                 VStack(spacing: 10) {
                     MascotView(pose: .calm, sign: .safe).frame(height: 130)
                     Text("Belum ada riwayat").font(Brand.display(.title3)).foregroundStyle(Brand.ink)
-                    Text("Panggilan yang selesai akan muncul di sini.")
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)

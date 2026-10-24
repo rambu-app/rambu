@@ -58,8 +58,6 @@ struct FamilySetupContent: View {
             if model.pilotConnected {
                 connectedContent
             } else if model.persona.isParent {
-                Text("Buat kode undangan, lalu kirim ke anak atau anggota keluarga yang akan mendampingi Anda.")
-                    .foregroundStyle(Brand.ink2)
                 Button {
                     perform { _ = await pilot.createFamily() }
                 } label: {
@@ -68,7 +66,6 @@ struct FamilySetupContent: View {
                 .primaryAction()
                 .disabled(busy)
             } else {
-                Text("Masukkan kode undangan dari HP orang tua.").foregroundStyle(Brand.ink2)
                 TextField("Kode 6 angka", text: $code)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)

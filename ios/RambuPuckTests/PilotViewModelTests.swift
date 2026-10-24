@@ -551,7 +551,7 @@ struct PilotViewModelTests {
         #expect(state.history.first?.decision?.verdict == .scam)
     }
 
-    @Test("Riwayat memetakan aman, waspada, bahaya, dan tidak dapat dinilai")
+    @Test("Riwayat memetakan aman, bahaya, dan tidak dapat dinilai")
     func testHistoryPresentationMapsSafeReviewDangerAndUnassessed() {
         let presentations: [HistoryPresentation] = [.safe, .review, .danger, .unassessed]
 

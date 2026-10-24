@@ -44,7 +44,7 @@ Run this acceptance matrix with the parent app backgrounded for the yellow, red,
 | Case | Parent and guardian history | Guardian notification |
 |---|---|---|
 | Safe call, then end | Green **Aman** on both phones | None |
-| Warning call, then end | Yellow **Waspada** on both phones | One warning |
+| Warning call, then end | Yellow **Bahaya** on both phones | One warning |
 | High-confidence call, then end | Red **Bahaya** on both phones | One danger warning |
 | One call escalates yellow → red | Final red **Bahaya** on both phones | One at yellow and one at red; no duplicates |
 | No-speech call, then end | Gray **Tidak dapat dinilai** on both phones | None |

@@ -13,7 +13,7 @@ struct ParentProfileStep: View {
             title: "Siapa nama Anda?",
             message: "Nama ini muncul di HP keluarga."
         ) {
-            NameField(title: "Nama panggilan", text: $name, prompt: "Contoh: Ibu Ratna")
+            NameField(title: nil, text: $name, prompt: "Contoh: Ibu Ratna")
             if model.allowsDemoControls { DemoPrefillNote() }
         } actions: {
             Button {

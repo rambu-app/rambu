@@ -129,10 +129,12 @@ private struct ProtectionStatusCard: View {
                 .background(Brand.tealSoft, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(content.title).font(.headline).foregroundStyle(Brand.ink)
-                Text(content.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !content.detail.isEmpty {
+                    Text(content.detail)
+                        .font(.subheadline)
+                        .foregroundStyle(Brand.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -147,11 +149,11 @@ private struct ProtectionStatusCard: View {
         case .setupRequired:
             ("link.badge.plus", "Hubungkan keluarga", "Buka Profil → Keluarga untuk membuat kode undangan.")
         case .monitoring:
-            ("phone.badge.waveform.fill", "Belum ada sesi analisis aktif", "Hasil analisis panggilan akan muncul di sini.")
+            ("phone.badge.waveform.fill", "Belum ada sesi analisis aktif", "")
         case .waitingForPuck:
-            ("waveform.badge.magnifyingglass", "Menunggu analisis", "Audio belum dianalisis.")
+            ("waveform.badge.magnifyingglass", "Menunggu analisis", "")
         case .listening:
-            ("waveform", "Analisis sedang berjalan", "Percakapan sedang dianalisis.")
+            ("waveform", "Analisis sedang berjalan", "")
         case .finishing:
             ("hourglass", "Menyelesaikan analisis", "Menunggu hasil akhir panggilan.")
         case .failed:
@@ -159,7 +161,7 @@ private struct ProtectionStatusCard: View {
         case .completed(let level):
             ("checkmark.circle.fill", "Analisis selesai", level == .safe ? "Tidak ada tanda penipuan yang terdeteksi." : "Peringatan dan bukti sudah dikirim ke pengawas.")
         case .noSpeech:
-            ("waveform.slash", "Percakapan tidak terdengar", "Tidak ada suara yang dapat dianalisis pada sesi ini.")
+            ("waveform.slash", "Percakapan tidak terdengar", "")
         }
     }
 }

@@ -526,7 +526,7 @@ final class CallViewModel {
         let danger = session.level == .danger
         return Toast(
             id: "\(session.id)-\(session.level.rawValue)",
-            title: danger ? "Bahaya: terindikasi penipuan" : "Waspada: telepon mencurigakan",
+            title: danger ? "Bahaya: terindikasi penipuan" : "Bahaya: telepon mencurigakan",
             body: danger
                 ? "Hati-hati. Jangan transfer atau sebut kode. \(delivery)"
                 : "\(session.headline). Jangan beri data dulu. \(delivery)",

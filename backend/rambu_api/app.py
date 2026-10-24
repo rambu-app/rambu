@@ -70,7 +70,7 @@ def _protection_warning(snapshot: ProtectionSessionSnapshot) -> tuple[str, str]:
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
         )
     return (
-        "Waspada: telepon mencurigakan",
+        "Bahaya: telepon mencurigakan",
         "Jangan berikan data atau uang. Verifikasi penelepon sebelum melanjutkan.",
     )
 
