@@ -189,6 +189,9 @@ final class AppViewModel {
         state.onboardingStep = .welcome
         pilot.disconnect()
         profile.clearStoredState()
+        UserDefaults.standard.removeObject(forKey: "puckPaired")
+        UserDefaults.standard.removeObject(forKey: "puckWifiName")
+        UserDefaults.standard.removeObject(forKey: "practiceCallDone")
     }
 
     func handleIncoming(_ url: URL) {

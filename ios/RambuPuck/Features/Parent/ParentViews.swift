@@ -252,6 +252,8 @@ private struct PuckStep: View {
 
 struct ParentHome: View {
     @Environment(AppState.self) private var model
+    @AppStorage("practiceCallDone") private var practiced = false
+    @State private var practicing = false
 
     var body: some View {
         NavigationStack {
@@ -279,16 +281,34 @@ struct ParentHome: View {
             .navigationDestination(for: UUID.self) { CallDetail(recordID: $0) }
             .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
             .animation(.smooth, value: model.issues)
+            .fullScreenCover(isPresented: $practicing) { PracticeCallView() }
+            .task {
+                guard !practiced, !model.allowsDemoControls else { return }
+                practiced = true
+                try? await Task.sleep(for: .milliseconds(600))
+                practicing = true
+            }
         }
     }
 }
 
-
 private struct ProtectionStatusCard: View {
     @Environment(AppState.self) private var model
+    @State private var showFamily = false
+
     var body: some View {
+        if model.protectionPresentation == .setupRequired {
+            Button { showFamily = true } label: { card }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $showFamily) { PilotSetupView() }
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
         let content = content(for: model.protectionPresentation)
-        HStack(spacing: 14) {
+        return HStack(spacing: 14) {
             Image(systemName: content.symbol)
                 .font(.title3)
                 .foregroundStyle(Brand.teal)
@@ -314,7 +334,7 @@ private struct ProtectionStatusCard: View {
     ) -> (symbol: String, title: String, detail: String) {
         switch status {
         case .setupRequired:
-            ("link.badge.plus", "Hubungkan keluarga", "Buka Profil → Keluarga untuk membuat kode undangan.")
+            ("link.badge.plus", "Hubungkan keluarga", "Ketuk untuk mengundang anak atau keluarga.")
         case .monitoring:
             ("phone.badge.waveform.fill", "Belum ada sesi analisis aktif", "")
         case .waitingForPuck:

@@ -5,6 +5,7 @@ import SwiftUI
 struct ParentProfileStep: View {
     @Environment(AppState.self) private var model
     @Environment(ProfileViewModel.self) private var profile
+    @Environment(OnboardingViewModel.self) private var onboarding
     @State private var name = ""
 
     var body: some View {
@@ -17,7 +18,11 @@ struct ParentProfileStep: View {
         } actions: {
             Button {
                 profile.renameParent(name)
-                model.onboardingStep = model.allowsDemoControls ? .pairPuck : .consent
+                if model.allowsDemoControls {
+                    model.onboardingStep = .pairPuck
+                } else {
+                    onboarding.complete(as: .ratna)
+                }
             } label: { WideLabel(title: "Lanjut") }
                 .primaryAction()
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
