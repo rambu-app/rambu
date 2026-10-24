@@ -85,7 +85,7 @@ final class AppState {
     var pilotInviteExpiresAt: Date?
     var pilotRole: String?
     var pilotError: String?
-    var pilotServerURL = UserDefaults.standard.string(forKey: "pilotServerURL") ?? "https://rambu-api.sfatimah.com"
+    let pilotServerURL = RambuServer.url
 
     var simulateOffline = false
     var bluetoothOn = true

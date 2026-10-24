@@ -86,19 +86,6 @@ struct FamilySetupContent: View {
                 .primaryAction()
                 .disabled(busy || code.count != 6)
             }
-            DisclosureGroup("Pengaturan lanjutan") {
-                VStack(alignment: .leading, spacing: 10) {
-                    TextField("Alamat server", text: Bindable(model).pilotServerURL)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .keyboardType(.URL).padding(12)
-                        .background(.white, in: .rect(cornerRadius: 12))
-                        .disabled(model.pilotConnected || busy)
-                    Text("Kedua HP harus menggunakan alamat server yang sama.")
-                        .font(.footnote).foregroundStyle(Brand.ink2)
-                }
-                .padding(.top, 12)
-            }
-            .font(.subheadline).disabled(busy)
         }
         .onAppear {
             code = model.pendingInviteCode ?? ""

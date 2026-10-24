@@ -3,6 +3,10 @@ import Security
 
 // MARK: - Persistent pilot identity
 
+enum RambuServer {
+    static let url = "https://rambu-api.sfatimah.com"
+}
+
 struct PilotCredentials: Codable, Sendable {
     let serverURL: String
     let familyID: String
@@ -405,7 +409,22 @@ final class PilotSync {
     ) {
         self.credentialStore = credentialStore
         self.session = session
-        credentials = initialCredentials ?? credentialStore.load()
+        if let initialCredentials {
+            credentials = initialCredentials
+        } else if let saved = credentialStore.load(), saved.serverURL != RambuServer.url {
+            let moved = PilotCredentials(
+                serverURL: RambuServer.url,
+                familyID: saved.familyID,
+                member: saved.member,
+                accessToken: saved.accessToken,
+                inviteCode: saved.inviteCode,
+                inviteExpiresAt: saved.inviteExpiresAt
+            )
+            credentialStore.save(moved)
+            credentials = moved
+        } else {
+            credentials = credentialStore.load()
+        }
         RambuAppDelegate.onPushToken = { [weak self] token in self?.receivePushToken(token) }
         if let token = RambuAppDelegate.latestPushToken { receivePushToken(token) }
     }
@@ -413,7 +432,7 @@ final class PilotSync {
     var isConnected: Bool { credentials != nil }
     var inviteCode: String? { credentials?.inviteCode }
     var inviteExpiresAt: Date? { credentials?.inviteExpiresAt }
-    var serverURL: String { credentials?.serverURL ?? UserDefaults.standard.string(forKey: "pilotServerURL") ?? "https://rambu-api.sfatimah.com" }
+    var serverURL: String { credentials?.serverURL ?? RambuServer.url }
 
     func start() {
         guard credentials != nil, pollTask == nil else { return }
@@ -560,7 +579,6 @@ final class PilotSync {
         )
         credentials = value
         credentialStore.save(value)
-        UserDefaults.standard.set(value.serverURL, forKey: "pilotServerURL")
         pollTask?.cancel()
         pollTask = nil
         start()
