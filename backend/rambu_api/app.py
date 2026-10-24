@@ -1,10 +1,13 @@
 import logging
 import os
+import threading
+import time
+from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Protocol
 
-from fastapi import BackgroundTasks, Body, FastAPI, Header, HTTPException, Response
+from fastapi import BackgroundTasks, Body, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 from .config import LangflowSettings, WhisperSettings
@@ -50,6 +53,9 @@ from .transcription import FasterWhisperTranscriber
 
 PUSH_LOGGER = logging.getLogger("uvicorn.error.rambu.push")
 RISK_RANK = {"low": 0, "needs_review": 1, "high_risk": 2}
+CODE_FAILURE_WINDOW_SECONDS = 600
+CODE_FAILURES_PER_CLIENT = 5
+CODE_FAILURES_TOTAL = 30
 
 
 def _risk_increased(
@@ -116,7 +122,11 @@ def create_app(
     protection_service: ProtectionService | None = None,
     push_sender: PushSender | None = None,
     settings: LangflowSettings | None = None,
+    demo_api: bool | None = None,
 ) -> FastAPI:
+    # The demo routes run Whisper and Langflow without a login, so they stay off on a public server.
+    if demo_api is None:
+        demo_api = service is not None or os.getenv("RAMBU_DEMO_API") == "1"
     demo_service = service
     protection = protection_service
     pilots = pilot_store or (PilotStore(":memory:") if service is not None else _default_pilot_store())
@@ -209,56 +219,80 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ready"}
 
-    @app.post("/api/demo/{scenario}", response_model=DemoSnapshot, status_code=201)
-    def start_demo(scenario: str) -> DemoSnapshot:
-        try:
-            return demos().start(scenario)
-        except KeyError as error:
-            raise HTTPException(status_code=404, detail="Skenario tidak ditemukan.") from error
-        except FileNotFoundError as error:
-            raise HTTPException(status_code=503, detail="Audio skenario belum tersedia.") from error
+    if demo_api:
+        @app.post("/api/demo/{scenario}", response_model=DemoSnapshot, status_code=201)
+        def start_demo(scenario: str) -> DemoSnapshot:
+            try:
+                return demos().start(scenario)
+            except KeyError as error:
+                raise HTTPException(status_code=404, detail="Skenario tidak ditemukan.") from error
+            except FileNotFoundError as error:
+                raise HTTPException(status_code=503, detail="Audio skenario belum tersedia.") from error
 
-    @app.get("/api/demo/{session_id}", response_model=DemoSnapshot)
-    def demo_status(session_id: str) -> DemoSnapshot:
-        try:
-            return demos().get(session_id)
-        except KeyError as error:
-            raise HTTPException(status_code=404, detail="Sesi demo tidak ditemukan.") from error
+        @app.get("/api/demo/{session_id}", response_model=DemoSnapshot)
+        def demo_status(session_id: str) -> DemoSnapshot:
+            try:
+                return demos().get(session_id)
+            except KeyError as error:
+                raise HTTPException(status_code=404, detail="Sesi demo tidak ditemukan.") from error
 
-    @app.delete("/api/demo/{session_id}", status_code=204)
-    def delete_demo(session_id: str) -> Response:
-        try:
-            demos().delete(session_id)
-        except KeyError as error:
-            raise HTTPException(status_code=404, detail="Sesi demo tidak ditemukan.") from error
-        return Response(status_code=204)
+        @app.delete("/api/demo/{session_id}", status_code=204)
+        def delete_demo(session_id: str) -> Response:
+            try:
+                demos().delete(session_id)
+            except KeyError as error:
+                raise HTTPException(status_code=404, detail="Sesi demo tidak ditemukan.") from error
+            return Response(status_code=204)
 
-    @app.post("/api/analyze-chunk", response_model=ChunkAnalysisResponse)
-    def analyze_chunk(
-        audio: bytes = Body(media_type="audio/wav"),
-        x_rambu_consent: str | None = Header(default=None),
-        x_rambu_final: str | None = Header(default=None),
-    ) -> ChunkAnalysisResponse:
-        if x_rambu_consent != "true":
-            raise HTTPException(status_code=403, detail="Persetujuan pemrosesan audio belum dikonfirmasi.")
-        if len(audio) > 1_000_000:
-            raise HTTPException(status_code=413, detail="Potongan audio terlalu besar.")
-        try:
-            return demos().analyze_chunk(audio, final=x_rambu_final == "true")
-        except ValueError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
-        except LangflowFailure as error:
-            failure = DemoFailure(
-                code=f"analysis_{error.code}",
-                message=error.safe_message,
-            )
-            raise HTTPException(status_code=503, detail=failure.model_dump()) from error
-        except Exception as error:
-            failure = DemoFailure(
-                code="transcription_failed",
-                message="Transkripsi audio gagal.",
-            )
-            raise HTTPException(status_code=503, detail=failure.model_dump()) from error
+        @app.post("/api/analyze-chunk", response_model=ChunkAnalysisResponse)
+        def analyze_chunk(
+            audio: bytes = Body(media_type="audio/wav"),
+            x_rambu_consent: str | None = Header(default=None),
+            x_rambu_final: str | None = Header(default=None),
+        ) -> ChunkAnalysisResponse:
+            if x_rambu_consent != "true":
+                raise HTTPException(status_code=403, detail="Persetujuan pemrosesan audio belum dikonfirmasi.")
+            if len(audio) > 1_000_000:
+                raise HTTPException(status_code=413, detail="Potongan audio terlalu besar.")
+            try:
+                return demos().analyze_chunk(audio, final=x_rambu_final == "true")
+            except ValueError as error:
+                raise HTTPException(status_code=422, detail=str(error)) from error
+            except LangflowFailure as error:
+                failure = DemoFailure(
+                    code=f"analysis_{error.code}",
+                    message=error.safe_message,
+                )
+                raise HTTPException(status_code=503, detail=failure.model_dump()) from error
+            except Exception as error:
+                failure = DemoFailure(
+                    code="transcription_failed",
+                    message="Transkripsi audio gagal.",
+                )
+                raise HTTPException(status_code=503, detail=failure.model_dump()) from error
+
+    failed_codes: dict[str, deque[float]] = {}
+    failed_codes_lock = threading.Lock()
+
+    def attempt_keys(request: Request) -> tuple[str, str]:
+        client = request.headers.get("cf-connecting-ip") or (request.client.host if request.client else "unknown")
+        return client, "*"
+
+    def check_attempt_keys(request: Request) -> None:
+        now = time.monotonic()
+        with failed_codes_lock:
+            for key, limit in zip(attempt_keys(request), (CODE_FAILURES_PER_CLIENT, CODE_FAILURES_TOTAL)):
+                failures = failed_codes.setdefault(key, deque())
+                while failures and now - failures[0] > CODE_FAILURE_WINDOW_SECONDS:
+                    failures.popleft()
+                if len(failures) >= limit:
+                    raise HTTPException(status_code=429, detail="Terlalu banyak percobaan kode. Coba lagi beberapa menit lagi.")
+
+    def record_code_failure(request: Request) -> None:
+        now = time.monotonic()
+        with failed_codes_lock:
+            for key in attempt_keys(request):
+                failed_codes.setdefault(key, deque()).append(now)
 
     def token_from(authorization: str | None) -> str:
         if not authorization or not authorization.startswith("Bearer "):
@@ -290,10 +324,13 @@ def create_app(
         return HTTPException(status_code=500, detail="Layanan perlindungan gagal.")
 
     @app.post("/api/pucks/pair", response_model=PairPuckResponse, status_code=201)
-    def pair_puck(value: PairPuckRequest) -> PairPuckResponse:
+    def pair_puck(value: PairPuckRequest, request: Request) -> PairPuckResponse:
+        check_attempt_keys(request)
         try:
             return protections().pair_puck(value.code, value.display_name)
         except Exception as error:
+            if isinstance(error, InviteError):
+                record_code_failure(request)
             raise protection_error(error) from error
 
     @app.post("/api/pilot/pucks", response_model=PairPuckResponse, status_code=201)
@@ -495,10 +532,13 @@ def create_app(
             raise pilot_error(error) from error
 
     @app.post("/api/pilot/families/join", response_model=PilotSession, status_code=201)
-    def join_family(value: JoinFamilyRequest) -> PilotSession:
+    def join_family(value: JoinFamilyRequest, request: Request) -> PilotSession:
+        check_attempt_keys(request)
         try:
             return pilots.join_family(value.code, value.name, value.relation)
         except Exception as error:
+            if isinstance(error, InviteError):
+                record_code_failure(request)
             raise pilot_error(error) from error
 
     @app.get("/api/pilot/profile", response_model=PilotProfile)

@@ -25,6 +25,29 @@ def authorization(token: str) -> dict[str, str]:
     return {"authorization": f"Bearer {token}"}
 
 
+def test_wrong_invite_codes_are_rate_limited_per_client_and_in_total() -> None:
+    store = PilotStore(":memory:")
+    parent = store.create_family("Ibu")
+    with TestClient(create_app(service=StubDemoService(), pilot_store=store)) as client:
+        def join(code, ip):
+            return client.post("/api/pilot/families/join", headers={"cf-connecting-ip": ip},
+                               json={"code": code, "name": "Anak", "relation": "Anak"}).status_code
+
+        wrong = "000000" if parent.invite_code != "000000" else "111111"
+        assert [join(wrong, "1.1.1.1") for _ in range(5)] == [422] * 5
+        assert join(parent.invite_code, "1.1.1.1") == 429
+        assert join(parent.invite_code, "2.2.2.2") == 201
+        for index in range(25):
+            join(wrong, f"3.3.3.{index}")
+        assert join(parent.invite_code, "4.4.4.4") == 429
+
+
+def test_demo_routes_are_off_unless_enabled() -> None:
+    disabled = TestClient(create_app(service=StubDemoService(), demo_api=False))
+    assert disabled.post("/api/demo/bank-otp").status_code in {404, 405}
+    assert disabled.post("/api/analyze-chunk", content=b"").status_code in {404, 405}
+
+
 def test_parent_pairs_a_puck_without_an_invite_code() -> None:
     store = PilotStore(":memory:")
     parent = store.create_family("Ibu")
