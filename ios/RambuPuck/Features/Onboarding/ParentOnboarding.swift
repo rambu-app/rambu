@@ -10,8 +10,7 @@ struct ParentProfileStep: View {
     var body: some View {
         StepScaffold(
             progress: (1, 3),
-            title: "Siapa nama Anda?",
-            message: "Nama ini muncul di HP keluarga."
+            title: "Siapa nama Anda?"
         ) {
             NameField(title: nil, text: $name, prompt: "Contoh: Ibu Ratna")
             if model.allowsDemoControls { DemoPrefillNote() }

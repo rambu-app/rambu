@@ -267,6 +267,8 @@ private struct PersonRow: View {
 /// Kode undangan plus cara mengirimnya. Tautan https bisa diketuk langsung di WhatsApp.
 struct InviteActions: View {
     let code: String
+    var renewing = false
+    var onRenew: (() -> Void)?
     @Environment(AppState.self) private var model
     @State private var copied = false
 
@@ -274,24 +276,40 @@ struct InviteActions: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let validity = InviteValidity(expiresAt: model.pilotInviteExpiresAt, now: context.date)
             let message = InviteLink.message(code: code, parentName: model.parent.name, expiresAt: model.pilotInviteExpiresAt)
-            VStack(alignment: .leading, spacing: 12) {
-                DigitBoxes(digits: code).opacity(validity.canShare ? 1 : 0.5)
-                Label(validity.message, systemImage: "clock")
-                    .font(.subheadline).foregroundStyle(Brand.ink2)
-                ShareLink(item: message) {
-                    WideLabel(title: "Bagikan kode", systemImage: "square.and.arrow.up")
+            VStack(alignment: .leading, spacing: 14) {
+                DigitBoxes(digits: code).opacity(validity.canShare ? 1 : 0.4)
+                Label(validity.message, systemImage: validity.canShare ? "clock" : "exclamationmark.circle.fill")
+                    .font(.subheadline.weight(validity.canShare ? .regular : .semibold))
+                    .foregroundStyle(validity.canShare ? Brand.ink2 : Brand.dangerInk)
+                if validity.canShare {
+                    ShareLink(item: message) {
+                        WideLabel(title: "Bagikan kode", systemImage: "square.and.arrow.up")
+                    }
+                    .primaryAction()
+                    HStack {
+                        Button {
+                            UIPasteboard.general.string = code
+                            withAnimation(.smooth) { copied = true }
+                        } label: {
+                            Label(copied ? "Kode tersalin" : "Salin kode", systemImage: copied ? "checkmark" : "doc.on.doc")
+                        }
+                        Spacer()
+                        if let onRenew {
+                            Button(renewing ? "Membuat kode…" : "Buat kode baru", systemImage: "arrow.clockwise", action: onRenew)
+                                .disabled(renewing)
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.teal)
+                    .buttonStyle(.plain)
+                    .frame(minHeight: 44)
+                } else if let onRenew {
+                    Button(action: onRenew) {
+                        WideLabel(title: renewing ? "Membuat kode…" : "Buat kode baru", systemImage: "arrow.clockwise")
+                    }
+                    .primaryAction()
+                    .disabled(renewing)
                 }
-                .primaryAction()
-                .disabled(!validity.canShare)
-                Button {
-                    UIPasteboard.general.string = code
-                    withAnimation(.smooth) { copied = true }
-                } label: {
-                    Label(copied ? "Kode tersalin" : "Salin kode", systemImage: copied ? "checkmark" : "doc.on.doc")
-                        .frame(minHeight: 44)
-                }
-                .buttonStyle(.plain).foregroundStyle(Brand.teal)
-                .disabled(!validity.canShare)
             }
         }
         .onChange(of: code) { _, _ in copied = false }

@@ -57,8 +57,7 @@ struct GuardianProfileStep: View {
     var body: some View {
         StepScaffold(
             progress: (1, 2),
-            title: "Siapa Anda?",
-            message: "Nama ini akan terlihat di HP orang tua."
+            title: "Siapa Anda?"
         ) {
             NameField(title: "Nama Anda", text: $name, prompt: "Contoh: Sinta")
 
