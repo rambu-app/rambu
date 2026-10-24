@@ -31,7 +31,6 @@ from .models import (
     ProtectionFailure,
     ProtectionSessionSnapshot,
     PushTokenRequest,
-    UpdatePilotContactRequest,
 )
 from .pilot import (
     ActiveProtectionSessionConflict,
@@ -490,15 +489,6 @@ def create_app(
     def pilot_profile(authorization: str | None = Header(default=None)) -> PilotProfile:
         try:
             return pilots.profile(token_from(authorization))
-        except HTTPException:
-            raise
-        except Exception as error:
-            raise pilot_error(error) from error
-
-    @app.put("/api/pilot/profile", response_model=PilotProfile)
-    def update_pilot_contact(value: UpdatePilotContactRequest, authorization: str | None = Header(default=None)) -> PilotProfile:
-        try:
-            return pilots.update_contact(token_from(authorization), value.phone_number)
         except HTTPException:
             raise
         except Exception as error:

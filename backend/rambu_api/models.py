@@ -173,29 +173,6 @@ class PilotPerson(BaseModel):
     name: str
     relation: str
     role: PilotRole
-    phone_number: str | None = None
-
-
-class UpdatePilotContactRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-    phone_number: str | None = Field(max_length=40)
-
-    @field_validator("phone_number")
-    @classmethod
-    def normalize_phone_number(cls, value: str | None) -> str | None:
-        if not value:
-            return None
-        if re.fullmatch(r"[+0-9 ()\-.]+", value) is None:
-            raise ValueError("Nomor telepon tidak valid.")
-        compact = re.sub(r"[ ()\-.]", "", value)
-        if compact.startswith("0"):
-            compact = "+62" + compact[1:]
-        elif compact.startswith("62"):
-            compact = "+" + compact
-        if re.fullmatch(r"\+[1-9][0-9]{7,14}", compact) is None:
-            raise ValueError("Nomor telepon tidak valid.")
-        return compact
 
 
 class PilotSession(BaseModel):

@@ -175,9 +175,6 @@ class PilotStore:
                 """
             )
             self._ensure_protection_session_metadata_columns()
-            member_columns = {row[1] for row in self._connection.execute("PRAGMA table_info(members)")}
-            if "phone_number" not in member_columns:
-                self._connection.execute("ALTER TABLE members ADD COLUMN phone_number TEXT")
 
     def close(self) -> None:
         with self._lock:
@@ -792,15 +789,6 @@ class PilotStore:
             session_status=session_status,
         )
 
-    def update_contact(self, token: str, phone_number: str | None) -> PilotProfile:
-        member = self.authenticate(token)
-        with self._lock, self._connection:
-            self._connection.execute(
-                "UPDATE members SET phone_number = ? WHERE id = ?",
-                (phone_number, member["id"]),
-            )
-        return self.profile(token)
-
     def register_push_token(self, access_token: str, push_token: str, environment: str) -> None:
         member = self.authenticate(access_token)
         cleaned = push_token.strip().lower()
@@ -1204,7 +1192,6 @@ class PilotStore:
     def _person(member: sqlite3.Row) -> PilotPerson:
         return PilotPerson(
             id=member["id"], name=member["name"], relation=member["relation"], role=member["role"],
-            phone_number=member["phone_number"],
         )
 
     def _new_code(self) -> str:
