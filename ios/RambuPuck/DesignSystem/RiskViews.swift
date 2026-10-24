@@ -143,39 +143,158 @@ struct EvidenceCard: View {
     }
 }
 
-/// Keep every stored excerpt accessible verbatim, including overlaps omitted from the short view.
-struct CallEvidenceSection: View {
-    let evidence: [TranscriptLine]
-    let level: RiskLevel
+// MARK: - Detail panggilan
+
+/// The verdict leads: what kind of call this was, in one sentence, with call facts as small print.
+struct VerdictCard: View {
+    let presentation: HistoryPresentation
+    let headline: String
+    let summary: String
+    let details: [String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Bagian yang ditandai Rambu")
-            Text("Cuplikan dari transkripsi otomatis. Kata-kata bisa salah terbaca; penanda adalah hasil analisis Rambu.")
-                .font(.subheadline).foregroundStyle(Brand.ink2)
-            if evidence.isEmpty {
-                Text("Cuplikan percakapan belum tersedia.")
-                    .font(.body).foregroundStyle(Brand.ink2)
-            } else {
-                ForEach(TranscriptLine.groupedForDisplay(evidence)) { EvidenceCard(line: $0, level: level) }
-                DisclosureGroup("Lihat transkripsi otomatis") {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Semua cuplikan yang tersimpan, bukan transkripsi lengkap panggilan. Teks di bawah tidak diubah.")
-                            .font(.footnote).foregroundStyle(Brand.ink2)
-                        ForEach(Array(evidence.enumerated()), id: \.offset) { index, line in
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Cuplikan \(index + 1)")
-                                    .font(.caption.weight(.semibold)).foregroundStyle(Brand.ink2)
-                                Text(line.text).font(.body).foregroundStyle(Brand.ink)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .textSelection(.enabled)
-                            }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: presentation.symbol)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(presentation.glyph)
+                    .frame(width: 44, height: 44)
+                    .background(presentation.tint, in: .rect(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(presentation.title.uppercased())
+                        .font(.footnote.weight(.bold))
+                        .tracking(0.5)
+                        .foregroundStyle(presentation.ink)
+                    Text(headline)
+                        .font(Brand.display(.title2, .heavy))
+                        .foregroundStyle(Brand.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                }
+            }
+            Text(summary)
+                .font(.body)
+                .foregroundStyle(Brand.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(details.joined(separator: " · "))
+                .font(.subheadline)
+                .foregroundStyle(presentation.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(presentation.soft, in: .rect(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct AdviceSection: View {
+    let items: [(text: String, symbol: String)]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Yang sebaiknya dilakukan")
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(items.indices, id: \.self) { index in
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: items[index].symbol)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(Brand.teal)
+                            .frame(width: 32, height: 32)
+                            .background(Brand.tealSoft, in: .rect(cornerRadius: 10, style: .continuous))
+                        Text(items[index].text)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Brand.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(minHeight: 32, alignment: .leading)
+                    }
+                }
+            }
+            .card()
+        }
+    }
+}
+
+/// Each signal once, with the automatic-transcription excerpt that triggered it.
+struct SignalEvidenceSection: View {
+    let signals: [SignalKind]
+    let evidence: [TranscriptLine]
+
+    var body: some View {
+        let lines = TranscriptLine.groupedForDisplay(evidence)
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Tanda yang ditemukan")
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(Array(signals.enumerated()), id: \.element) { index, signal in
+                    if index > 0 { Divider() }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(signal.title, systemImage: signal.symbol)
+                            .font(.headline)
+                            .foregroundStyle(Brand.dangerInk)
+                        ForEach(lines.filter { $0.signals.contains(signal) }) { line in
+                            Text("“\(line.text.split(whereSeparator: \.isWhitespace).joined(separator: " "))”")
+                                .font(.body)
+                                .foregroundStyle(Brand.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Brand.canvas, in: .rect(cornerRadius: 14, style: .continuous))
                         }
                     }
-                    .padding(.top, 12)
+                    .accessibilityElement(children: .combine)
                 }
-                .font(.subheadline).tint(Brand.teal)
             }
+            .card()
         }
+    }
+}
+
+struct TranscriptLink: View {
+    let evidence: [TranscriptLine]
+
+    var body: some View {
+        NavigationLink {
+            TranscriptExcerpts(evidence: evidence)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "text.alignleft").foregroundStyle(Brand.teal)
+                Text("Lihat transkripsi otomatis")
+                    .font(.body.weight(.semibold)).foregroundStyle(Brand.ink)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(Brand.ink3)
+            }
+            .frame(minHeight: 24)
+            .card(padding: 16)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct TranscriptExcerpts: View {
+    let evidence: [TranscriptLine]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Semua cuplikan yang tersimpan dari transkripsi otomatis, bukan rekaman lengkap. Kata-kata bisa salah terbaca.")
+                    .font(.footnote).foregroundStyle(Brand.ink2)
+                ForEach(Array(evidence.enumerated()), id: \.offset) { index, line in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Cuplikan \(index + 1)")
+                            .font(.caption.weight(.semibold)).foregroundStyle(Brand.ink2)
+                        Text(line.text).font(.body).foregroundStyle(Brand.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    .card(padding: 16)
+                }
+            }
+            .padding(20)
+        }
+        .background(Brand.canvas)
+        .navigationTitle("Transkripsi otomatis")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

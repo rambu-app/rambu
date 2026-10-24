@@ -28,8 +28,6 @@ struct HistoryList: View {
                 VStack(spacing: 10) {
                     MascotView(pose: .calm, sign: .safe).frame(height: 130)
                     Text("Belum ada riwayat").font(Brand.display(.title3)).foregroundStyle(Brand.ink)
-                    Text("Panggilan yang selesai akan muncul di sini.")
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
@@ -129,24 +127,17 @@ struct CallDetail: View {
         if let record = model.history.first(where: { $0.id == recordID }) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HistoryBadge(presentation: record.historyPresentation, large: true)
-                        Text(record.title)
-                            .font(Brand.display(.title))
-                            .foregroundStyle(Brand.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 14) {
-                            Label(Fmt.day(record.startedAt), systemImage: "calendar")
-                            Label(Fmt.duration(record.duration), systemImage: "timer")
-                        }
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
-                        .labelStyle(CompactLabelStyle())
-                        Label(record.callerDetail, systemImage: record.channel.symbol)
-                            .font(.subheadline).foregroundStyle(Brand.ink3)
-                            .labelStyle(CompactLabelStyle())
-                    }
+                    VerdictCard(
+                        presentation: record.historyPresentation,
+                        headline: record.verdictHeadline,
+                        summary: record.displayReason ?? record.signals.callerSummary ?? record.incidentSummary,
+                        details: [record.channel.label, Fmt.day(record.startedAt), Fmt.duration(record.duration)]
+                    )
 
-                    SummaryCard(record: record)
+                    if record.displayReason == nil && !record.signals.isEmpty {
+                        AdviceSection(items: record.signals.map { ($0.advice, "nosign") }
+                            + [("Hubungi keluarga jika ragu.", "person.2.fill")])
+                    }
 
                     if let decision = record.decision {
                         HStack(spacing: 12) {
@@ -160,38 +151,12 @@ struct CallDetail: View {
                         .card()
                     }
 
-                    if record.decision?.verdict == .safe {
-                        Label("Pendamping menandai panggilan ini aman.", systemImage: "checkmark.circle")
-                            .font(.footnote).foregroundStyle(Brand.ink3)
+                    if record.displayReason == nil && !record.signals.isEmpty {
+                        SignalEvidenceSection(signals: record.signals, evidence: record.evidence)
                     }
 
-                    if let reason = record.displayReason {
-                        HStack(spacing: 12) {
-                            Image(systemName: record.historyPresentation.symbol)
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(record.historyPresentation.ink)
-                            Text(reason)
-                                .font(.body).foregroundStyle(Brand.ink2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .card()
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Tidak dapat dinilai. \(reason)")
-                    } else if record.signals.isEmpty {
-                        HStack(spacing: 12) {
-                            MascotView(pose: .calm, animated: false).frame(width: 56)
-                            Text("Tidak terdeteksi tanda penipuan.")
-                                .font(.body).foregroundStyle(Brand.ink2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .card()
-                    } else {
-                        FlowLayout(spacing: 6) {
-                            ForEach(record.signals, id: \.self) { SignalChip(kind: $0, level: record.level) }
-                        }
-                    }
-                    if !record.evidence.isEmpty || (record.displayReason == nil && !record.signals.isEmpty) {
-                        CallEvidenceSection(evidence: record.evidence, level: record.level)
+                    if !record.evidence.isEmpty {
+                        TranscriptLink(evidence: record.evidence)
                     }
                 }
                 .padding(20)
@@ -207,19 +172,18 @@ struct CallDetail: View {
 
 private struct HistoryBadge: View {
     let presentation: HistoryPresentation
-    var large = false
 
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: presentation.symbol)
             Text(presentation.title)
         }
-        .font(large ? .headline : .subheadline.weight(.bold))
+        .font(.subheadline.weight(.bold))
         .foregroundStyle(presentation.glyph)
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, large ? 14 : 10)
-        .padding(.vertical, large ? 8 : 5)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
         .background(presentation.tint, in: .capsule)
         .accessibilityElement(children: .combine)
     }
@@ -236,24 +200,5 @@ private struct HistoryTile: View {
             .frame(width: size, height: size)
             .background(presentation.tint, in: .rect(cornerRadius: size * 0.3, style: .continuous))
             .accessibilityLabel(presentation.title)
-    }
-}
-
-/// Brief interpretation of the detected signals, separate from automatic-transcription excerpts.
-private struct SummaryCard: View {
-    let record: CallRecord
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Ringkasan Rambu", systemImage: "text.alignleft")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Brand.teal)
-            Text(record.incidentSummary)
-                .font(.body)
-                .foregroundStyle(Brand.ink)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .card()
-        .accessibilityElement(children: .combine)
     }
 }

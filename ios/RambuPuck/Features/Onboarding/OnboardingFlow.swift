@@ -114,13 +114,15 @@ struct StepScaffold<Content: View, Actions: View>: View {
 
 /// Kolom nama besar dan jelas. Sudah terisi data contoh, tetap bisa diubah.
 struct NameField: View {
-    let title: String
+    let title: String?
     @Binding var text: String
     let prompt: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink2)
+            if let title {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink2)
+            }
             TextField(prompt, text: $text)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Brand.ink)

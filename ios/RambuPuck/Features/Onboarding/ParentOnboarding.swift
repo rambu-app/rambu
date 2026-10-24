@@ -5,20 +5,24 @@ import SwiftUI
 struct ParentProfileStep: View {
     @Environment(AppState.self) private var model
     @Environment(ProfileViewModel.self) private var profile
+    @Environment(OnboardingViewModel.self) private var onboarding
     @State private var name = ""
 
     var body: some View {
         StepScaffold(
             progress: (1, 3),
-            title: "Siapa nama Anda?",
-            message: "Nama ini muncul di HP keluarga."
+            title: "Siapa nama Anda?"
         ) {
-            NameField(title: "Nama panggilan", text: $name, prompt: "Contoh: Ibu Ratna")
+            NameField(title: nil, text: $name, prompt: "Contoh: Ibu Ratna")
             if model.allowsDemoControls { DemoPrefillNote() }
         } actions: {
             Button {
                 profile.renameParent(name)
-                model.onboardingStep = model.allowsDemoControls ? .pairPuck : .consent
+                if model.allowsDemoControls {
+                    model.onboardingStep = .pairPuck
+                } else {
+                    onboarding.complete(as: .ratna)
+                }
             } label: { WideLabel(title: "Lanjut") }
                 .primaryAction()
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)

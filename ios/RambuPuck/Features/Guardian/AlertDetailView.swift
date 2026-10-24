@@ -12,9 +12,30 @@ struct AlertDetail: View {
         if let alert = model.alerts.first(where: { $0.id == alertID }) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    AlertHeader(alert: alert)
+                    VerdictCard(
+                        presentation: alert.level.historyPresentation,
+                        headline: alert.title,
+                        summary: alert.signals.callerSummary ?? "Rambu mendeteksi tanda penipuan pada panggilan ini.",
+                        details: [
+                            alert.channel.label,
+                            "Terdeteksi \(Fmt.clock(alert.raisedAt))",
+                            alert.callEnded ? "Panggilan selesai" : "Panggilan masih berlangsung",
+                        ]
+                    )
 
-                    CallEvidenceSection(evidence: alert.evidence, level: alert.level)
+                    if alert.decision == nil && !alert.signals.isEmpty {
+                        AdviceSection(items: alert.signals.map(\.adviceForGuardian).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+                            .map { ($0, "exclamationmark.bubble.fill") }
+                            + [("Pilih Aman atau Penipuan di bawah agar \(alert.parent.name) tahu.", "hand.tap.fill")])
+                    }
+
+                    if !alert.signals.isEmpty {
+                        SignalEvidenceSection(signals: alert.signals, evidence: alert.evidence)
+                    }
+
+                    if !alert.evidence.isEmpty {
+                        TranscriptLink(evidence: alert.evidence)
+                    }
 
                     if alert.decision == nil {
                         VStack(alignment: .leading, spacing: 12) {
@@ -35,34 +56,6 @@ struct AlertDetail: View {
         } else {
             ContentUnavailableView("Peringatan tidak ditemukan", systemImage: "bell.slash")
         }
-    }
-}
-
-private struct AlertHeader: View {
-    let alert: FamilyAlert
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            LevelBand(level: alert.level, callEnded: alert.callEnded, detectedAt: alert.raisedAt, handled: alert.decision != nil)
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(alert.title)
-                            .font(Brand.display(.title))
-                            .foregroundStyle(Brand.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityAddTraits(.isHeader)
-                        Label(alert.callerDetail, systemImage: alert.channel.symbol)
-                            .font(.subheadline).foregroundStyle(Brand.ink2)
-                    }
-                    Spacer(minLength: 0)
-                }
-            }
-            .padding(20)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(alert.level.soft)
-        .clipShape(.rect(cornerRadius: 28, style: .continuous))
     }
 }
 
@@ -114,9 +107,7 @@ private struct DecisionBar: View {
     let alert: FamilyAlert
     @Environment(AppState.self) private var model
     @Environment(AppViewModel.self) private var app
-    @Environment(\.openURL) private var openURL
     @State private var confirmSafe = false
-    @State private var callInfo = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -140,17 +131,11 @@ private struct DecisionBar: View {
         } message: {
             Text("\(alert.parent.name) akan diberi tahu.")
         }
-        .alert("Telepon \(alert.parent.name)", isPresented: $callInfo) {
-            Button("Oke", role: .cancel) {}
-        } message: {
-            Text("Panggilan tidak dapat dibuka. Coba melalui aplikasi Telepon; simulator tidak mendukung panggilan.")
-        }
     }
 
     @ViewBuilder
     private func decidedContent(_ decision: GuardianDecision) -> some View {
         let mine = decision.by == model.currentPerson
-        let scam = decision.verdict == .scam
         HStack(spacing: 12) {
             Group {
                 if mine {
@@ -176,16 +161,6 @@ private struct DecisionBar: View {
         .background(.white, in: .rect(cornerRadius: 20, style: .continuous))
         .shadow(color: Brand.ink.opacity(0.08), radius: 12, y: 4)
         .accessibilityElement(children: .combine)
-
-        let parent = model.parent.id == alert.parent.id ? model.parent : alert.parent
-        if let url = parent.telephoneURL {
-            Button {
-                openURL(url) { accepted in if !accepted { callInfo = true } }
-            } label: {
-                WideLabel(title: "Telepon \(parent.name)", systemImage: "phone.fill")
-            }
-            .primaryAction(scam ? Brand.danger : Brand.teal)
-        }
     }
 }
 

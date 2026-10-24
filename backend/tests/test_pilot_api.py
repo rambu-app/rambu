@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
-import sqlite3
 
 from fastapi.testclient import TestClient
 
@@ -9,51 +8,6 @@ from rambu_api.models import PilotAlertInput, RiskAssessment
 from rambu_api.pilot import DecisionConflict, PilotStore
 
 from .test_api import StubDemoService
-
-
-def test_contact_migration_preserves_existing_family_and_tokens(tmp_path) -> None:
-    path = tmp_path / "legacy.sqlite3"
-    original = PilotStore(path)
-    parent = original.create_family("Ibu")
-    child = original.join_family(parent.invite_code, "Anak", "Anak")
-    original.close()
-    with sqlite3.connect(path) as connection:
-        columns = {row[1] for row in connection.execute("PRAGMA table_info(members)")}
-        if "phone_number" in columns:
-            connection.execute("ALTER TABLE members DROP COLUMN phone_number")
-    migrated = PilotStore(path)
-    profile = migrated.profile(child.access_token)
-    assert profile.parent.id == parent.member.id
-    assert profile.parent.phone_number is None
-    assert profile.member.id == child.member.id
-    migrated.close()
-
-
-def test_phone_numbers_are_optional_shared_with_family_and_editable_only_by_owner() -> None:
-    store = PilotStore(":memory:")
-    parent = store.create_family("Ibu")
-    child = store.join_family(parent.invite_code, "Anak", "Anak")
-    other = store.create_family("Keluarga lain")
-    with TestClient(create_app(service=StubDemoService(), pilot_store=store)) as client:
-        updated = client.put("/api/pilot/profile", headers=authorization(parent.access_token),
-                             json={"phone_number": "0812-3456-7890"})
-        assert updated.status_code == 200
-        assert updated.json()["member"]["phone_number"] == "+6281234567890"
-        family = client.get("/api/pilot/profile", headers=authorization(child.access_token)).json()
-        assert family["parent"]["phone_number"] == "+6281234567890"
-        assert family["member"]["phone_number"] is None
-        assert client.put("/api/pilot/profile", json={"phone_number": "+6281234567890"}).status_code == 401
-        assert client.put("/api/pilot/profile", headers=authorization(child.access_token),
-                          json={"phone_number": "+628111111111", "member_id": parent.member.id}).status_code == 422
-        for invalid in ["112", "tel:123", "+62812;123456", "+62812#123456", "letters", "+" + "1" * 16]:
-            assert client.put("/api/pilot/profile", headers=authorization(parent.access_token),
-                              json={"phone_number": invalid}).status_code == 422
-        unchanged = client.get("/api/pilot/profile", headers=authorization(other.access_token)).json()
-        assert unchanged["parent"]["phone_number"] is None
-        cleared = client.put("/api/pilot/profile", headers=authorization(parent.access_token),
-                             json={"phone_number": None})
-        assert cleared.status_code == 200
-        assert cleared.json()["parent"]["phone_number"] is None
 
 
 class RecordingPushSender:
@@ -69,6 +23,22 @@ class RecordingPushSender:
 
 def authorization(token: str) -> dict[str, str]:
     return {"authorization": f"Bearer {token}"}
+
+
+def test_parent_pairs_a_puck_without_an_invite_code() -> None:
+    store = PilotStore(":memory:")
+    parent = store.create_family("Ibu")
+    child = store.join_family(parent.invite_code, "Anak", "Anak")
+    with TestClient(create_app(service=StubDemoService(), pilot_store=store)) as client:
+        paired = client.post("/api/pilot/pucks", headers=authorization(parent.access_token),
+                             json={"display_name": "Rambu Puck"})
+        assert paired.status_code == 201
+        assert paired.json()["family_id"] == parent.family_id
+        puck_token = paired.json()["access_token"]
+        assert store.authenticate_puck(puck_token)["family_id"] == parent.family_id
+        assert client.post("/api/pilot/pucks", headers=authorization(child.access_token),
+                           json={"display_name": "Rambu Puck"}).status_code == 403
+        assert client.post("/api/pilot/pucks", json={"display_name": "Rambu Puck"}).status_code == 401
 
 
 def test_family_profile_reports_server_session_without_cross_family_leak() -> None:

@@ -23,6 +23,9 @@ from .models import (
 )
 
 
+RISK_RANK = {"low": 0, "needs_review": 1, "high_risk": 2}
+
+
 class PilotError(RuntimeError):
     pass
 
@@ -175,9 +178,6 @@ class PilotStore:
                 """
             )
             self._ensure_protection_session_metadata_columns()
-            member_columns = {row[1] for row in self._connection.execute("PRAGMA table_info(members)")}
-            if "phone_number" not in member_columns:
-                self._connection.execute("ALTER TABLE members ADD COLUMN phone_number TEXT")
 
     def close(self) -> None:
         with self._lock:
@@ -280,21 +280,31 @@ class PilotStore:
                 raise InviteError("Kode undangan tidak ditemukan.")
             if datetime.fromisoformat(family["invite_expires_at"]) <= _now():
                 raise InviteError("Kode undangan sudah kedaluwarsa.")
-            puck_id = uuid4().hex
-            token = secrets.token_urlsafe(32)
-            now = _iso(_now())
-            with self._connection:
-                self._connection.execute(
-                    """
-                    INSERT INTO pucks (
-                        id, family_id, display_name, token_hash, created_at, last_seen_at
-                    ) VALUES (?, ?, ?, ?, ?, NULL)
-                    """,
-                    (puck_id, family["id"], name, _token_hash(token), now),
-                )
+            return self._insert_puck(family["id"], name)
+
+    def pair_puck_for_parent(self, token: str, display_name: str) -> PairPuckResponse:
+        member = self.authenticate(token)
+        if member["role"] != "parent":
+            raise AuthorizationError("Hanya orang tua yang dapat memasangkan puck.")
+        name = self._required(display_name, "Nama puck")
+        with self._lock:
+            return self._insert_puck(member["family_id"], name)
+
+    def _insert_puck(self, family_id: str, name: str) -> PairPuckResponse:
+        puck_id = uuid4().hex
+        token = secrets.token_urlsafe(32)
+        with self._connection:
+            self._connection.execute(
+                """
+                INSERT INTO pucks (
+                    id, family_id, display_name, token_hash, created_at, last_seen_at
+                ) VALUES (?, ?, ?, ?, ?, NULL)
+                """,
+                (puck_id, family_id, name, _token_hash(token), _iso(_now())),
+            )
         return PairPuckResponse(
             puck_id=puck_id,
-            family_id=family["id"],
+            family_id=family_id,
             display_name=name,
             access_token=token,
         )
@@ -555,7 +565,7 @@ class PilotStore:
                 status = row["status"]
                 if final:
                     status = "completed"
-                    outcome = "analyzed" if assessment is not None else "no_speech"
+                    outcome = "analyzed" if assessment is not None or masked_transcript else "no_speech"
                     ended_at = _iso(_now())
                 self._connection.execute(
                     """
@@ -590,6 +600,37 @@ class PilotStore:
                 if self._connection.in_transaction:
                     self._connection.rollback()
                 raise
+            row = self._connection.execute(
+                "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+        return self._protection_snapshot(row)
+
+    def update_protection_assessment(
+        self, token: str, session_id: str, assessment: RiskAssessment
+    ) -> ProtectionSessionSnapshot:
+        puck = self.authenticate_puck(token)
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+            if row is None:
+                raise MissingProtectionSessionError("Sesi perlindungan tidak ditemukan.")
+            if row["family_id"] != puck["family_id"] or row["puck_id"] != puck["id"]:
+                raise AuthorizationError("Sesi perlindungan berasal dari keluarga lain.")
+            if row["status"] != "error":
+                if row["assessment_json"]:
+                    stored = RiskAssessment.model_validate_json(row["assessment_json"])
+                    if RISK_RANK[stored.risk_level] > RISK_RANK[assessment.risk_level]:
+                        assessment = stored
+                with self._connection:
+                    self._connection.execute(
+                        """
+                        UPDATE protection_sessions
+                        SET assessment_json = ?, revision = revision + 1
+                        WHERE id = ?
+                        """,
+                        (json.dumps(assessment.model_dump(mode="json"), ensure_ascii=False), session_id),
+                    )
             row = self._connection.execute(
                 "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
             ).fetchone()
@@ -791,15 +832,6 @@ class PilotStore:
             guardians=[person for person in people if person.role == "guardian"],
             session_status=session_status,
         )
-
-    def update_contact(self, token: str, phone_number: str | None) -> PilotProfile:
-        member = self.authenticate(token)
-        with self._lock, self._connection:
-            self._connection.execute(
-                "UPDATE members SET phone_number = ? WHERE id = ?",
-                (phone_number, member["id"]),
-            )
-        return self.profile(token)
 
     def register_push_token(self, access_token: str, push_token: str, environment: str) -> None:
         member = self.authenticate(access_token)
@@ -1204,7 +1236,6 @@ class PilotStore:
     def _person(member: sqlite3.Row) -> PilotPerson:
         return PilotPerson(
             id=member["id"], name=member["name"], relation=member["relation"], role=member["role"],
-            phone_number=member["phone_number"],
         )
 
     def _new_code(self) -> str:

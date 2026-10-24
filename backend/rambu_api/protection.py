@@ -2,8 +2,9 @@ import hashlib
 import json
 import logging
 import tempfile
+from concurrent.futures import Executor, ThreadPoolExecutor
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol
 
 from .audio import validate_wav_bytes
 from .langflow_client import LangflowFailure
@@ -23,7 +24,6 @@ MAXIMUM_CHUNK_BYTES = 1_048_576
 TRANSCRIPTION_LOGGER = logging.getLogger("uvicorn.error.rambu.transcription")
 ANALYSIS_LOGGER = logging.getLogger("uvicorn.error.rambu.analysis")
 CONTRACT_FAILURE_CODES = frozenset({"invalid_json", "invalid_response"})
-RISK_RANK = {"low": 0, "needs_review": 1, "high_risk": 2}
 
 
 class Analyzer(Protocol):
@@ -36,10 +36,15 @@ class ProtectionService:
         store: PilotStore,
         transcriber: Transcriber,
         analyzer: Analyzer,
+        analysis_executor: Executor | None = None,
     ) -> None:
         self.store = store
         self.transcriber = transcriber
         self.analyzer = analyzer
+        self._analysis = analysis_executor or ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="rambu-analysis"
+        )
+        self._analyzed: dict[str, tuple[str, bool]] = {}
 
     def pair_puck(self, invitation_code: str, display_name: str) -> PairPuckResponse:
         return self.store.pair_puck(invitation_code, display_name)
@@ -135,75 +140,95 @@ class ProtectionService:
         combined = " ".join(
             part for part in (current.masked_transcript.strip(), text) if part
         )
-        masked_transcript = mask_sensitive_text(combined)
-        assessment: RiskAssessment | None = None
-        if masked_transcript:
-            try:
-                for attempt in range(2):
-                    try:
-                        assessment = self.analyzer.analyze(masked_transcript, final=final)
-                        if assessment.risk_level == "needs_review":
-                            assessment = assessment.model_copy(update={"risk_level": "high_risk"})
-                        break
-                    except LangflowFailure as error:
-                        if error.code not in CONTRACT_FAILURE_CODES or attempt == 1:
-                            raise
-                        ANALYSIS_LOGGER.warning(
-                            "analysis contract retry session=%s sequence=%d reason=%s",
-                            session_id,
-                            sequence,
-                            error.reason or error.code,
-                        )
-            except LangflowFailure as error:
-                if error.code in CONTRACT_FAILURE_CODES and (
-                    not final or current.assessment is not None
-                ):
-                    ANALYSIS_LOGGER.warning(
-                        "analysis contract fallback session=%s sequence=%d reason=%s "
-                        "previous_assessment=%s",
-                        session_id,
-                        sequence,
-                        error.reason or error.code,
-                        current.assessment is not None,
-                    )
-                    assessment = current.assessment
-                else:
-                    self.store.fail_protection_session(
-                        puck_token,
-                        session_id,
-                        ProtectionFailure(
-                            code=f"analysis_{error.code}",
-                            message=error.safe_message,
-                        ),
-                    )
-                    raise
-            except Exception:
-                self.store.fail_protection_session(
-                    puck_token,
-                    session_id,
-                    ProtectionFailure(
-                        code="analysis_failed",
-                        message="Analisis panggilan gagal.",
-                    ),
-                )
-                raise
-
-        if (
-            current.assessment is not None
-            and assessment is not None
-            and RISK_RANK[current.assessment.risk_level] > RISK_RANK[assessment.risk_level]
-        ):
-            assessment = current.assessment
-
         return self.store.record_protection_chunk(
             puck_token,
             session_id,
             sequence=sequence,
             digest=digest,
-            masked_transcript=masked_transcript,
-            assessment=assessment,
+            masked_transcript=mask_sensitive_text(combined),
+            assessment=current.assessment,
             final=final,
         )
+
+    def analyze_latest(
+        self,
+        puck_token: str,
+        session_id: str,
+        on_assessed: Callable[[ProtectionSessionSnapshot, ProtectionSessionSnapshot], None],
+    ) -> None:
+        self._analysis.submit(self._analyze, puck_token, session_id, on_assessed)
+
+    def _analyze(
+        self,
+        puck_token: str,
+        session_id: str,
+        on_assessed: Callable[[ProtectionSessionSnapshot, ProtectionSessionSnapshot], None],
+    ) -> None:
+        try:
+            current = self.store.get_puck_protection_session(puck_token, session_id)
+            transcript = current.masked_transcript
+            final = current.status == "completed"
+            if current.status == "error" or not transcript:
+                return
+            if self._analyzed.get(session_id) == (transcript, final):
+                return
+            assessment = self._assess(puck_token, session_id, current, transcript, final)
+            self._analyzed[session_id] = (transcript, final)
+            if assessment is None:
+                return
+            updated = self.store.update_protection_assessment(puck_token, session_id, assessment)
+            on_assessed(current, updated)
+        except Exception:
+            ANALYSIS_LOGGER.exception("analysis failed session=%s", session_id)
+
+    def _assess(
+        self,
+        puck_token: str,
+        session_id: str,
+        current: ProtectionSessionSnapshot,
+        transcript: str,
+        final: bool,
+    ) -> RiskAssessment | None:
+        try:
+            for attempt in range(2):
+                try:
+                    assessment = self.analyzer.analyze(transcript, final=final)
+                    if assessment.risk_level == "needs_review":
+                        assessment = assessment.model_copy(update={"risk_level": "high_risk"})
+                    return assessment
+                except LangflowFailure as error:
+                    if error.code not in CONTRACT_FAILURE_CODES or attempt == 1:
+                        raise
+                    ANALYSIS_LOGGER.warning(
+                        "analysis contract retry session=%s reason=%s",
+                        session_id,
+                        error.reason or error.code,
+                    )
+        except LangflowFailure as error:
+            if error.code in CONTRACT_FAILURE_CODES and (
+                not final or current.assessment is not None
+            ):
+                ANALYSIS_LOGGER.warning(
+                    "analysis contract fallback session=%s reason=%s previous_assessment=%s",
+                    session_id,
+                    error.reason or error.code,
+                    current.assessment is not None,
+                )
+                return None
+            self.store.fail_protection_session(
+                puck_token,
+                session_id,
+                ProtectionFailure(code=f"analysis_{error.code}", message=error.safe_message),
+            )
+            raise
+        except Exception:
+            self.store.fail_protection_session(
+                puck_token,
+                session_id,
+                ProtectionFailure(code="analysis_failed", message="Analisis panggilan gagal."),
+            )
+            raise
+        return None
 
     def end_session(
         self, parent_token: str, session_id: str

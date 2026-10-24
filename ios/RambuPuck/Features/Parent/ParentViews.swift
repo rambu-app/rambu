@@ -27,51 +27,53 @@ struct ParentRoot: View {
     }
 }
 
-/// Device guide only: no hardware readings or simulated device actions.
+/// Status puck dulu, lalu cara pakai, lalu pengingat keamanan.
 struct PuckScreen: View {
+    @State private var pairing = BluetoothPuckPairing()
+
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    PhotoSlot(name: "PhotoPuckProduct") {
-                        PuckIllustration().frame(maxWidth: 240)
-                    }
-                    .frame(height: 200)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    PuckStatusCard(pairing: pairing)
 
-                Section("Saat menerima panggilan") {
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Letakkan puck dekat HP").font(.headline)
-                            Text("Pastikan suara dari HP tidak terhalang.")
-                                .foregroundStyle(Brand.ink2)
+                    if pairing.status == .paired {
+                        PuckWifiCard(pairing: pairing)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader(title: "Saat menerima panggilan")
+                        VStack(alignment: .leading, spacing: 16) {
+                            PuckStep(number: 1, title: "Letakkan puck dekat HP", detail: "Jarak sekitar satu jengkal.")
+                            Divider()
+                            PuckStep(number: 2, title: "Nyalakan speaker", detail: "Supaya puck bisa mendengar penelepon.")
+                            Divider()
+                            PuckStep(number: 3, title: "Bicara seperti biasa", detail: "Rambu memberi tahu jika ada tanda penipuan.")
                         }
-                    } icon: {
-                        Image(systemName: "iphone.gen3")
-                            .foregroundStyle(Brand.teal)
+                        .card(padding: 18)
                     }
 
-                    Label {
+                    HStack(alignment: .top, spacing: 14) {
+                        Image(systemName: "hand.raised.fill")
+                            .font(.title3)
+                            .foregroundStyle(Brand.signalInk)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Nyalakan speaker").font(.headline)
-                            Text("Suara percakapan perlu terdengar oleh puck.")
-                                .foregroundStyle(Brand.ink2)
+                            Text("Jika ada peringatan").font(.headline).foregroundStyle(Brand.signalInk)
+                            Text("Jangan berikan OTP, PIN, atau kata sandi. Hubungi keluarga jika ragu.")
+                                .font(.subheadline)
+                                .foregroundStyle(Brand.signalInk)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                    } icon: {
-                        Image(systemName: "speaker.wave.2.fill")
-                            .foregroundStyle(Brand.teal)
                     }
+                    .padding(18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Brand.signalSoft, in: .rect(cornerRadius: 24, style: .continuous))
+                    .accessibilityElement(children: .combine)
                 }
-
-                Section("Jika ada peringatan") {
-                    Text("Jangan berikan OTP, PIN, atau kata sandi. Periksa peringatan di Rambu dan hubungi keluarga jika ragu.")
-                        .foregroundStyle(Brand.ink)
-                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 28)
             }
-            .foregroundStyle(Brand.ink)
-            .scrollContentBackground(.hidden)
             .background(Brand.canvas)
             .navigationTitle("Rambu Puck")
             .toolbar {
@@ -81,8 +83,195 @@ struct PuckScreen: View {
     }
 }
 
+private struct PuckStatusCard: View {
+    let pairing: BluetoothPuckPairing
+
+    var body: some View {
+        let content = content
+        VStack(spacing: 16) {
+            PhotoSlot(name: "PhotoPuckProduct") {
+                PuckIllustration(ledColor: pairing.status == .paired ? Brand.tealBright : nil)
+                    .frame(maxWidth: 200)
+            }
+            .frame(height: 150)
+
+            VStack(spacing: 6) {
+                Label(content.title, systemImage: content.symbol)
+                    .font(Brand.display(.title3))
+                    .foregroundStyle(content.tint)
+                Text(content.detail)
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.ink2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+
+            switch pairing.status {
+            case .idle, .failed:
+                Button { pairing.pair() } label: {
+                    WideLabel(title: "Pasangkan puck", systemImage: "dot.radiowaves.left.and.right")
+                }
+                .primaryAction()
+            case .searching, .pairing:
+                ProgressView().frame(minHeight: 44)
+            case .paired:
+                Button("Pasangkan ulang", systemImage: "arrow.clockwise") { pairing.pair() }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.teal)
+                    .frame(minHeight: 44)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .card(padding: 20)
+    }
+
+    private var content: (symbol: String, title: String, detail: String, tint: Color) {
+        switch pairing.status {
+        case .idle:
+            ("circle.dashed", "Belum dipasangkan", "Pasangkan sekali, lalu puck mendengarkan sendiri saat ada panggilan masuk.", Brand.ink)
+        case .searching:
+            ("dot.radiowaves.left.and.right", "Mencari puck…", "Pastikan puck menyala dan dekat HP.", Brand.ink)
+        case .pairing:
+            ("lock.shield", "Pilih Pasangkan", "Ketuk Pasangkan pada pesan yang muncul di iPhone.", Brand.ink)
+        case .paired:
+            ("checkmark.circle.fill", "Puck siap", "Puck mulai mendengarkan sendiri saat ada panggilan masuk.", Brand.safeInk)
+        case .failed(let message):
+            ("exclamationmark.triangle.fill", "Belum tersambung", message, Brand.dangerInk)
+        }
+    }
+}
+
+private struct PuckWifiCard: View {
+    let pairing: BluetoothPuckPairing
+    @Environment(AppState.self) private var model
+    @Environment(AppViewModel.self) private var app
+    @AppStorage("puckWifiName") private var savedName = ""
+    @State private var preparing = false
+    @State private var tokenError: String?
+    @State private var editing = false
+    @State private var name = ""
+    @State private var password = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Wi-Fi puck")
+            Group {
+                if savedName.isEmpty || editing {
+                    form
+                } else {
+                    HStack(spacing: 14) {
+                        Image(systemName: "wifi")
+                            .font(.title3)
+                            .foregroundStyle(Brand.teal)
+                            .frame(width: 44, height: 44)
+                            .background(Brand.tealSoft, in: .rect(cornerRadius: 12, style: .continuous))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(savedName).font(.headline).foregroundStyle(Brand.ink)
+                            Text("Puck memakai Wi-Fi ini").font(.subheadline).foregroundStyle(Brand.ink2)
+                        }
+                        Spacer(minLength: 0)
+                        Button("Ganti") {
+                            name = savedName
+                            editing = true
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Brand.teal)
+                    }
+                }
+            }
+            .card(padding: 18)
+        }
+        .onChange(of: pairing.wifiStatus) { _, status in
+            guard status == .connected else { return }
+            savedName = name
+            password = ""
+            editing = false
+        }
+    }
+
+    private var form: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            TextField("Nama Wi-Fi", text: $name)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(14)
+                .background(Brand.canvas, in: .rect(cornerRadius: 14, style: .continuous))
+            SecureField("Kata sandi Wi-Fi", text: $password)
+                .padding(14)
+                .background(Brand.canvas, in: .rect(cornerRadius: 14, style: .continuous))
+
+            if let tokenError {
+                Label(tokenError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.dangerInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            switch pairing.wifiStatus {
+            case .sending:
+                Label("Puck sedang masuk Wi-Fi…", systemImage: "wifi")
+                    .font(.subheadline).foregroundStyle(Brand.ink2)
+            case .failed(let message):
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.dangerInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            case .idle, .connected:
+                EmptyView()
+            }
+
+            Button { Task { await connect() } } label: {
+                WideLabel(title: "Sambungkan puck ke Wi-Fi", systemImage: "wifi")
+            }
+            .secondaryAction()
+            .disabled(name.isEmpty || preparing || pairing.wifiStatus == .sending)
+
+            if editing {
+                Button("Batal") { editing = false }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.teal)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+        }
+    }
+
+    private func connect() async {
+        preparing = true
+        tokenError = nil
+        defer { preparing = false }
+        guard let token = await app.pilot.puckToken() else {
+            tokenError = "Hubungkan keluarga dulu di Beranda, lalu coba lagi."
+            return
+        }
+        pairing.sendWifi(name: name, password: password, serverURL: model.pilotServerURL, puckToken: token)
+    }
+}
+
+private struct PuckStep: View {
+    let number: Int
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text("\(number)")
+                .font(Brand.display(.headline))
+                .foregroundStyle(Brand.teal)
+                .frame(width: 36, height: 36)
+                .background(Brand.tealSoft, in: .circle)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline).foregroundStyle(Brand.ink)
+                Text(detail).font(.subheadline).foregroundStyle(Brand.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct ParentHome: View {
     @Environment(AppState.self) private var model
+    @AppStorage("practiceCallDone") private var practiced = false
+    @State private var practicing = false
 
     var body: some View {
         NavigationStack {
@@ -100,7 +289,6 @@ struct ParentHome: View {
                             .buttonStyle(.plain)
                         }
                     }
-
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
@@ -111,17 +299,34 @@ struct ParentHome: View {
             .navigationDestination(for: UUID.self) { CallDetail(recordID: $0) }
             .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
             .animation(.smooth, value: model.issues)
+            .fullScreenCover(isPresented: $practicing) { PracticeCallView() }
+            .task {
+                guard !practiced, !model.allowsDemoControls else { return }
+                practiced = true
+                try? await Task.sleep(for: .milliseconds(600))
+                practicing = true
+            }
         }
     }
 }
 
-
 private struct ProtectionStatusCard: View {
     @Environment(AppState.self) private var model
+    @State private var showFamily = false
 
     var body: some View {
+        if model.protectionPresentation == .setupRequired {
+            Button { showFamily = true } label: { card }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $showFamily) { PilotSetupView() }
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
         let content = content(for: model.protectionPresentation)
-        HStack(spacing: 14) {
+        return HStack(spacing: 14) {
             Image(systemName: content.symbol)
                 .font(.title3)
                 .foregroundStyle(Brand.teal)
@@ -129,10 +334,12 @@ private struct ProtectionStatusCard: View {
                 .background(Brand.tealSoft, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(content.title).font(.headline).foregroundStyle(Brand.ink)
-                Text(content.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Brand.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !content.detail.isEmpty {
+                    Text(content.detail)
+                        .font(.subheadline)
+                        .foregroundStyle(Brand.ink2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -145,13 +352,13 @@ private struct ProtectionStatusCard: View {
     ) -> (symbol: String, title: String, detail: String) {
         switch status {
         case .setupRequired:
-            ("link.badge.plus", "Hubungkan keluarga", "Buka Profil → Keluarga untuk membuat kode undangan.")
+            ("link.badge.plus", "Hubungkan keluarga", "Ketuk untuk mengundang anak atau keluarga.")
         case .monitoring:
-            ("phone.badge.waveform.fill", "Belum ada sesi analisis aktif", "Hasil analisis panggilan akan muncul di sini.")
+            ("phone.badge.waveform.fill", "Belum ada sesi analisis aktif", "")
         case .waitingForPuck:
-            ("waveform.badge.magnifyingglass", "Menunggu analisis", "Audio belum dianalisis.")
+            ("waveform.badge.magnifyingglass", "Menunggu analisis", "")
         case .listening:
-            ("waveform", "Analisis sedang berjalan", "Percakapan sedang dianalisis.")
+            ("waveform", "Analisis sedang berjalan", "")
         case .finishing:
             ("hourglass", "Menyelesaikan analisis", "Menunggu hasil akhir panggilan.")
         case .failed:
@@ -159,7 +366,7 @@ private struct ProtectionStatusCard: View {
         case .completed(let level):
             ("checkmark.circle.fill", "Analisis selesai", level == .safe ? "Tidak ada tanda penipuan yang terdeteksi." : "Peringatan dan bukti sudah dikirim ke pengawas.")
         case .noSpeech:
-            ("waveform.slash", "Percakapan tidak terdengar", "Tidak ada suara yang dapat dianalisis pada sesi ini.")
+            ("waveform.slash", "Percakapan tidak terdengar", "")
         }
     }
 }

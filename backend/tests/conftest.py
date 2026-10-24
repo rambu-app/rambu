@@ -21,3 +21,8 @@ def wav_bytes(seconds: float = 1.0, sample_rate: int = 16_000) -> bytes:
         output.setframerate(sample_rate)
         output.writeframes(b"\x01\x00" * int(seconds * sample_rate))
     return buffer.getvalue()
+
+
+class ImmediateExecutor:
+    def submit(self, function, *args):
+        function(*args)

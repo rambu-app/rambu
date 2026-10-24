@@ -52,10 +52,12 @@ struct CallStatusView: View {
                 .foregroundStyle(Brand.ink)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
-            Text(status.detail)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Brand.ink2)
-                .multilineTextAlignment(.center)
+            if !status.detail.isEmpty {
+                Text(status.detail)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Brand.ink2)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(22)
@@ -113,7 +115,7 @@ struct CallStatusView: View {
                 guardianNote = "Pengawas sudah diberi tahu, menunggu jawaban."
             } else if session.level > .safe {
                 level = session.level
-                title = session.level == .danger ? "Terindikasi penipuan" : "Telepon mencurigakan"
+                title = "Terindikasi penipuan"
                 detail = session.level.parentAdvice
                 guardianNote = "Pengawas sudah diberi tahu, menunggu jawaban."
             } else {
@@ -121,19 +123,19 @@ struct CallStatusView: View {
                 switch session.protectionStatus {
                 case .waitingForPuck:
                     title = "Menunggu analisis"
-                    detail = "Audio belum dianalisis."
+                    detail = ""
                 case .listening where !session.speakerOn:
                     title = "Nyalakan loudspeaker"
                     detail = "Percakapan belum terdengar jelas."
                 case .listening:
                     title = "Rambu sedang mendengarkan"
-                    detail = "Percakapan sedang dianalisis."
+                    detail = ""
                 case .completed:
                     title = "Analisis selesai"
                     detail = "Tidak ada tanda penipuan yang terdeteksi."
                 case .noSpeech:
                     title = "Tidak ada audio yang dianalisis"
-                    detail = "Tidak ada suara yang dapat dianalisis pada sesi ini."
+                    detail = ""
                 }
                 guardianNote = "Pengawas dikabari kalau ada tanda penipuan."
             }

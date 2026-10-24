@@ -1,4 +1,5 @@
 @preconcurrency import ActivityKit
+import CoreBluetooth
 import Foundation
 
 // MARK: - Batas serah terima ke backend
@@ -105,6 +106,204 @@ final class SimulatedPuckLink: PuckLink {
     func discover() async -> PuckState {
         try? await Task.sleep(for: .seconds(2))
         return .demo
+    }
+}
+
+/// Memasangkan iPhone dengan puck lewat Bluetooth. Setelah dipasangkan, iOS sendiri
+/// yang memberi tahu puck saat ada panggilan masuk (ANCS), tanpa perlu Rambu terbuka.
+/// Lewat sambungan yang sama, app mengirim Wi-Fi dan alamat server ke puck.
+@MainActor
+@Observable
+final class BluetoothPuckPairing: NSObject {
+    enum Status: Equatable {
+        case idle
+        case searching
+        case pairing
+        case paired
+        case failed(String)
+    }
+
+    enum WifiStatus: Equatable {
+        case idle
+        case sending
+        case connected
+        case failed(String)
+    }
+
+    private enum PendingTask: Equatable {
+        case pair
+        case wifi(Data)
+    }
+
+    private static let service = CBUUID(string: "5B4F74AF-95E4-4449-8129-C97AD2293807")
+    private static let pairing = CBUUID(string: "29308BE3-4FCA-47FB-AF2D-3539D416BAA1")
+    private static let wifi = CBUUID(string: "8E1F2A6C-3B7D-4C59-9A0E-5D2F7B4C1E93")
+    private static let pairedKey = "puckPaired"
+
+    private(set) var status: Status
+    private(set) var wifiStatus = WifiStatus.idle
+    @ObservationIgnored private var central: CBCentralManager?
+    @ObservationIgnored private var peripheral: CBPeripheral?
+    @ObservationIgnored private var pending: PendingTask?
+    @ObservationIgnored private var timeout: Task<Void, Never>?
+
+    override init() {
+        status = UserDefaults.standard.bool(forKey: Self.pairedKey) ? .paired : .idle
+    }
+
+    func pair() {
+        status = .searching
+        start(.pair)
+    }
+
+    func sendWifi(name: String, password: String, serverURL: String, puckToken: String) {
+        let server = URL(string: serverURL)
+        let https = server?.scheme == "https"
+        let port = server?.port ?? (https ? 443 : 80)
+        let config = [name, password, server?.host() ?? "", String(port), https ? "1" : "0", puckToken].joined(separator: "\n")
+        wifiStatus = .sending
+        start(.wifi(Data(config.utf8)))
+    }
+
+    private func start(_ task: PendingTask) {
+        pending = task
+        timeout?.cancel()
+        timeout = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            guard let self, !Task.isCancelled, self.pending != nil else { return }
+            self.central?.stopScan()
+            self.fail("Puck tidak ditemukan. Pastikan puck menyala dan dekat HP.")
+        }
+        guard let central, central.state == .poweredOn else {
+            if central == nil { central = CBCentralManager(delegate: self, queue: .main) }
+            return
+        }
+        connect(central)
+    }
+
+    private func connect(_ central: CBCentralManager) {
+        if let known = central.retrieveConnectedPeripherals(withServices: [Self.service]).first {
+            use(known, on: central)
+        } else {
+            central.scanForPeripherals(withServices: [Self.service])
+        }
+    }
+
+    private func use(_ peripheral: CBPeripheral, on central: CBCentralManager) {
+        self.peripheral = peripheral
+        peripheral.delegate = self
+        if peripheral.state == .connected {
+            peripheral.discoverServices([Self.service])
+        } else {
+            central.connect(peripheral)
+        }
+    }
+
+    private func finish() {
+        pending = nil
+        timeout?.cancel()
+    }
+
+    private func fail(_ message: String) {
+        switch pending {
+        case .pair: status = .failed(message)
+        case .wifi: wifiStatus = .failed(message)
+        case nil: break
+        }
+        finish()
+    }
+}
+
+extension BluetoothPuckPairing: @preconcurrency CBCentralManagerDelegate {
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn where pending != nil:
+            connect(central)
+        case .poweredOff:
+            fail("Bluetooth mati. Nyalakan Bluetooth lalu coba lagi.")
+        case .unauthorized:
+            fail("Izinkan Bluetooth untuk Rambu di Pengaturan.")
+        default:
+            break
+        }
+    }
+
+    func centralManager(
+        _ central: CBCentralManager,
+        didDiscover peripheral: CBPeripheral,
+        advertisementData: [String: Any],
+        rssi RSSI: NSNumber
+    ) {
+        central.stopScan()
+        if case .pair = pending { status = .pairing }
+        use(peripheral, on: central)
+    }
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        peripheral.discoverServices([Self.service])
+    }
+
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        fail("Gagal terhubung ke puck. Coba lagi.")
+    }
+}
+
+extension BluetoothPuckPairing: @preconcurrency CBPeripheralDelegate {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard let service = peripheral.services?.first(where: { $0.uuid == Self.service }) else {
+            fail("Perangkat ini bukan Rambu Puck.")
+            return
+        }
+        peripheral.discoverCharacteristics([Self.pairing, Self.wifi], for: service)
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        let characteristics = service.characteristics ?? []
+        switch pending {
+        case .pair:
+            guard let pairing = characteristics.first(where: { $0.uuid == Self.pairing }) else {
+                fail("Perangkat ini bukan Rambu Puck.")
+                return
+            }
+            // Karakteristik ini terenkripsi, jadi membacanya memunculkan permintaan pairing iOS.
+            peripheral.readValue(for: pairing)
+        case .wifi(let config):
+            guard let wifi = characteristics.first(where: { $0.uuid == Self.wifi }) else {
+                fail("Perbarui firmware puck terlebih dahulu.")
+                return
+            }
+            peripheral.setNotifyValue(true, for: wifi)
+            peripheral.writeValue(config, for: wifi, type: .withResponse)
+        case nil:
+            break
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        if error != nil { fail("Wi-Fi belum terkirim. Coba lagi.") }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if characteristic.uuid == Self.pairing {
+            guard case .pair = pending else { return }
+            guard error == nil else {
+                fail("Pairing dibatalkan. Coba lagi dan pilih Pasangkan.")
+                return
+            }
+            UserDefaults.standard.set(true, forKey: Self.pairedKey)
+            status = .paired
+            finish()
+        } else if characteristic.uuid == Self.wifi, case .wifi = pending {
+            switch characteristic.value.map({ String(decoding: $0, as: UTF8.self) }) {
+            case "connected":
+                wifiStatus = .connected
+                finish()
+            case "failed":
+                fail("Puck tidak bisa masuk Wi-Fi. Periksa nama dan kata sandi.")
+            default:
+                break
+            }
+        }
     }
 }
 

@@ -169,13 +169,8 @@ private struct QuietState: View {
         HStack(spacing: 16) {
             Image(systemName: "bell")
                 .font(.title2).foregroundStyle(Brand.teal)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tidak ada peringatan baru")
-                    .font(Brand.display(.title3)).foregroundStyle(Brand.ink)
-                Text("Peringatan akan muncul saat analisis menemukan tanda penipuan.")
-                    .font(.subheadline).foregroundStyle(Brand.ink2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("Tidak ada peringatan baru")
+                .font(Brand.display(.title3)).foregroundStyle(Brand.ink)
             Spacer(minLength: 0)
         }
         .padding(18)

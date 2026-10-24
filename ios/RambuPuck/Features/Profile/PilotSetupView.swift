@@ -43,8 +43,8 @@ struct FamilySetupContent: View {
         VStack(alignment: .leading, spacing: 24) {
             if let error = model.pilotError {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label(error, systemImage: "exclamationmark.circle")
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
+                    Label(error, systemImage: "exclamationmark.circle.fill")
+                        .font(.subheadline).foregroundStyle(Brand.signalInk)
                         .fixedSize(horizontal: false, vertical: true)
                     if model.pilotConnected {
                         Button("Perbarui keluarga") { perform { await pilot.refresh() } }
@@ -52,14 +52,13 @@ struct FamilySetupContent: View {
                     }
                 }
                 .padding(16)
-                .background(Brand.hairline.opacity(0.5), in: .rect(cornerRadius: 12))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Brand.signalSoft, in: .rect(cornerRadius: 18, style: .continuous))
                 .accessibilityElement(children: .contain)
             }
             if model.pilotConnected {
                 connectedContent
             } else if model.persona.isParent {
-                Text("Buat kode undangan, lalu kirim ke anak atau anggota keluarga yang akan mendampingi Anda.")
-                    .foregroundStyle(Brand.ink2)
                 Button {
                     perform { _ = await pilot.createFamily() }
                 } label: {
@@ -68,7 +67,6 @@ struct FamilySetupContent: View {
                 .primaryAction()
                 .disabled(busy)
             } else {
-                Text("Masukkan kode undangan dari HP orang tua.").foregroundStyle(Brand.ink2)
                 TextField("Kode 6 angka", text: $code)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
@@ -89,19 +87,6 @@ struct FamilySetupContent: View {
                 .primaryAction()
                 .disabled(busy || code.count != 6)
             }
-            DisclosureGroup("Pengaturan lanjutan") {
-                VStack(alignment: .leading, spacing: 10) {
-                    TextField("Alamat server", text: Bindable(model).pilotServerURL)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .keyboardType(.URL).padding(12)
-                        .background(.white, in: .rect(cornerRadius: 12))
-                        .disabled(model.pilotConnected || busy)
-                    Text("Kedua HP harus menggunakan alamat server yang sama.")
-                        .font(.footnote).foregroundStyle(Brand.ink2)
-                }
-                .padding(.top, 12)
-            }
-            .font(.subheadline).disabled(busy)
         }
         .onAppear {
             code = model.pendingInviteCode ?? ""
@@ -119,80 +104,107 @@ struct FamilySetupContent: View {
     }
 
     private var connectedContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Label("Keluarga terhubung", systemImage: "person.2.fill")
-                .font(.headline).foregroundStyle(Brand.teal)
-            ServerConnectionLabel()
+        VStack(alignment: .leading, spacing: 22) {
             if model.pilotRole == "parent" {
                 if model.guardians.isEmpty {
-                    Text("Undang pendamping Anda")
-                        .font(Brand.display(.title2)).foregroundStyle(Brand.ink)
-                    Text("Bagikan kode ke anak atau anggota keluarga. Mereka memasukkannya di Rambu pada HP mereka.")
-                        .foregroundStyle(Brand.ink2)
-                } else {
-                    Text("Pendamping Anda")
-                        .font(Brand.display(.title2)).foregroundStyle(Brand.ink)
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(model.guardians) { person in
-                            HStack(spacing: 12) {
-                                Avatar(person: person, size: 44)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(person.name).font(.headline).foregroundStyle(Brand.ink)
-                                    Text(person.relation).font(.subheadline).foregroundStyle(Brand.ink2)
-                                }
-                            }
-                            .accessibilityElement(children: .combine)
-                        }
-                    }
-                    Text("Peringatan panggilan Anda dibagikan kepada pendamping ini.")
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
-                    Button {
-                        showInvitation.toggle()
-                    } label: {
-                        WideLabel(title: showInvitation ? "Tutup undangan" : "Undang pendamping lain", systemImage: "person.badge.plus")
-                    }
-                    .primaryAction().disabled(busy)
-                }
-                if showInvitation {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if !model.guardians.isEmpty {
-                            Text("Pendamping baru memasukkan kode ini di HP-nya.")
-                                .font(.subheadline).foregroundStyle(Brand.ink2)
-                        }
-                        if let code = model.pilotInviteCode, !code.isEmpty { InviteActions(code: code).disabled(busy) }
-                        Button(busy ? "Membuat kode…" : "Buat kode baru", systemImage: "arrow.clockwise") {
-                            perform { await pilot.renewInvite() }
-                        }
-                        .frame(minHeight: 44).disabled(busy)
-                    }
-                }
-            } else {
-                Text("Yang Anda dampingi")
-                    .font(Brand.display(.title2)).foregroundStyle(Brand.ink)
-                HStack(spacing: 12) {
-                    Avatar(person: model.parent, size: 44)
-                    Text(model.parent.name).font(.headline).foregroundStyle(Brand.ink)
-                }
-                .accessibilityElement(children: .combine)
-                Text("Anda menerima peringatan saat Rambu mendeteksi tanda penipuan dalam panggilannya.")
-                    .font(.subheadline).foregroundStyle(Brand.ink2)
-            }
-            if let onContinue {
-                Button("Selesai") { onContinue() }.primaryAction()
-            } else {
-                DisclosureGroup("Kelola keluarga") {
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("Undang pendamping Anda")
+                            .font(Brand.display(.title3)).foregroundStyle(Brand.ink)
+                        Text("Bagikan kode ke anak atau anggota keluarga. Mereka memasukkannya di Rambu pada HP mereka.")
+                            .font(.subheadline).foregroundStyle(Brand.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader(title: "Pendamping Anda", trailing: "\(model.guardians.count) orang")
+                        VStack(alignment: .leading, spacing: 14) {
+                            ForEach(Array(model.guardians.enumerated()), id: \.element.id) { index, person in
+                                if index > 0 { Divider() }
+                                personRow(person, detail: person.relation)
+                            }
+                        }
+                        .card(padding: 16)
+                        Text("Peringatan panggilan Anda dibagikan kepada pendamping ini.")
+                            .font(.footnote).foregroundStyle(Brand.ink2)
+                            .padding(.horizontal, 4)
+                    }
+                }
+
+                if model.guardians.isEmpty || showInvitation {
+                    Group {
+                        if let code = model.pilotInviteCode, !code.isEmpty {
+                            InviteActions(code: code, renewing: busy) { perform { await pilot.renewInvite() } }
+                        } else {
+                            Button { perform { await pilot.renewInvite() } } label: {
+                                WideLabel(title: busy ? "Membuat kode…" : "Buat kode undangan", systemImage: "person.badge.plus")
+                            }
+                            .primaryAction()
+                            .disabled(busy)
+                        }
+                    }
+                    .card(padding: 18)
+                } else {
+                    Button {
+                        showInvitation = true
+                    } label: {
+                        WideLabel(title: "Undang pendamping lain", systemImage: "person.badge.plus")
+                    }
+                    .secondaryAction().disabled(busy)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionHeader(title: "Yang Anda dampingi")
+                    personRow(model.parent, detail: "Orang tua").card(padding: 16)
+                    Text("Anda menerima peringatan saat Rambu mendeteksi tanda penipuan dalam panggilannya.")
+                        .font(.footnote).foregroundStyle(Brand.ink2)
+                        .padding(.horizontal, 4)
+                }
+            }
+
+            if let onContinue {
+                Button { onContinue() } label: { WideLabel(title: "Selesai") }.primaryAction()
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionHeader(title: "Kelola")
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.2.fill").foregroundStyle(Brand.teal)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Keluarga terhubung").foregroundStyle(Brand.ink)
+                                ServerConnectionLabel()
+                            }
+                        }
+                        .padding(.vertical, 8)
+                        .accessibilityElement(children: .combine)
+                        Divider()
                         Button("Perbarui keluarga", systemImage: "arrow.triangle.2.circlepath") {
                             perform { await pilot.refresh() }
-                        }.frame(minHeight: 44).disabled(busy)
-                        Button("Keluar dari keluarga", role: .destructive) { confirmLeave = true }
-                            .frame(minHeight: 44).disabled(busy)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .disabled(busy)
+                        Divider()
+                        Button("Keluar dari keluarga", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
+                            confirmLeave = true
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .disabled(busy)
                     }
-                    .padding(.top, 8)
+                    .font(.body.weight(.medium))
+                    .card(padding: 8)
                 }
-                .font(.subheadline)
             }
         }
+    }
+
+    private func personRow(_ person: Person, detail: String) -> some View {
+        HStack(spacing: 12) {
+            Avatar(person: person, size: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(person.name).font(.headline).foregroundStyle(Brand.ink)
+                Text(detail).font(.subheadline).foregroundStyle(Brand.ink2)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private func perform(_ operation: @escaping @MainActor () async -> Void) {

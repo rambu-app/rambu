@@ -3,6 +3,10 @@ import Security
 
 // MARK: - Persistent pilot identity
 
+enum RambuServer {
+    static let url = "https://rambu-api.sfatimah.com"
+}
+
 struct PilotCredentials: Codable, Sendable {
     let serverURL: String
     let familyID: String
@@ -66,14 +70,13 @@ struct PilotPersonDTO: Codable, Sendable {
     let name: String
     let relation: String
     let role: String
-    var phoneNumber: String? = nil
 
     var person: Person {
         let palette: [UInt32] = [0x1E6E9E, 0x6347A8, 0xA23B72, 0x8A5A12]
         let stableIndex = id.utf8.reduce(0) { (result, byte) in (result + Int(byte)) % palette.count }
         let color = role == "parent" ? UInt32(0x006F63) : palette[stableIndex]
         let initial = name.split(separator: " ").last?.first.map { String($0).uppercased() } ?? "?"
-        return Person(id: id, name: name, initial: initial, relation: relation, colorHex: color, phoneNumber: phoneNumber)
+        return Person(id: id, name: name, initial: initial, relation: relation, colorHex: color)
     }
 }
 
@@ -233,7 +236,8 @@ private struct CreateFamilyBody: Encodable { let parentName: String }
 private struct JoinFamilyBody: Encodable { let code: String; let name: String; let relation: String }
 private struct DecisionBody: Encodable { let verdict: String }
 private struct PushTokenBody: Encodable { let token: String; let environment: String }
-private struct ContactBody: Encodable { let phoneNumber: String }
+private struct PuckNameBody: Encodable { let displayName: String }
+struct PuckPairingDTO: Codable, Sendable { let accessToken: String }
 private struct APIMessage: Decodable { let detail: String }
 
 enum PilotAPIError: LocalizedError {
@@ -289,12 +293,12 @@ struct PilotAPI: Sendable {
         try await request("api/pilot/profile", token: token, body: Optional<String>.none)
     }
 
-    func updateContact(phoneNumber: String, token: String) async throws -> PilotProfileDTO {
-        try await request("api/pilot/profile", method: "PUT", token: token, body: ContactBody(phoneNumber: phoneNumber))
-    }
-
     func renewInvite(token: String) async throws -> PilotInviteDTO {
         try await request("api/pilot/invites", method: "POST", token: token, body: Optional<String>.none)
+    }
+
+    func pairPuck(token: String) async throws -> PuckPairingDTO {
+        try await request("api/pilot/pucks", method: "POST", token: token, body: PuckNameBody(displayName: "Rambu Puck"))
     }
 
     func alerts(token: String) async throws -> [PilotAlertDTO] {
@@ -405,7 +409,22 @@ final class PilotSync {
     ) {
         self.credentialStore = credentialStore
         self.session = session
-        credentials = initialCredentials ?? credentialStore.load()
+        if let initialCredentials {
+            credentials = initialCredentials
+        } else if let saved = credentialStore.load(), saved.serverURL != RambuServer.url {
+            let moved = PilotCredentials(
+                serverURL: RambuServer.url,
+                familyID: saved.familyID,
+                member: saved.member,
+                accessToken: saved.accessToken,
+                inviteCode: saved.inviteCode,
+                inviteExpiresAt: saved.inviteExpiresAt
+            )
+            credentialStore.save(moved)
+            credentials = moved
+        } else {
+            credentials = credentialStore.load()
+        }
         RambuAppDelegate.onPushToken = { [weak self] token in self?.receivePushToken(token) }
         if let token = RambuAppDelegate.latestPushToken { receivePushToken(token) }
     }
@@ -413,7 +432,7 @@ final class PilotSync {
     var isConnected: Bool { credentials != nil }
     var inviteCode: String? { credentials?.inviteCode }
     var inviteExpiresAt: Date? { credentials?.inviteExpiresAt }
-    var serverURL: String { credentials?.serverURL ?? UserDefaults.standard.string(forKey: "pilotServerURL") ?? "https://rambu-api.sfatimah.com" }
+    var serverURL: String { credentials?.serverURL ?? RambuServer.url }
 
     func start() {
         guard credentials != nil, pollTask == nil else { return }
@@ -442,16 +461,6 @@ final class PilotSync {
         await refresh()
     }
 
-    func updatePhoneNumber(_ phoneNumber: String) async throws -> PilotProfileDTO {
-        guard var credentials else { throw PilotAPIError.invalidResponse }
-        let value = try await PilotAPI(serverURL: credentials.serverURL, session: session)
-            .updateContact(phoneNumber: phoneNumber, token: credentials.accessToken)
-        credentials.member = value.member
-        self.credentials = credentials
-        credentialStore.save(credentials)
-        return value
-    }
-
     func renewInvite() async throws -> String {
         guard var credentials else { throw PilotAPIError.server("Hubungkan server terlebih dahulu.") }
         let invite = try await PilotAPI(serverURL: credentials.serverURL, session: session)
@@ -461,6 +470,12 @@ final class PilotSync {
         self.credentials = credentials
         credentialStore.save(credentials)
         return invite.code
+    }
+
+    func pairPuck() async throws -> String {
+        guard let credentials else { throw PilotAPIError.server("Hubungkan keluarga terlebih dahulu.") }
+        return try await PilotAPI(serverURL: credentials.serverURL, session: session)
+            .pairPuck(token: credentials.accessToken).accessToken
     }
 
     func disconnect() {
@@ -560,7 +575,6 @@ final class PilotSync {
         )
         credentials = value
         credentialStore.save(value)
-        UserDefaults.standard.set(value.serverURL, forKey: "pilotServerURL")
         pollTask?.cancel()
         pollTask = nil
         start()

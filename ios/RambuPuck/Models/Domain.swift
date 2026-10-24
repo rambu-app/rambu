@@ -19,27 +19,8 @@ struct Person: Identifiable, Hashable, Codable, Sendable {
     let initial: String
     let relation: String
     let colorHex: UInt32
-    var phoneNumber: String? = nil
 
     var color: Color { Color(hex: colorHex) }
-
-    var telephoneURL: URL? {
-        guard let phoneNumber, let normalized = PhoneNumber.normalized(phoneNumber) else { return nil }
-        return URL(string: "tel:\(normalized)")
-    }
-}
-
-enum PhoneNumber {
-    static func normalized(_ input: String) -> String? {
-        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty, value.count <= 40,
-              value.range(of: "^[+0-9 ()\\-.]+$", options: .regularExpression) != nil else { return nil }
-        var compact = value.filter { !" ()-.".contains($0) }
-        if compact.hasPrefix("0") { compact = "+62" + compact.dropFirst() }
-        else if compact.hasPrefix("62") { compact = "+" + compact }
-        guard compact.range(of: "^\\+[1-9][0-9]{7,14}$", options: .regularExpression) != nil else { return nil }
-        return compact
-    }
 }
 
 extension Person {
@@ -54,7 +35,7 @@ extension Person {
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? self.name : trimmed
         let initial = name.split(separator: " ").last?.first.map { String($0).uppercased() } ?? self.initial
-        return Person(id: id, name: name, initial: initial, relation: newRelation ?? relation, colorHex: colorHex, phoneNumber: phoneNumber)
+        return Person(id: id, name: name, initial: initial, relation: newRelation ?? relation, colorHex: colorHex)
     }
 }
 
@@ -319,7 +300,7 @@ struct FamilyAlert: Identifiable, Hashable, Sendable {
     var callEnded = false
 
     var title: String {
-        level == .danger ? "\(parent.name) mungkin sedang ditipu" : "Telepon \(parent.name) mencurigakan"
+        "\(parent.name) mungkin sedang ditipu"
     }
 }
 
@@ -569,6 +550,62 @@ extension SignalKind {
         case .secretCode: "permintaan kode OTP atau PIN"
         case .transfer: "permintaan transfer uang"
         case .remoteApp: "permintaan memasang aplikasi"
+        }
+    }
+
+    var callerPhrase: String {
+        switch self {
+        case .impersonation: "mengaku dari lembaga"
+        case .urgency: "mendesak Anda"
+        case .secretCode: "meminta kode OTP atau PIN"
+        case .transfer: "meminta transfer uang"
+        case .remoteApp: "menyuruh memasang aplikasi"
+        }
+    }
+
+    var adviceForGuardian: String {
+        switch self {
+        case .impersonation, .urgency: "Minta orang tua menutup telepon dan menelepon balik lewat nomor resmi."
+        case .secretCode: "Ingatkan untuk tidak memberikan kode OTP atau PIN."
+        case .transfer: "Ingatkan untuk tidak mentransfer uang."
+        case .remoteApp: "Ingatkan untuk tidak memasang aplikasi apa pun."
+        }
+    }
+
+    var advice: String {
+        switch self {
+        case .impersonation: "Hubungi lembaganya lewat nomor resmi."
+        case .urgency: "Jangan terburu-buru. Tutup telepon dulu."
+        case .secretCode: "Jangan berikan kode OTP, PIN, atau kata sandi."
+        case .transfer: "Jangan transfer uang."
+        case .remoteApp: "Jangan pasang aplikasi yang diminta penelepon."
+        }
+    }
+}
+
+extension [SignalKind] {
+    var callerSummary: String? {
+        guard !isEmpty else { return nil }
+        return "Penelepon \(map(\.callerPhrase).formatted(.list(type: .and).locale(Fmt.locale)))."
+    }
+}
+
+extension CallRecord {
+    var verdictHeadline: String {
+        switch historyPresentation {
+        case .danger, .review: "Kemungkinan penipuan"
+        case .safe: "Tidak ada tanda penipuan"
+        case .unassessed: "Belum bisa dinilai"
+        }
+    }
+}
+
+extension RiskLevel {
+    var historyPresentation: HistoryPresentation {
+        switch self {
+        case .safe: .safe
+        case .review: .review
+        case .danger: .danger
         }
     }
 }
