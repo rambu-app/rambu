@@ -109,6 +109,27 @@ struct AppStateTests {
         }
     }
 
+    @Test("History decisions use natural personalized copy in both languages")
+    func historyDecisionCopyIsNatural() {
+        let key = "history.decision.by_verdict"
+        let fallback = "%@ menandai panggilan ini sebagai %@"
+
+        #expect(L10n.format(
+            key,
+            fallback: fallback,
+            language: .english,
+            "Richard",
+            L10n.text(Verdict.scam.pastTitle, language: .english)
+        ) == "Richard marked this call as scam")
+        #expect(L10n.format(
+            key,
+            fallback: fallback,
+            language: .indonesian,
+            "Richard",
+            L10n.text(Verdict.scam.pastTitle, language: .indonesian)
+        ) == "Richard menandai panggilan ini sebagai penipuan")
+    }
+
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")
     func groupsOverlappingEvidenceWithoutRewritingSource() {
         let lines = [

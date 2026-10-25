@@ -4329,6 +4329,22 @@
         }
       }
     },
+    "history.decision.by_verdict": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ menandai panggilan ini sebagai %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ marked this call as %@"
+          }
+        }
+      }
+    },
     "guardian.together": {
       "localizations": {
         "id": {
