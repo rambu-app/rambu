@@ -53,7 +53,8 @@ final class AppViewModel {
             notifier: notifier,
             narrator: Narrator(enabled: speech),
             network: NetworkMonitor(),
-            store: store
+            store: store,
+            urgencyFeedback: UrgencyFeedback()
         )
         let activity = CallLiveActivity(enabled: liveActivities)
         let feedback = LocalDetectionFeedback()

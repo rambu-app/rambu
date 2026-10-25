@@ -488,12 +488,17 @@ enum SystemIssue: String, Identifiable, CaseIterable, Sendable {
 /// Isi push Rambu. Dikirim sebagai notifikasi sistem, atau tampil sebagai tiruan banner
 /// di dalam app kalau izin notifikasi belum ada.
 struct Toast: Identifiable, Equatable {
+    static let urgentSoundName = "rambu-urgent.caf"
+
     let id: String
     let title: String
     let body: String
     /// Menentukan warna dan papan yang dipegang maskot.
     let level: RiskLevel
     let alertID: UUID?
+
+    var isUrgent: Bool { level == .review || level == .danger }
+    var notificationSoundName: String? { isUrgent ? Self.urgentSoundName : nil }
 }
 
 // MARK: - Format tanggal berbahasa Indonesia

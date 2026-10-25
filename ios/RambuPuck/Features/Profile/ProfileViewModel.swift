@@ -10,19 +10,22 @@ final class ProfileViewModel {
     @ObservationIgnored private let narrator: Narrator
     @ObservationIgnored private let network: NetworkMonitor
     @ObservationIgnored private let store: LocalStore?
+    @ObservationIgnored private let urgencyFeedback: any UrgencyFeedbackProviding
 
     init(
         state: AppState,
         notifier: RambuNotifier,
         narrator: Narrator,
         network: NetworkMonitor,
-        store: LocalStore?
+        store: LocalStore?,
+        urgencyFeedback: any UrgencyFeedbackProviding = UrgencyFeedback()
     ) {
         self.state = state
         self.notifier = notifier
         self.narrator = narrator
         self.network = network
         self.store = store
+        self.urgencyFeedback = urgencyFeedback
     }
 
     func startNetworkMonitoring() {
@@ -110,6 +113,7 @@ final class ProfileViewModel {
         if notifier.isAuthorized {
             notifier.post(push)
         } else {
+            if push.isUrgent { urgencyFeedback.presentUrgentFeedback() }
             state.toast = push
         }
         if state.persona.isParent { narrate("\(push.title). \(push.body)") }

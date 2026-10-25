@@ -19,7 +19,11 @@ targets:
     platform: iOS
     sources:
       - path: RambuPuck
+        excludes:
+          - Resources
       - path: Shared
+      - path: RambuPuck/Resources
+        buildPhase: resources
     info:
       path: RambuPuck/Info.plist
       properties:
