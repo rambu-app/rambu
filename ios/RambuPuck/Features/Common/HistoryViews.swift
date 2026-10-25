@@ -70,7 +70,7 @@ struct HistoryList: View {
         }
         .scrollContentBackground(.hidden)
         .background(Brand.canvas)
-        .navigationTitle("Riwayat")
+        .navigationTitle(L10n.text("Riwayat", language: model.language))
         .navigationDestination(for: UUID.self) { id in
             if records.contains(where: { $0.id == id }) {
                 CallDetail(recordID: id)
@@ -88,34 +88,37 @@ struct HistoryRow: View {
     @Environment(AppState.self) private var model
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            HistoryTile(presentation: record.historyPresentation)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(L10n.text(record.title, language: model.language))
-                    .font(.headline).foregroundStyle(Brand.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 8) {
-                    HistoryBadge(presentation: record.historyPresentation)
-                    Label(Fmt.day(record.startedAt, language: model.language), systemImage: record.channel.symbol)
-                        .font(.subheadline).foregroundStyle(Brand.ink2)
-                        .labelStyle(CompactLabelStyle())
-                }
-                if let decision = record.decision {
-                    Label(L10n.format(
-                          "decision.by_verdict",
-                          fallback: "%@: %@",
-                          language: model.language,
-                          decision.by.name,
-                          L10n.text(decision.verdict.pastTitle, language: model.language)),
-                          systemImage: decision.verdict == .scam ? "hand.raised.fill" : "checkmark.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(decision.verdict == .scam ? Brand.dangerInk : Brand.safeInk)
-                        .labelStyle(CompactLabelStyle())
-                }
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.text(record.title, language: model.language))
+                .font(.headline)
+                .foregroundStyle(Brand.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HistoryBadge(
+                presentation: record.historyPresentation,
+                language: model.language
+            )
+
+            Label(Fmt.day(record.startedAt, language: model.language), systemImage: record.channel.symbol)
+                .font(.subheadline)
+                .foregroundStyle(Brand.ink2)
+                .labelStyle(CompactLabelStyle())
+
+            if let decision = record.decision {
+                Label(L10n.format(
+                      "decision.by_verdict",
+                      fallback: "%@: %@",
+                      language: model.language,
+                      decision.by.name,
+                      L10n.text(decision.verdict.pastTitle, language: model.language)),
+                      systemImage: decision.verdict == .scam ? "hand.raised.fill" : "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(decision.verdict == .scam ? Brand.dangerInk : Brand.safeInk)
+                    .labelStyle(CompactLabelStyle())
             }
-            Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
     }
 }
@@ -201,33 +204,19 @@ struct CallDetail: View {
 
 private struct HistoryBadge: View {
     let presentation: HistoryPresentation
+    let language: AppLanguage
 
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: presentation.symbol)
-            Text(LocalizedStringKey(presentation.title))
+            Text(L10n.text(presentation.title, language: language))
         }
         .font(.subheadline.weight(.bold))
         .foregroundStyle(presentation.glyph)
-        .lineLimit(1)
-        .fixedSize()
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(presentation.tint, in: .capsule)
         .accessibilityElement(children: .combine)
-    }
-}
-
-private struct HistoryTile: View {
-    let presentation: HistoryPresentation
-    @ScaledMetric private var size: CGFloat = 44
-
-    var body: some View {
-        Image(systemName: presentation.symbol)
-            .font(.system(size: size * 0.46, weight: .bold))
-            .foregroundStyle(presentation.glyph)
-            .frame(width: size, height: size)
-            .background(presentation.tint, in: .rect(cornerRadius: size * 0.3, style: .continuous))
-            .accessibilityLabel(Text(LocalizedStringKey(presentation.title)))
     }
 }

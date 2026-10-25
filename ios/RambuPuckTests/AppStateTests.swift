@@ -87,6 +87,26 @@ struct AppStateTests {
     func englishResourceLookup() {
         #expect(L10n.text("Profil", language: .english) == "Profile")
         #expect(L10n.text("Profil", language: .indonesian) == "Profil")
+        #expect(L10n.text("Panggilan masuk terdeteksi", language: .english) == "Incoming call detected")
+        #expect(L10n.text("Terdeteksi oleh puck", language: .english) == "Detected by puck")
+        #expect(L10n.text("Panggilan WhatsApp terdeteksi", language: .english) == "WhatsApp call detected")
+        #expect(L10n.text("Kontak WhatsApp", language: .english) == "WhatsApp contact")
+
+        let visibleCopy = [
+            "Beranda": "Home",
+            "Berhenti": "Stop",
+            "Contoh": "Example",
+            "Ganti": "Change",
+            "Izinkan": "Allow",
+            "Mencari…": "Searching…",
+            "Menunggu…": "Waiting…",
+            "Simulasi": "Simulation",
+            "Ulangi": "Repeat",
+            "Hadiah undian dari nomor asing": "Prize claim from an unknown number",
+        ]
+        for (key, translation) in visibleCopy {
+            #expect(L10n.text(key, language: .english) == translation)
+        }
     }
 
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")

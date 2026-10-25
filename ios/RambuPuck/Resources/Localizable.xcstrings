@@ -1491,6 +1491,16 @@
         }
       }
     },
+    "Kontak WhatsApp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WhatsApp contact"
+          }
+        }
+      }
+    },
     "Kontak tersimpan": {
       "localizations": {
         "en": {
@@ -1941,12 +1951,32 @@
         }
       }
     },
+    "Panggilan masuk terdeteksi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incoming call detected"
+          }
+        }
+      }
+    },
     "Panggilan terdeteksi": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Call detected"
+          }
+        }
+      }
+    },
+    "Panggilan WhatsApp terdeteksi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WhatsApp call detected"
           }
         }
       }
@@ -2737,6 +2767,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Detected %@ ago"
+          }
+        }
+      }
+    },
+    "Terdeteksi oleh puck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected by puck"
           }
         }
       }
@@ -4437,6 +4477,36 @@
     },
     "Ibu": {
       "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Mother" } } }
+    },
+    "Beranda": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Home" } } }
+    },
+    "Berhenti": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Stop" } } }
+    },
+    "Contoh": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Example" } } }
+    },
+    "Ganti": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Change" } } }
+    },
+    "Izinkan": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Allow" } } }
+    },
+    "Mencari…": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Searching…" } } }
+    },
+    "Menunggu…": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Waiting…" } } }
+    },
+    "Simulasi": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Simulation" } } }
+    },
+    "Ulangi": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Repeat" } } }
+    },
+    "Hadiah undian dari nomor asing": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Prize claim from an unknown number" } } }
     },
     "family.people_count": {
       "localizations": {

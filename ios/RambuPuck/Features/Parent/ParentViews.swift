@@ -6,10 +6,10 @@ struct ParentRoot: View {
     var body: some View {
         @Bindable var model = model
         TabView(selection: $model.parentTab) {
-            Tab("Beranda", systemImage: "house.fill", value: ParentTab.home) {
+            Tab(L10n.text("Beranda", language: model.language), systemImage: "house.fill", value: ParentTab.home) {
                 ParentHome()
             }
-            Tab("Riwayat", systemImage: "clock.fill", value: ParentTab.history) {
+            Tab(L10n.text("Riwayat", language: model.language), systemImage: "clock.fill", value: ParentTab.history) {
                 NavigationStack { HistoryList(forGuardian: false) }
             }
             Tab("Puck", systemImage: "circle.circle.fill", value: ParentTab.puck) {

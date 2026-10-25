@@ -8,10 +8,10 @@ struct GuardianRoot: View {
     var body: some View {
         @Bindable var model = model
         TabView(selection: $model.guardianTab) {
-            Tab("Beranda", systemImage: "house.fill", value: GuardianTab.home) {
+            Tab(L10n.text("Beranda", language: model.language), systemImage: "house.fill", value: GuardianTab.home) {
                 GuardianHome()
             }
-            Tab("Riwayat", systemImage: "clock.fill", value: GuardianTab.history) {
+            Tab(L10n.text("Riwayat", language: model.language), systemImage: "clock.fill", value: GuardianTab.history) {
                 NavigationStack { HistoryList(forGuardian: true) }
             }
         }
