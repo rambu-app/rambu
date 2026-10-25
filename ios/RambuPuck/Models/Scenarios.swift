@@ -99,11 +99,110 @@ extension Scenario {
         ]
     )
 
-    static let all: [Scenario] = [.bankOTP, .accidentTransfer, .courierApp, .neighbourSafe]
+    static func all(language: AppLanguage = .indonesian) -> [Scenario] {
+        language == .english
+            ? [.bankOTPEnglish, .accidentTransferEnglish, .courierAppEnglish, .neighbourSafeEnglish]
+            : [.bankOTP, .accidentTransfer, .courierApp, .neighbourSafe]
+    }
+
+    private static let bankOTPEnglish = Scenario(
+        id: "bank-otp",
+        title: "Caller claiming to be from Sentosa Bank",
+        summary: "Asks for an OTP to cancel a transaction.",
+        callerName: "Unknown number",
+        callerDetail: "+1 (415) •••-4417",
+        channel: .cellular,
+        lines: [
+            .init(id: 0, offset: 0, speaker: .caller,
+                  text: "Good afternoon, is this Mrs Ratna? I'm Andrew from Sentosa Bank's security team.",
+                  flagged: ["from Sentosa Bank's security team"], signals: [.impersonation]),
+            .init(id: 1, offset: 5, speaker: .parent,
+                  text: "Yes, speaking. What happened?", flagged: [], signals: []),
+            .init(id: 2, offset: 10, speaker: .caller,
+                  text: "There is a suspicious transaction on your account. If it is not cancelled within ten minutes, your balance could be drained.",
+                  flagged: ["within ten minutes", "your balance could be drained"], signals: [.urgency]),
+            .init(id: 3, offset: 15, speaker: .parent,
+                  text: "Oh no. What should I do?", flagged: [], signals: []),
+            .init(id: 4, offset: 20, speaker: .caller,
+                  text: "You will receive a six-digit code by text. Please read the code to me so I can cancel the transaction.",
+                  flagged: ["read the code to me"], signals: [.secretCode]),
+            .init(id: 5, offset: 25, speaker: .caller,
+                  text: "Do not share the code with anyone except me.",
+                  flagged: ["Do not share the code with anyone except me"], signals: [.secretCode]),
+        ]
+    )
+
+    private static let accidentTransferEnglish = Scenario(
+        id: "kecelakaan-transfer",
+        title: "Claim that a family member had an accident",
+        summary: "Claims an accident occurred, then demands surgery payment.",
+        callerName: "Unknown number",
+        callerDetail: "+1 (202) •••-2290",
+        channel: .whatsapp,
+        lines: [
+            .init(id: 0, offset: 0, speaker: .caller,
+                  text: "Hello. I'm a nurse at Medika Medical Center. Your child was just in a motorcycle accident.",
+                  flagged: ["a nurse at Medika Medical Center", "Your child was just in a motorcycle accident"], signals: [.impersonation]),
+            .init(id: 1, offset: 5, speaker: .parent,
+                  text: "Which child? How are they?", flagged: [], signals: []),
+            .init(id: 2, offset: 10, speaker: .caller,
+                  text: "They need surgery immediately. Any delay could be fatal.",
+                  flagged: ["surgery immediately", "delay could be fatal"], signals: [.urgency]),
+            .init(id: 3, offset: 15, speaker: .caller,
+                  text: "The deposit is eight thousand dollars. Transfer it now to the doctor's account.",
+                  flagged: ["Transfer it now to the doctor's account"], signals: [.transfer]),
+            .init(id: 4, offset: 20, speaker: .parent,
+                  text: "Wait, I will call my child first.", flagged: [], signals: []),
+            .init(id: 5, offset: 25, speaker: .caller,
+                  text: "Do not hang up. There is no time.",
+                  flagged: ["Do not hang up", "There is no time"], signals: [.urgency]),
+        ]
+    )
+
+    private static let courierAppEnglish = Scenario(
+        id: "kurir-aplikasi",
+        title: "Courier asks you to open a file",
+        summary: "Asks you to open a file and install an app.",
+        callerName: "Unknown number",
+        callerDetail: "+1 (646) •••-1043",
+        channel: .whatsapp,
+        lines: [
+            .init(id: 0, offset: 0, speaker: .caller,
+                  text: "Hello. I'm a courier. A package for Mrs Ratna is being held at our warehouse.",
+                  flagged: ["package for Mrs Ratna is being held"], signals: [.impersonation]),
+            .init(id: 1, offset: 5, speaker: .parent,
+                  text: "What package? I did not order anything.", flagged: [], signals: []),
+            .init(id: 2, offset: 10, speaker: .caller,
+                  text: "Open the file I just sent on WhatsApp and install the app to check the tracking number.",
+                  flagged: ["Open the file I just sent", "install the app"], signals: [.remoteApp]),
+            .init(id: 3, offset: 15, speaker: .caller,
+                  text: "If you do not confirm today, the package will be returned and you will be fined.",
+                  flagged: ["confirm today", "you will be fined"], signals: [.urgency]),
+        ]
+    )
+
+    private static let neighbourSafeEnglish = Scenario(
+        id: "tetangga-aman",
+        title: "Call from your neighbor Wati",
+        summary: "A neighbor shares the community gathering schedule.",
+        callerName: "Wati",
+        callerDetail: "Saved contact",
+        channel: .cellular,
+        lines: [
+            .init(id: 0, offset: 0, speaker: .caller,
+                  text: "Hello, Mrs Ratna. It's Wati from next door.", flagged: [], signals: []),
+            .init(id: 1, offset: 5, speaker: .parent,
+                  text: "Hi, Wati. What is it?", flagged: [], signals: []),
+            .init(id: 2, offset: 10, speaker: .caller,
+                  text: "Next week's neighborhood gathering will be at my house at four in the afternoon.", flagged: [], signals: []),
+            .init(id: 3, offset: 15, speaker: .parent,
+                  text: "All right, I will bring cake.", flagged: [], signals: []),
+        ]
+    )
 
     /// Mengganti nama contoh di transkrip dengan nama orang tua yang diisi saat onboarding.
-    func personalized(parentName: String) -> Scenario {
-        let sample = Person.ratna.name
+    func personalized(parentName: String, language: AppLanguage = .indonesian) -> Scenario {
+        let sample = language == .english ? "Mrs Ratna" : Person.ratna.name
         guard parentName != sample else { return self }
         let swap = { (s: String) in
             s.replacingOccurrences(of: sample, with: parentName)

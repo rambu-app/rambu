@@ -22,8 +22,22 @@ struct PracticeCallStep: View {
         }
     }
 
-    private let sample = Toast(id: "latihan", title: "Bahaya: terindikasi penipuan",
-                               body: "Hati-hati. Jangan transfer atau sebut kode.", level: .danger, alertID: nil)
+    private var sample: Toast {
+        Toast(
+            id: "latihan",
+            title: L10n.text(
+                "alert.scam.title",
+                fallback: "Bahaya: terindikasi penipuan",
+                language: model.language
+            ),
+            body: L10n.text(
+                "Hati-hati. Jangan transfer atau sebut kode.",
+                language: model.language
+            ),
+            level: .danger,
+            alertID: nil
+        )
+    }
 
     var body: some View {
         StepScaffold(
@@ -90,6 +104,7 @@ struct PracticeCallStep: View {
 /// Telepon latihan dari "penipu" dengan suara iPhone. Peringatan diatur waktunya,
 /// bukan analisis sungguhan, supaya latihan selalu berjalan sama.
 struct PracticeCallView: View {
+    @Environment(AppState.self) private var model
     @Environment(ProfileViewModel.self) private var profile
     @Environment(\.dismiss) private var dismiss
     @AppStorage("practiceCallDone") private var practiced = false
@@ -99,14 +114,37 @@ struct PracticeCallView: View {
 
     enum Phase { case ringing, speaker, talking, warning, advice, done }
 
-    private let script = [
-        "Halo, selamat siang Bu. Saya Rina dari bagian keamanan bank.",
-        "Rekening Ibu ada transaksi mencurigakan, jadi sementara kami blokir.",
-        "Supaya bisa dibuka lagi, Ibu akan menerima SMS berisi kode. Tolong sebutkan kode OTP-nya ke saya sekarang ya, Bu.",
-    ]
+    private var script: [String] {
+        if model.language == .english {
+            return [
+                "Hello. This is Rina from the bank security team.",
+                "There is a suspicious transaction on your account, so we temporarily blocked it.",
+                "To unlock it, you will receive a code by text. Read the OTP code to me now.",
+            ]
+        }
+        return [
+            "Halo, selamat siang Bu. Saya Rina dari bagian keamanan bank.",
+            "Rekening Ibu ada transaksi mencurigakan, jadi sementara kami blokir.",
+            "Supaya bisa dibuka lagi, Ibu akan menerima SMS berisi kode. Tolong sebutkan kode OTP-nya ke saya sekarang ya, Bu.",
+        ]
+    }
 
-    private let warning = Toast(id: "latihan-telepon", title: "Bahaya: terindikasi penipuan",
-                                body: "Jangan berikan kode atau transfer. Tutup telepon sekarang.", level: .danger, alertID: nil)
+    private var warning: Toast {
+        Toast(
+            id: "latihan-telepon",
+            title: L10n.text(
+                "alert.scam.title",
+                fallback: "Bahaya: terindikasi penipuan",
+                language: model.language
+            ),
+            body: L10n.text(
+                "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+                language: model.language
+            ),
+            level: .danger,
+            alertID: nil
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -131,13 +169,14 @@ struct PracticeCallView: View {
     }
 
     private var coach: String {
-        switch phase {
+        let copy = switch phase {
         case .ringing: "Ada telepon dari nomor tidak dikenal. Ketuk Jawab."
         case .speaker: "Tekan Speaker supaya Rambu bisa ikut mendengar."
         case .talking: "Dengarkan penelepon."
         case .warning: "Rambu memberi peringatan. Ketuk peringatannya."
         case .advice, .done: ""
         }
+        return L10n.text(copy, language: model.language)
     }
 
     private var callScreen: some View {
@@ -165,7 +204,7 @@ struct PracticeCallView: View {
                     .frame(width: 96, height: 96)
                     .background(.white.opacity(0.14), in: .circle)
                 Text("Nomor tidak dikenal").font(.title.weight(.semibold)).foregroundStyle(.white)
-                Text(phase == .ringing ? "Memanggil…" : "00:12")
+                Text(phase == .ringing ? L10n.text("Memanggil…", language: model.language) : "00:12")
                     .font(.title3).foregroundStyle(.white.opacity(0.7))
             }
             .padding(.top, 48)
@@ -237,8 +276,8 @@ struct PracticeCallView: View {
             VerdictCard(
                 presentation: .danger,
                 headline: "Kemungkinan penipuan",
-                summary: [SignalKind.impersonation, .secretCode].callerSummary ?? "",
-                details: ["Contoh latihan"]
+                summary: [SignalKind.impersonation, .secretCode].callerSummary(language: model.language) ?? "",
+                details: [L10n.text("Contoh latihan", language: model.language)]
             )
             AdviceSection(items: [
                 ("Jangan berikan kode OTP, PIN, atau kata sandi.", "nosign"),
@@ -288,7 +327,7 @@ struct PracticeCallView: View {
                     .foregroundStyle(glyph)
                     .frame(width: 80, height: 80)
                     .background(tint, in: .circle)
-                Text(title).font(.headline).foregroundStyle(.white)
+                Text(L10n.text(title, language: model.language)).font(.headline).foregroundStyle(.white)
             }
         }
         .buttonStyle(.plain)
@@ -302,7 +341,7 @@ struct PracticeCallView: View {
     private func talk() async {
         for line in script {
             caption = line
-            await voice.say(line)
+            await voice.say(line, language: model.language)
             guard phase == .talking, !voice.stopped else { return }
         }
         show(.warning)
@@ -321,12 +360,12 @@ final class PracticeVoice: NSObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self
     }
 
-    func say(_ text: String) async {
+    func say(_ text: String, language: AppLanguage = .indonesian) async {
         guard !stopped else { return }
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         try? AVAudioSession.sharedInstance().setActive(true)
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "id-ID")
+        utterance.voice = AVSpeechSynthesisVoice(language: language.speechCode)
         utterance.rate = 0.47
         await withCheckedContinuation { continuation in
             finished = continuation
@@ -396,7 +435,12 @@ struct PracticeAlertStep: View {
                 .background(Brand.danger)
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top) {
-                        Text("\(model.parent.name) mungkin sedang ditipu")
+                        Text(L10n.format(
+                            "family.alert_title",
+                            fallback: "%@ mungkin sedang ditipu",
+                            language: model.language,
+                            model.parent.name
+                        ))
                             .font(Brand.display(.title3)).foregroundStyle(Brand.ink)
                         Spacer(minLength: 0)
                         MascotView(pose: .stop, sign: .danger).frame(width: 54)
@@ -432,8 +476,12 @@ struct PracticeAlertStep: View {
         return HStack(spacing: 14) {
             MascotView(pose: right ? .happy : .check, sign: right ? .safe : .review).frame(width: 56)
             VStack(alignment: .leading, spacing: 2) {
-                Text(right ? "Tepat" : "Coba lagi").font(.headline).foregroundStyle(Brand.ink)
-                Text(right ? "Orang tua langsung diminta menutup telepon." : "Meminta kode OTP selalu tanda penipuan.")
+                Text(L10n.text(right ? "Tepat" : "Coba lagi", language: model.language))
+                    .font(.headline).foregroundStyle(Brand.ink)
+                Text(L10n.text(
+                    right ? "Orang tua langsung diminta menutup telepon." : "Meminta kode OTP selalu tanda penipuan.",
+                    language: model.language
+                ))
                     .font(.subheadline).foregroundStyle(Brand.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }

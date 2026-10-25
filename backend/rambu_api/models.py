@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 RiskLevel = Literal["low", "needs_review", "high_risk"]
 Signal = Literal["impersonation", "urgency", "secret_code", "transfer", "remote_app"]
+AppLanguage = Literal["id", "en"]
 
 
 class Evidence(BaseModel):
@@ -120,6 +121,7 @@ class CreateProtectionSessionRequest(BaseModel):
     channel: Literal["cellular", "whatsapp"] | None = None
     title: str | None = None
     caller_detail: str | None = None
+    language: AppLanguage = "id"
 
 
 class ProtectionFailure(BaseModel):
@@ -137,6 +139,7 @@ class ProtectionSessionSnapshot(BaseModel):
     title: str
     caller_detail: str
     channel: Literal["cellular", "whatsapp"] | None
+    language: AppLanguage = "id"
     status: Literal["waiting_for_puck", "listening", "completed", "error"]
     puck_connected: bool
     masked_transcript: str
@@ -294,3 +297,4 @@ class PushTokenRequest(BaseModel):
 
     token: str
     environment: Literal["sandbox", "production"] = "sandbox"
+    language: AppLanguage = "id"

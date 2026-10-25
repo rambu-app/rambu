@@ -58,6 +58,20 @@ private actor GatedPilotHTTPStub: HTTPDataSession {
 @MainActor
 @Suite(.serialized)
 struct PilotViewModelTests {
+    @Test("Push token registration includes the selected app language")
+    func pushTokenRegistrationIncludesLanguage() async throws {
+        let stub = PilotHTTPStub(responses: ["/api/pilot/push-token": ""])
+        let api = try PilotAPI(serverURL: "https://rambu.test", session: stub)
+
+        try await api.registerPushToken(
+            "aa", environment: "sandbox", language: .english, token: "member-token"
+        )
+
+        let body = try #require(await stub.body(for: "/api/pilot/push-token"))
+        let payload = try #require(JSONSerialization.jsonObject(with: body) as? [String: String])
+        #expect(payload["language"] == "en")
+    }
+
     @Test("A late refresh cannot restore a departed family's profile or connection status")
     func ignoresRefreshAfterDisconnect() async throws {
         let store = PilotCredentialStore()

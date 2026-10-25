@@ -6,12 +6,26 @@ from typing import Protocol
 
 
 class PushSender(Protocol):
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None: ...
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None: ...
     def close(self) -> None: ...
 
 
 class DisabledPushSender:
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None:
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None:
         raise RuntimeError("APNs is not configured.")
 
     def close(self) -> None:
@@ -41,7 +55,14 @@ class APNsPushSender:
         self._authorization: tuple[str, float] | None = None
         self._lock = threading.Lock()
 
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None:
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None:
         if not tokens:
             return
         headers = {
@@ -54,7 +75,7 @@ class APNsPushSender:
         payload = {
             "aps": {
                 "alert": {"title": title, "body": body},
-                "sound": "default",
+                "sound": "rambu-urgent.caf" if urgent else "default",
                 "thread-id": alert_id,
             },
             "alertID": alert_id,

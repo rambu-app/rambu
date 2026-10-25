@@ -53,7 +53,8 @@ final class AppViewModel {
             notifier: notifier,
             narrator: Narrator(enabled: speech),
             network: NetworkMonitor(),
-            store: store
+            store: store,
+            urgencyFeedback: UrgencyFeedback()
         )
         let activity = CallLiveActivity(enabled: liveActivities)
         let feedback = LocalDetectionFeedback()
@@ -107,11 +108,14 @@ final class AppViewModel {
                 return
             } catch {
                 guard let self else { return }
-                let detail = (error as? BackendAnalysisError)?.detail
-                    ?? "iOS menghentikan pemantauan panggilan."
+                let detail = L10n.text(
+                    (error as? BackendAnalysisError)?.detail
+                        ?? "iOS menghentikan pemantauan panggilan.",
+                    language: state.language
+                )
                 profile.present(Toast(
                     id: "call-monitor-error",
-                    title: "Pemantauan panggilan berhenti",
+                    title: L10n.text("Pemantauan panggilan berhenti", language: state.language),
                     body: detail,
                     level: .review,
                     alertID: nil
@@ -133,8 +137,14 @@ final class AppViewModel {
             guard isProtectionConfigured() else {
                 profile.present(Toast(
                     id: "protection-not-configured-\(event.id)",
-                    title: "Perlindungan panggilan belum siap",
-                    body: "Hubungkan akun orang tua ke server Rambu sebelum menerima panggilan.",
+                    title: L10n.text(
+                        "Perlindungan panggilan belum siap",
+                        language: state.language
+                    ),
+                    body: L10n.text(
+                        "Hubungkan akun orang tua ke server Rambu sebelum menerima panggilan.",
+                        language: state.language
+                    ),
                     level: .review,
                     alertID: nil
                 ))
@@ -143,8 +153,11 @@ final class AppViewModel {
             call.startDetectedCall(id: event.id, startedAt: event.at)
             profile.present(Toast(
                 id: "call-detected-\(event.id)",
-                title: "Panggilan terdeteksi",
-                body: "Menunggu Rambu Puck. Audio belum dianalisis.",
+                title: L10n.text("Panggilan terdeteksi", language: state.language),
+                body: L10n.text(
+                    "Menunggu Rambu Puck. Audio belum dianalisis.",
+                    language: state.language
+                ),
                 level: .safe,
                 alertID: nil
             ))
@@ -201,8 +214,18 @@ final class AppViewModel {
         } else if !state.persona.isParent, let added = profile.addProtectedParent(code: code) {
             state.toast = Toast(
                 id: "joined-\(added.id)",
-                title: "Sekarang Anda menjaga \(added.name)",
-                body: "Peringatan dari HP \(added.name) akan masuk ke sini.",
+                title: L10n.format(
+                    "guardian.now_protecting.title",
+                    fallback: "Sekarang Anda menjaga %@",
+                    language: state.language,
+                    added.name
+                ),
+                body: L10n.format(
+                    "guardian.now_protecting.body",
+                    fallback: "Peringatan dari HP %@ akan masuk ke sini.",
+                    language: state.language,
+                    added.name
+                ),
                 level: .safe,
                 alertID: nil
             )

@@ -9,9 +9,12 @@ class Segment:
 
 
 class StubWhisperModel:
+    def __init__(self) -> None:
+        self.languages: list[str] = []
+
     def transcribe(self, path: str, **kwargs):
         assert path.endswith("sample.mp3")
-        assert kwargs["language"] == "id"
+        self.languages.append(kwargs["language"])
         return [Segment(" Halo "), Segment("Ibu.")], object()
 
 
@@ -25,6 +28,19 @@ def test_passes_mp3_dataset_audio_to_whisper(tmp_path) -> None:
     path = tmp_path / "sample.mp3"
     path.write_bytes(b"synthetic fixture")
     transcriber = FasterWhisperTranscriber("small")
-    transcriber._model = StubWhisperModel()
+    model = StubWhisperModel()
+    transcriber._model = model
 
     assert transcriber.transcribe(path) == "Halo Ibu."
+    assert model.languages == ["id"]
+
+
+def test_passes_selected_english_language_to_whisper(tmp_path) -> None:
+    path = tmp_path / "sample.mp3"
+    path.write_bytes(b"synthetic fixture")
+    model = StubWhisperModel()
+    transcriber = FasterWhisperTranscriber("small")
+    transcriber._model = model
+
+    assert transcriber.transcribe(path, language="en") == "Halo Ibu."
+    assert model.languages == ["en"]

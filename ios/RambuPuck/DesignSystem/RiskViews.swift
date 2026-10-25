@@ -19,7 +19,7 @@ struct LevelIcon: View {
             .font(.system(size: size, weight: .semibold))
             .symbolRenderingMode(.palette)
             .foregroundStyle(level.glyph, level.tint)
-            .accessibilityLabel(level.title)
+            .accessibilityLabel(Text(LocalizedStringKey(level.title)))
     }
 }
 
@@ -29,7 +29,7 @@ struct LevelPill: View {
     var body: some View {
         HStack(spacing: 6) {
             LevelIcon(level: level, size: 15)
-            Text(level.title).font(.subheadline.weight(.semibold))
+            Text(LocalizedStringKey(level.title)).font(.subheadline.weight(.semibold))
         }
         .foregroundStyle(level.ink)
         .padding(.horizontal, 12)
@@ -47,7 +47,7 @@ struct RiskBadge: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: level.symbol)
-            Text(level.title)
+            Text(LocalizedStringKey(level.title))
         }
             .font(large ? .headline : .subheadline.weight(.bold))
             .foregroundStyle(level.glyph)
@@ -71,7 +71,7 @@ struct LevelTile: View {
             .foregroundStyle(level.glyph)
             .frame(width: size, height: size)
             .background(level.tint, in: .rect(cornerRadius: size * 0.3, style: .continuous))
-            .accessibilityLabel(level.title)
+            .accessibilityLabel(Text(LocalizedStringKey(level.title)))
     }
 }
 
@@ -85,7 +85,7 @@ struct SignalChip: View {
     var onTint = false
 
     var body: some View {
-        Label(kind.title, systemImage: kind.symbol)
+        Label(LocalizedStringKey(kind.title), systemImage: kind.symbol)
             .font(.footnote.weight(.semibold))
             .foregroundStyle(level.ink)
             .lineLimit(1)
@@ -125,6 +125,7 @@ struct HighlightedText: View {
 struct EvidenceCard: View {
     let line: TranscriptLine
     var level: RiskLevel = .danger
+    @Environment(AppState.self) private var model
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -132,7 +133,12 @@ struct EvidenceCard: View {
                 .font(.body).foregroundStyle(Brand.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if !line.signals.isEmpty {
-                Text("Ditandai Rambu: " + line.signals.map(\.title).joined(separator: ", "))
+                Text(L10n.format(
+                    "evidence.flagged_by",
+                    fallback: "Ditandai Rambu: %@",
+                    language: model.language,
+                    line.signals.map { L10n.text($0.title, language: model.language) }.joined(separator: ", ")
+                ))
                     .font(.caption).foregroundStyle(Brand.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -161,18 +167,19 @@ struct VerdictCard: View {
                     .frame(width: 44, height: 44)
                     .background(presentation.tint, in: .rect(cornerRadius: 14, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(presentation.title.uppercased())
+                    Text(LocalizedStringKey(presentation.title))
+                        .textCase(.uppercase)
                         .font(.footnote.weight(.bold))
                         .tracking(0.5)
                         .foregroundStyle(presentation.ink)
-                    Text(headline)
+                    Text(LocalizedStringKey(headline))
                         .font(Brand.display(.title2, .heavy))
                         .foregroundStyle(Brand.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                 }
             }
-            Text(summary)
+            Text(LocalizedStringKey(summary))
                 .font(.body)
                 .foregroundStyle(Brand.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -202,7 +209,7 @@ struct AdviceSection: View {
                             .foregroundStyle(Brand.teal)
                             .frame(width: 32, height: 32)
                             .background(Brand.tealSoft, in: .rect(cornerRadius: 10, style: .continuous))
-                        Text(items[index].text)
+                        Text(LocalizedStringKey(items[index].text))
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Brand.ink)
                             .fixedSize(horizontal: false, vertical: true)
@@ -228,7 +235,7 @@ struct SignalEvidenceSection: View {
                 ForEach(Array(signals.enumerated()), id: \.element) { index, signal in
                     if index > 0 { Divider() }
                     VStack(alignment: .leading, spacing: 10) {
-                        Label(signal.title, systemImage: signal.symbol)
+                        Label(LocalizedStringKey(signal.title), systemImage: signal.symbol)
                             .font(.headline)
                             .foregroundStyle(Brand.dangerInk)
                         ForEach(lines.filter { $0.signals.contains(signal) }) { line in
@@ -274,6 +281,7 @@ struct TranscriptLink: View {
 
 private struct TranscriptExcerpts: View {
     let evidence: [TranscriptLine]
+    @Environment(AppState.self) private var model
 
     var body: some View {
         ScrollView {
@@ -282,7 +290,12 @@ private struct TranscriptExcerpts: View {
                     .font(.footnote).foregroundStyle(Brand.ink2)
                 ForEach(Array(evidence.enumerated()), id: \.offset) { index, line in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Cuplikan \(index + 1)")
+                        Text(L10n.format(
+                            "evidence.excerpt_number",
+                            fallback: "Cuplikan %d",
+                            language: model.language,
+                            index + 1
+                        ))
                             .font(.caption.weight(.semibold)).foregroundStyle(Brand.ink2)
                         Text(line.text).font(.body).foregroundStyle(Brand.ink)
                             .fixedSize(horizontal: false, vertical: true)

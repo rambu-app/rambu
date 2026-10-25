@@ -38,6 +38,23 @@ Skenario sintetis dan Mode demo tetap dikompilasi khusus untuk test/screenshot d
 
 Data demo tersimpan lokal di `Application Support/Rambu/state.json`. Mode pilot memakai identitas perangkat acak di Keychain dan menyimpan keluarga, peringatan, serta keputusan di SQLite backend.
 
+## Bahasa dan lokalisasi
+
+App mendukung Bahasa Indonesia (`id`) dan English (`en`). Instalasi baru mengikuti bahasa pilihan iPhone jika cocok, lalu pengguna dapat menggantinya saat onboarding atau melalui **Profil → Bahasa**. Pilihan disimpan bersama state app tanpa menghapus keluarga, onboarding, atau riwayat.
+
+- Semua terjemahan UI dikelola di `RambuPuck/Resources/Localizable.xcstrings`; deskripsi izin sistem ada di `RambuPuck/Resources/InfoPlist.xcstrings`.
+- Teks statis SwiftUI memakai String Catalog secara otomatis. Teks dinamis dan terpersonalisasi memakai semantic key melalui `L10n.text` atau `L10n.format`, dengan salinan Bahasa Indonesia sebagai fallback.
+- Nama pengguna dan transkrip penelepon adalah data, bukan copy UI, sehingga tidak diterjemahkan.
+- `AppLanguage.backendCode` mengirim `id` atau `en` ke sesi proteksi. Backend memakai bahasa itu untuk transkripsi dan prompt analisis, tetapi pemeriksaan permintaan rahasia tetap dwibahasa.
+- Registrasi token APNs menyertakan bahasa perangkat. Backend mengelompokkan penerima menurut bahasa agar satu keluarga dapat menerima push dalam bahasa yang berbeda.
+
+Saat menambah copy baru, gunakan semantic key untuk kalimat yang memiliki interpolasi atau dipakai lintas fitur, tambahkan nilai `id` dan `en` ke catalog, lalu validasi catalog:
+
+```bash
+xcrun xcstringstool compile ios/RambuPuck/Resources/Localizable.xcstrings --output-directory /tmp/rambu-localizable-check
+xcrun xcstringstool compile ios/RambuPuck/Resources/InfoPlist.xcstrings --output-directory /tmp/rambu-infoplist-check
+```
+
 ## Puck Mac dan dua iPhone opsional
 
 1. Jalankan backend agar terlihat dari Wi-Fi:
@@ -111,6 +128,7 @@ ios/
   RambuPuck/
     App/RambuPuckApp.swift           titik masuk, RootView, peluncur demo (RAMBU_SCENE)
     App/AppViewModel.swift           composition root dan routing lintas fitur
+    Models/AppLanguage.swift         pilihan bahasa, locale, dan helper L10n
     Models/AppState.swift            state observable bersama dan penyimpanan
     Models/Domain.swift              tipe domain, aturan risiko tiruan, ringkasan kejadian
     Models/Scenarios.swift           percakapan sintetis dan riwayat awal
@@ -118,6 +136,7 @@ ios/
     Services/PilotAPI.swift          API, Keychain, polling, dan sinkronisasi dua HP
     Services/Notifier.swift          push lokal (pengganti APNs di prototipe)
     Services/Support.swift           penyimpanan lokal, narasi suara, internet, tautan undangan, umpan balik
+    Resources/*.xcstrings            catalog Bahasa Indonesia dan English
     DesignSystem/
       Components.swift               kartu, tombol, avatar, header, kode 6 digit, PhotoSlot
       RiskViews.swift                ikon, label, dan chip tingkat risiko; gelembung kalimat penelepon

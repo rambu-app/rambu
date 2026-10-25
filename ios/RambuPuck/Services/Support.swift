@@ -16,6 +16,47 @@ struct SavedState: Codable, Equatable {
     var history: [CallRecord]
     var puck: PuckState
     var narrationEnabled: Bool
+    var language: AppLanguage = .indonesian
+
+    private enum CodingKeys: String, CodingKey {
+        case onboardingComplete, persona, parent, guardians, extraParents, history, puck
+        case narrationEnabled, language
+    }
+
+    init(
+        onboardingComplete: Bool,
+        persona: Persona,
+        parent: Person,
+        guardians: [Person],
+        extraParents: [Person],
+        history: [CallRecord],
+        puck: PuckState,
+        narrationEnabled: Bool,
+        language: AppLanguage = .indonesian
+    ) {
+        self.onboardingComplete = onboardingComplete
+        self.persona = persona
+        self.parent = parent
+        self.guardians = guardians
+        self.extraParents = extraParents
+        self.history = history
+        self.puck = puck
+        self.narrationEnabled = narrationEnabled
+        self.language = language
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        onboardingComplete = try values.decode(Bool.self, forKey: .onboardingComplete)
+        persona = try values.decode(Persona.self, forKey: .persona)
+        parent = try values.decode(Person.self, forKey: .parent)
+        guardians = try values.decode([Person].self, forKey: .guardians)
+        extraParents = try values.decode([Person].self, forKey: .extraParents)
+        history = try values.decode([CallRecord].self, forKey: .history)
+        puck = try values.decode(PuckState.self, forKey: .puck)
+        narrationEnabled = try values.decode(Bool.self, forKey: .narrationEnabled)
+        language = try values.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .indonesian
+    }
 }
 
 struct LocalStore: Sendable {
@@ -59,11 +100,11 @@ final class Narrator {
         self.enabled = enabled
     }
 
-    func speak(_ text: String) {
+    func speak(_ text: String, language: AppLanguage = .indonesian) {
         guard enabled else { return }
         synthesizer.stopSpeaking(at: .immediate)
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "id-ID")
+        utterance.voice = AVSpeechSynthesisVoice(language: language.speechCode)
         utterance.rate = 0.46
         synthesizer.speak(utterance)
     }
@@ -102,14 +143,34 @@ enum InviteLink {
         URL(string: "\(webBase)?kode=\(code)")!
     }
 
-    static func message(code: String, parentName: String, expiresAt: Date? = nil) -> String {
-        let expiry = expiresAt.map { " Kode berlaku sampai pukul \(Fmt.clock($0))." } ?? ""
+    static func message(
+        code: String,
+        parentName: String,
+        expiresAt: Date? = nil,
+        language: AppLanguage = .indonesian
+    ) -> String {
+        if language == .english {
+            let expiry = expiresAt.map {
+                " The code is valid until \(Fmt.clock($0, language: language))."
+            } ?? ""
+            return "\(parentName) invited you to be a caregiver on Rambu. Invitation code: \(code). Open Rambu, choose I am a caregiver, then enter this code.\(expiry)"
+        }
+        let expiry = expiresAt.map {
+            " Kode berlaku sampai pukul \(Fmt.clock($0, language: language))."
+        } ?? ""
         return "\(parentName) mengundang Anda menjadi pendamping di Rambu. Kode undangan: \(code). Buka Rambu, pilih Saya pendamping, lalu masukkan kode ini.\(expiry)"
     }
 
-    static func whatsAppURL(code: String, parentName: String) -> URL {
+    static func whatsAppURL(
+        code: String,
+        parentName: String,
+        language: AppLanguage = .indonesian
+    ) -> URL {
         var components = URLComponents(string: "https://wa.me/")!
-        components.queryItems = [URLQueryItem(name: "text", value: message(code: code, parentName: parentName))]
+        components.queryItems = [URLQueryItem(
+            name: "text",
+            value: message(code: code, parentName: parentName, language: language)
+        )]
         return components.url!
     }
 

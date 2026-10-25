@@ -17,7 +17,7 @@ class QueueTranscriber:
         self.values: Iterator[str | Exception] = iter(values)
         self.seen_paths: list[Path] = []
 
-    def transcribe(self, path: Path) -> str:
+    def transcribe(self, path: Path, language: str = "id") -> str:
         assert path.exists()
         self.seen_paths.append(path)
         value = next(self.values)
@@ -31,7 +31,9 @@ class RecordingAnalyzer:
         self.calls: list[tuple[str, bool]] = []
         self.error = error
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         self.calls.append((transcript, final))
         if self.error is not None:
             raise self.error
@@ -49,7 +51,9 @@ class SequenceAnalyzer:
         self.values: Iterator[RiskAssessment | Exception] = iter(values)
         self.calls: list[tuple[str, bool]] = []
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         self.calls.append((transcript, final))
         value = next(self.values)
         if isinstance(value, Exception):

@@ -22,6 +22,7 @@ struct ProtectionSnapshotDTO: Decodable, Sendable {
     let id: String
     let callId: UUID
     let channel: String?
+    let language: String?
     let status: String
     let puckConnected: Bool
     let maskedTranscript: String
@@ -43,6 +44,7 @@ struct ProtectionAPI: Sendable {
         let channel: String?
         let title: String
         let callerDetail: String
+        let language: String
     }
 
     let baseURL: URL
@@ -73,7 +75,8 @@ struct ProtectionAPI: Sendable {
             startedAt: call.startedAt,
             channel: call.metadata.channel.rawValue,
             title: call.metadata.title,
-            callerDetail: call.metadata.callerDetail
+            callerDetail: call.metadata.callerDetail,
+            language: call.language.backendCode
         )
         return try await request(
             endpoint("api", "protection", "sessions"),

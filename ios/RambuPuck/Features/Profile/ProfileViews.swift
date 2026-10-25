@@ -28,7 +28,7 @@ struct ProfileView: View {
                     VStack(spacing: 10) {
                         Avatar(person: me, size: 72)
                         Text(me.name).font(Brand.display(.title2)).foregroundStyle(Brand.ink)
-                        Text(model.persona.isParent ? "Orang tua" : "Pendamping")
+                        Text(LocalizedStringKey(model.persona.isParent ? "Orang tua" : "Pendamping"))
                             .font(.subheadline).foregroundStyle(Brand.ink2)
                     }
                     .frame(maxWidth: .infinity)
@@ -41,7 +41,9 @@ struct ProfileView: View {
                             Label {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Keluarga").font(.headline).foregroundStyle(Brand.ink)
-                                    Text(model.pilotConnected ? "Tergabung" : "Belum terhubung")
+                                    Text(LocalizedStringKey(
+                                        model.pilotConnected ? "Tergabung" : "Belum terhubung"
+                                    ))
                                         .font(.subheadline)
                                         .foregroundStyle(model.pilotConnected ? Brand.safeInk : Brand.ink3)
                                 }
@@ -74,6 +76,18 @@ struct ProfileView: View {
                     .tint(Brand.teal)
                 }
 
+                Section("Bahasa") {
+                    Picker("Bahasa aplikasi", selection: Bindable(model).language) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .onChange(of: model.language) { _, _ in
+                        profile.persist()
+                        app.pilot.updateLanguage()
+                    }
+                }
+
                 if !model.pilotConnected {
                     Section("Nama") {
                         TextField("Nama panggilan", text: $name)
@@ -83,7 +97,7 @@ struct ProfileView: View {
                             .onSubmit(saveName)
                         if !model.persona.isParent {
                             Picker("Hubungan", selection: $relation) {
-                                ForEach(relations, id: \.self) { Text($0) }
+                                ForEach(relations, id: \.self) { Text(LocalizedStringKey($0)) }
                             }
                             .onChange(of: relation) { saveName() }
                         }
@@ -227,13 +241,15 @@ struct ProfileView: View {
 
 private struct PersonRow: View {
     let person: Person
+    @Environment(AppState.self) private var model
 
     var body: some View {
         HStack(spacing: 12) {
             Avatar(person: person, size: 38)
             VStack(alignment: .leading, spacing: 1) {
                 Text(person.name).font(.headline).foregroundStyle(Brand.ink)
-                Text(person.relation).font(.subheadline).foregroundStyle(Brand.ink2)
+                Text(L10n.text(person.relation, language: model.language))
+                    .font(.subheadline).foregroundStyle(Brand.ink2)
             }
         }
         .accessibilityElement(children: .combine)
@@ -253,10 +269,18 @@ struct InviteActions: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let validity = InviteValidity(expiresAt: model.pilotInviteExpiresAt, now: context.date)
-            let message = InviteLink.message(code: code, parentName: model.parent.name, expiresAt: model.pilotInviteExpiresAt)
+            let message = InviteLink.message(
+                code: code,
+                parentName: model.parent.name,
+                expiresAt: model.pilotInviteExpiresAt,
+                language: model.language
+            )
             VStack(alignment: .leading, spacing: 14) {
                 DigitBoxes(digits: code).opacity(validity.canShare ? 1 : 0.4)
-                Label(validity.message, systemImage: validity.canShare ? "clock" : "exclamationmark.circle.fill")
+                Label(
+                    LocalizedStringKey(validity.message(language: model.language)),
+                    systemImage: validity.canShare ? "clock" : "exclamationmark.circle.fill"
+                )
                     .font(.subheadline.weight(validity.canShare ? .regular : .semibold))
                     .foregroundStyle(validity.canShare ? Brand.ink2 : Brand.dangerInk)
                 if validity.canShare {
@@ -336,7 +360,12 @@ private struct JoinParentSheet: View {
                 if let added {
                     VStack(spacing: 12) {
                         MascotView(pose: .happy, sign: .safe).frame(height: 130)
-                        Text("Sekarang Anda menjaga \(added.name)")
+                        Text(L10n.format(
+                            "guardian.now_protecting.title",
+                            fallback: "Sekarang Anda menjaga %@",
+                            language: model.language,
+                            added.name
+                        ))
                             .font(Brand.display(.title3)).foregroundStyle(Brand.ink)
                             .multilineTextAlignment(.center)
                     }

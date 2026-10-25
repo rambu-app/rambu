@@ -235,7 +235,11 @@ struct PilotDecisionResultDTO: Codable, Sendable {
 private struct CreateFamilyBody: Encodable { let parentName: String }
 private struct JoinFamilyBody: Encodable { let code: String; let name: String; let relation: String }
 private struct DecisionBody: Encodable { let verdict: String }
-private struct PushTokenBody: Encodable { let token: String; let environment: String }
+private struct PushTokenBody: Encodable {
+    let token: String
+    let environment: String
+    let language: String
+}
 private struct PuckNameBody: Encodable { let displayName: String }
 struct PuckPairingDTO: Codable, Sendable { let accessToken: String }
 private struct APIMessage: Decodable { let detail: String }
@@ -261,9 +265,16 @@ enum PilotAPIError: LocalizedError {
         }
     }
 
-    static func displayMessage(for error: Error) -> String {
-        if let error = error as? PilotAPIError { return error.localizedDescription }
-        return "Belum dapat terhubung ke server. Periksa koneksi internet lalu coba lagi."
+    static func displayMessage(
+        for error: Error,
+        language: AppLanguage = .indonesian
+    ) -> String {
+        let message = if let error = error as? PilotAPIError {
+            error.localizedDescription
+        } else {
+            "Belum dapat terhubung ke server. Periksa koneksi internet lalu coba lagi."
+        }
+        return L10n.text(message, language: language)
     }
 }
 
@@ -323,9 +334,18 @@ struct PilotAPI: Sendable {
                           body: Optional<String>.none)
     }
 
-    func registerPushToken(_ pushToken: String, environment: String, token: String) async throws {
+    func registerPushToken(
+        _ pushToken: String,
+        environment: String,
+        language: AppLanguage,
+        token: String
+    ) async throws {
         let _: EmptyResponse = try await request("api/pilot/push-token", method: "PUT", token: token,
-                                                 body: PushTokenBody(token: pushToken, environment: environment))
+                                                 body: PushTokenBody(
+                                                    token: pushToken,
+                                                    environment: environment,
+                                                    language: language.backendCode
+                                                 ))
     }
 
     private func request<Response: Decodable, Body: Encodable>(
@@ -400,6 +420,7 @@ final class PilotSync {
     private var pollTask: Task<Void, Never>?
     private var operationTask: Task<Void, Never>?
     private var pushToken: String?
+    private var language: AppLanguage = .indonesian
     private var connectionGeneration = 0
 
     init(
@@ -444,6 +465,11 @@ final class PilotSync {
                 await self?.refresh(quietly: true)
             }
         }
+    }
+
+    func updateLanguage(_ language: AppLanguage) {
+        self.language = language
+        registerPushTokenIfPossible()
     }
 
     func createFamily(serverURL: String, parentName: String) async throws -> String {
@@ -508,7 +534,7 @@ final class PilotSync {
             await refreshAlerts(quietly: true)
             return result.accepted ? .accepted(result.decision.decision) : .alreadyDecided(result.decision.decision)
         } catch {
-            onError?(PilotAPIError.displayMessage(for: error))
+            onError?(PilotAPIError.displayMessage(for: error, language: language))
             return nil
         }
     }
@@ -545,7 +571,11 @@ final class PilotSync {
         } catch {
             guard generation == connectionGeneration, !Task.isCancelled else { return }
             onServerStatus?(.unavailable)
-            onError?("Keluarga belum dapat diperbarui. \(PilotAPIError.displayMessage(for: error))")
+            onError?(L10n.format(
+                "Keluarga belum dapat diperbarui. %@",
+                language: language,
+                PilotAPIError.displayMessage(for: error, language: language)
+            ))
         }
     }
 
@@ -559,7 +589,9 @@ final class PilotSync {
             onAlerts?(values.map(\.alert))
         } catch {
             guard generation == connectionGeneration, !Task.isCancelled else { return }
-            if !quietly { onError?(PilotAPIError.displayMessage(for: error)) }
+            if !quietly {
+                onError?(PilotAPIError.displayMessage(for: error, language: language))
+            }
         }
     }
 
@@ -591,7 +623,7 @@ final class PilotSync {
     }
 
     private func report(_ error: Error) {
-        onError?(PilotAPIError.displayMessage(for: error))
+        onError?(PilotAPIError.displayMessage(for: error, language: language))
     }
 
     private func receivePushToken(_ token: String) {
@@ -610,7 +642,12 @@ final class PilotSync {
             guard let self else { return }
             do {
                 try await PilotAPI(serverURL: credentials.serverURL, session: self.session)
-                    .registerPushToken(pushToken, environment: environment, token: credentials.accessToken)
+                    .registerPushToken(
+                        pushToken,
+                        environment: environment,
+                        language: self.language,
+                        token: credentials.accessToken
+                    )
             } catch {
                 self.report(error)
             }

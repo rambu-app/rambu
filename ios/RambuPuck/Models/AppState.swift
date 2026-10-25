@@ -50,6 +50,7 @@ struct RecentProtection: Equatable, Sendable {
 @Observable
 final class AppState {
     var persona: Persona
+    var language: AppLanguage
     var onboardingComplete: Bool
     var onboardingStep: OnboardingStep = .welcome
     var puck: PuckState
@@ -96,10 +97,12 @@ final class AppState {
     init(
         persona: Persona = .ratna,
         onboardingComplete: Bool = false,
+        language: AppLanguage = .preferred(),
         allowsDemoControls: Bool = false,
         now: Date = .now
     ) {
         self.persona = persona
+        self.language = language
         self.onboardingComplete = onboardingComplete
         self.allowsDemoControls = allowsDemoControls
         puck = allowsDemoControls && onboardingComplete ? .demo : .unpaired
@@ -183,7 +186,8 @@ final class AppState {
             extraParents: extraParents,
             history: history,
             puck: puck,
-            narrationEnabled: narrationEnabled
+            narrationEnabled: narrationEnabled,
+            language: language
         )
     }
 
@@ -196,6 +200,7 @@ final class AppState {
         history = saved.history
         puck = saved.puck
         narrationEnabled = saved.narrationEnabled
+        language = saved.language
         if !allowsDemoControls {
             if parent.id == Person.ratna.id {
                 parent = Person(id: "parent-draft", name: "", initial: "", relation: "Orang tua", colorHex: 0x006F63)

@@ -20,17 +20,21 @@ class TextTranscriber:
     def __init__(self, text: str = "Halo") -> None:
         self.text = text
         self.calls = 0
+        self.languages: list[str] = []
 
-    def transcribe(self, path: Path) -> str:
+    def transcribe(self, path: Path, language: str = "id") -> str:
         self.calls += 1
+        self.languages.append(language)
         return self.text
 
 
 class LowRiskAnalyzer:
     def __init__(self, error: Exception | None = None) -> None:
         self.error = error
+        self.languages: list[str] = []
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(self, transcript: str, final: bool, language: str = "id") -> RiskAssessment:
+        self.languages.append(language)
         if self.error is not None:
             raise self.error
         return RiskAssessment(
@@ -43,7 +47,9 @@ class LowRiskAnalyzer:
 
 
 class HighRiskAnalyzer:
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         return RiskAssessment(
             risk_level="high_risk",
             signals=["secret_code", "transfer"],
@@ -59,7 +65,9 @@ class SequenceAnalyzer:
     def __init__(self, values: list[RiskAssessment | Exception]) -> None:
         self.values = values
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         value = self.values.pop(0)
         if isinstance(value, Exception):
             raise value
@@ -70,17 +78,26 @@ class BlockingAnalyzer:
     def __init__(self) -> None:
         self.release = threading.Event()
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         self.release.wait(timeout=5)
         return danger_assessment()
 
 
 class RecordingProtectionPushSender:
     def __init__(self) -> None:
-        self.sent: list[tuple[list[str], str, str, str]] = []
+        self.sent: list[tuple[list[str], str, str, str, bool]] = []
 
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None:
-        self.sent.append((tokens, title, body, alert_id))
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None:
+        self.sent.append((tokens, title, body, alert_id, urgent))
 
     def close(self) -> None:
         pass
@@ -242,6 +259,7 @@ def test_high_risk_chunk_pushes_parent_once_when_risk_increases() -> None:
             "Bahaya: terindikasi penipuan",
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
             session_payload()["call_id"],
+            True,
         )
     ]
 
@@ -278,6 +296,7 @@ def test_risky_chunk_persists_alert_and_pushes_guardian_without_parent_publish()
     assert alerts[0]["evidence"][0]["speaker"] == "unknown"
     assert [sent[0] for sent in pushes.sent].count(["aa" * 32]) == 1
     assert [sent[0] for sent in pushes.sent].count(["bb" * 32]) == 1
+    assert all(sent[4] is True for sent in pushes.sent)
 
 
 def test_all_risky_chunks_use_red_and_notify_guardian_once() -> None:
@@ -306,6 +325,7 @@ def test_all_risky_chunks_use_red_and_notify_guardian_once() -> None:
     guardian_pushes = [sent for sent in pushes.sent if sent[0] == ["bb" * 32]]
     assert len(guardian_pushes) == 1
     assert "Danger" in guardian_pushes[0][1]
+    assert guardian_pushes[0][4] is True
     alerts = client.get(
         "/api/pilot/alerts", headers=auth(guardian.access_token)
     ).json()
@@ -717,6 +737,29 @@ def test_protection_routes_complete_authenticated_parent_and_puck_flow() -> None
     assert deleted.status_code == 204
 
 
+def test_english_protection_session_persists_and_drives_detection_language() -> None:
+    analyzer = LowRiskAnalyzer()
+    client, store, transcriber, _ = build_client(analyzer=analyzer)
+    parent = store.create_family("Mrs Taylor")
+    puck = store.pair_puck(parent.invite_code or "", "Living room Mac")
+
+    created = client.post(
+        "/api/protection/sessions",
+        headers=auth(parent.access_token),
+        json={**session_payload(), "language": "en"},
+    )
+    assert created.status_code == 201
+    assert created.json()["language"] == "en"
+    claimed = client.get("/api/pucks/sessions/active", headers=auth(puck.access_token))
+    assert claimed.json()["language"] == "en"
+
+    uploaded = upload_chunk(client, puck.access_token, created.json()["id"], sequence=0)
+
+    assert uploaded.status_code == 200
+    assert transcriber.languages == ["en"]
+    assert analyzer.languages == ["en"]
+
+
 def test_puck_created_session_pushes_parent_once_and_not_guardian() -> None:
     pushes = RecordingProtectionPushSender()
     client, store, _, _ = build_client(push_sender=pushes)
@@ -750,6 +793,7 @@ def test_puck_created_session_pushes_parent_once_and_not_guardian() -> None:
             "Panggilan WhatsApp terdeteksi",
             "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
             session_payload()["call_id"],
+            False,
         )
     ]
 
@@ -821,6 +865,7 @@ def test_puck_joining_parent_session_pushes_parent_once_and_not_guardian() -> No
             "Panggilan WhatsApp terdeteksi",
             "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
             session_payload()["call_id"],
+            False,
         )
     ]
 
@@ -1078,6 +1123,7 @@ def test_chunk_upload_responds_before_slow_analysis_and_analysis_completes_later
             "Bahaya: terindikasi penipuan",
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
             session_payload()["call_id"],
+            True,
         )
     ]
 

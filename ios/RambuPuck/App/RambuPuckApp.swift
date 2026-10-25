@@ -15,7 +15,7 @@ struct RambuPuckApp: App {
                 .environment(app.family)
                 .environment(app.profile)
                 .environment(app.pilot)
-                .environment(\.locale, Fmt.locale)
+                .environment(\.locale, app.state.language.locale)
                 .tint(Brand.teal)
         }
     }
@@ -139,7 +139,7 @@ enum DemoLaunch {
         let model = app.state
         let parts = scene.split(separator: ":").map(String.init)
         let key = parts.first ?? ""
-        let scenario = Scenario.all.first { $0.id == parts.dropFirst().first } ?? .bankOTP
+        let scenario = Scenario.all(language: model.language).first { $0.id == parts.dropFirst().first } ?? .bankOTP
 
         switch key {
         case "setup-parent":

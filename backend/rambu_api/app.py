@@ -67,13 +67,25 @@ def _risk_increased(
     return RISK_RANK[current_level] > max(0, RISK_RANK[previous_level])
 
 
-def _protection_warning(snapshot: ProtectionSessionSnapshot) -> tuple[str, str]:
+def _protection_warning(
+    snapshot: ProtectionSessionSnapshot, language: str = "id"
+) -> tuple[str, str]:
     if snapshot.assessment is None or snapshot.assessment.risk_level == "low":
         raise ValueError("Peringatan membutuhkan hasil analisis berisiko.")
     if snapshot.assessment.risk_level == "high_risk":
+        if language == "en":
+            return (
+                "Danger: possible scam",
+                "Do not share codes or transfer money. Hang up now.",
+            )
         return (
             "Bahaya: terindikasi penipuan",
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+        )
+    if language == "en":
+        return (
+            "Danger: suspicious call",
+            "Do not share personal data or money. Verify the caller before continuing.",
         )
     return (
         "Bahaya: telepon mencurigakan",
@@ -133,19 +145,49 @@ def create_app(
     pushes = push_sender or push_sender_from_environment()
     push_environment = os.getenv("APNS_ENVIRONMENT", "sandbox")
 
-    def send_protection_warning(
-        tokens: list[str], title: str, body: str, call_id: str, session_id: str
+    def send_localized_push(
+        targets: dict[str, list[str]],
+        copy: dict[str, tuple[str, str]],
+        notification_id: str,
+        session_id: str,
+        urgent: bool,
     ) -> None:
-        if not tokens:
+        if not targets:
             PUSH_LOGGER.error(
-                "protection push not sent session=%s reason=no_registered_parent_token",
+                "push not sent session=%s reason=no_registered_token",
                 session_id,
             )
             return
-        try:
-            pushes.send(tokens, title, body, call_id)
-        except Exception:
-            PUSH_LOGGER.exception("protection push failed session=%s", session_id)
+        for language, tokens in targets.items():
+            title, body = copy.get(language, copy["id"])
+            try:
+                pushes.send(tokens, title, body, notification_id, urgent=urgent)
+            except Exception:
+                PUSH_LOGGER.exception("push failed session=%s language=%s", session_id, language)
+
+    def guardian_copy(level: str, parent_name: str) -> dict[str, tuple[str, str]]:
+        return {
+            "id": (
+                f"{level.title()}: {parent_name} mungkin sedang ditipu",
+                "Ketuk untuk melihat kalimat pemicu dan memutuskan.",
+            ),
+            "en": (
+                f"{level.title()}: {parent_name} may be getting scammed",
+                "Tap to review the warning signs and decide.",
+            ),
+        }
+
+    def call_detected_copy() -> dict[str, tuple[str, str]]:
+        return {
+            "id": (
+                "Panggilan WhatsApp terdeteksi",
+                "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
+            ),
+            "en": (
+                "WhatsApp call detected",
+                "Rambu Puck is now listening and protecting this call.",
+            ),
+        }
 
     def notify_assessment(
         token: str,
@@ -155,25 +197,31 @@ def create_app(
     ) -> None:
         alert, should_notify_guardians = pilots.upsert_protection_alert(token, session_id)
         if alert is not None and should_notify_guardians:
-            guardian_targets = pilots.protection_notification_tokens(
+            guardian_targets = pilots.protection_notification_targets(
                 token, session_id, "guardian", push_environment
             )
             if guardian_targets:
-                try:
-                    pushes.send(
-                        guardian_targets,
-                        f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
-                        "Ketuk untuk melihat kalimat pemicu dan memutuskan.",
-                        str(alert.id),
-                    )
-                except Exception:
-                    PUSH_LOGGER.exception("guardian push failed session=%s", session_id)
+                send_localized_push(
+                    guardian_targets,
+                    guardian_copy(alert.level, alert.parent.name),
+                    str(alert.id),
+                    session_id,
+                    urgent=alert.level in {"review", "danger"},
+                )
         if _risk_increased(previous, snapshot):
-            targets = pilots.protection_notification_tokens(
+            targets = pilots.protection_notification_targets(
                 token, session_id, "parent", push_environment
             )
-            title, body = _protection_warning(snapshot)
-            send_protection_warning(targets, title, body, str(snapshot.call_id), snapshot.id)
+            send_localized_push(
+                targets,
+                {
+                    language: _protection_warning(snapshot, language)
+                    for language in ("id", "en")
+                },
+                str(snapshot.call_id),
+                snapshot.id,
+                urgent=True,
+            )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -415,16 +463,16 @@ def create_app(
             token = token_from(authorization)
             snapshot, newly_claimed = protections().claim_active_puck_session(token)
             if newly_claimed:
-                targets = pilots.protection_notification_tokens(
+                targets = pilots.protection_notification_targets(
                     token, snapshot.id, "parent", push_environment
                 )
                 background_tasks.add_task(
-                    send_protection_warning,
+                    send_localized_push,
                     targets,
-                    "Panggilan WhatsApp terdeteksi",
-                    "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
+                    call_detected_copy(),
                     str(snapshot.call_id),
                     snapshot.id,
+                    False,
                 )
             return snapshot
         except HTTPException:
@@ -446,16 +494,16 @@ def create_app(
             token = token_from(authorization)
             snapshot, created = protections().create_puck_session(token, value)
             if created:
-                targets = pilots.protection_notification_tokens(
+                targets = pilots.protection_notification_targets(
                     token, snapshot.id, "parent", push_environment
                 )
                 background_tasks.add_task(
-                    send_protection_warning,
+                    send_localized_push,
                     targets,
-                    "Panggilan WhatsApp terdeteksi",
-                    "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
+                    call_detected_copy(),
                     str(snapshot.call_id),
                     snapshot.id,
+                    False,
                 )
             return snapshot
         except HTTPException:
@@ -566,7 +614,9 @@ def create_app(
         authorization: str | None = Header(default=None),
     ) -> Response:
         try:
-            pilots.register_push_token(token_from(authorization), value.token, value.environment)
+            pilots.register_push_token(
+                token_from(authorization), value.token, value.environment, value.language
+            )
             return Response(status_code=204)
         except HTTPException:
             raise
@@ -583,10 +633,14 @@ def create_app(
             token = token_from(authorization)
             alert, should_notify = pilots.publish_alert_result(token, value)
             if should_notify:
-                targets = pilots.notification_tokens(token, "guardian", push_environment)
+                targets = pilots.notification_targets(token, "guardian", push_environment)
                 background_tasks.add_task(
-                    pushes.send, targets, f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
-                    "Ketuk untuk melihat kalimat pemicu dan memutuskan.", str(alert.id),
+                    send_localized_push,
+                    targets,
+                    guardian_copy(alert.level, alert.parent.name),
+                    str(alert.id),
+                    str(alert.id),
+                    alert.level in {"review", "danger"},
                 )
             return alert
         except HTTPException:
@@ -624,10 +678,29 @@ def create_app(
         try:
             token = token_from(authorization)
             decision = pilots.decide(token, alert_id, value.verdict)
-            targets = pilots.notification_tokens(token, "parent", push_environment)
-            title = f"{decision.by.name}: {'ini penipuan' if decision.verdict == 'scam' else 'telepon aman'}"
-            body = "Tutup telepon sekarang." if decision.verdict == "scam" else "Tetap jangan beri kode atau transfer."
-            background_tasks.add_task(pushes.send, targets, title, body, alert_id)
+            targets = pilots.notification_targets(token, "parent", push_environment)
+            copies = {
+                "id": (
+                    f"{decision.by.name}: {'ini penipuan' if decision.verdict == 'scam' else 'telepon aman'}",
+                    "Tutup telepon sekarang."
+                    if decision.verdict == "scam"
+                    else "Tetap jangan beri kode atau transfer.",
+                ),
+                "en": (
+                    f"{decision.by.name}: {'this is a scam' if decision.verdict == 'scam' else 'call is safe'}",
+                    "Hang up now."
+                    if decision.verdict == "scam"
+                    else "Still do not share codes or transfer money.",
+                ),
+            }
+            background_tasks.add_task(
+                send_localized_push,
+                targets,
+                copies,
+                alert_id,
+                alert_id,
+                decision.verdict == "scam",
+            )
             return PilotDecisionResult(accepted=True, decision=decision)
         except DecisionConflict as error:
             body = PilotDecisionResult(accepted=False, decision=error.decision)

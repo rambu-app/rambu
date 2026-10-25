@@ -165,11 +165,26 @@ struct InviteValidity {
     var canShare: Bool { expiresAt.map { $0 > now } ?? false }
 
     var message: String {
-        guard let expiresAt else { return "Buat kode baru untuk membagikan undangan." }
+        message(language: .indonesian)
+    }
+
+    func message(language: AppLanguage) -> String {
+        guard let expiresAt else {
+            return L10n.text("Buat kode baru untuk membagikan undangan.", language: language)
+        }
         let remaining = expiresAt.timeIntervalSince(now)
-        guard remaining > 0 else { return "Kode kedaluwarsa" }
-        if remaining < 60 { return "Berlaku kurang dari 1 menit lagi" }
-        return "Berlaku \(Int(ceil(remaining / 60))) menit lagi"
+        guard remaining > 0 else {
+            return L10n.text("Kode kedaluwarsa", language: language)
+        }
+        if remaining < 60 {
+            return L10n.text("Berlaku kurang dari 1 menit lagi", language: language)
+        }
+        return L10n.format(
+            "invite.valid_minutes",
+            fallback: "Berlaku %d menit lagi",
+            language: language,
+            Int(ceil(remaining / 60))
+        )
     }
 }
 
@@ -301,6 +316,15 @@ struct FamilyAlert: Identifiable, Hashable, Sendable {
 
     var title: String {
         "\(parent.name) mungkin sedang ditipu"
+    }
+
+    func title(language: AppLanguage) -> String {
+        L10n.format(
+            "family.alert_title",
+            fallback: "%@ mungkin sedang ditipu",
+            language: language,
+            parent.name
+        )
     }
 }
 
@@ -488,12 +512,17 @@ enum SystemIssue: String, Identifiable, CaseIterable, Sendable {
 /// Isi push Rambu. Dikirim sebagai notifikasi sistem, atau tampil sebagai tiruan banner
 /// di dalam app kalau izin notifikasi belum ada.
 struct Toast: Identifiable, Equatable {
+    static let urgentSoundName = "rambu-urgent.caf"
+
     let id: String
     let title: String
     let body: String
     /// Menentukan warna dan papan yang dipegang maskot.
     let level: RiskLevel
     let alertID: UUID?
+
+    var isUrgent: Bool { level == .review || level == .danger }
+    var notificationSoundName: String? { isUrgent ? Self.urgentSoundName : nil }
 }
 
 // MARK: - Format tanggal berbahasa Indonesia
@@ -501,23 +530,51 @@ struct Toast: Identifiable, Equatable {
 enum Fmt {
     static let locale = Locale(identifier: "id_ID")
 
-    static func clock(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale))
+    static func locale(_ language: AppLanguage) -> Locale { language.locale }
+
+    static func clock(
+        _ date: Date, language: AppLanguage = .indonesian
+    ) -> String {
+        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(locale(language)))
     }
 
-    static func day(_ date: Date, now: Date = .now) -> String {
+    static func day(
+        _ date: Date,
+        now: Date = .now,
+        language: AppLanguage = .indonesian
+    ) -> String {
         let calendar = Calendar(identifier: .gregorian)
-        if calendar.isDate(date, inSameDayAs: now) { return "Hari ini, \(clock(date))" }
-        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) {
-            return "Kemarin, \(clock(date))"
+        if calendar.isDate(date, inSameDayAs: now) {
+            return L10n.format(
+                "date.today_at",
+                fallback: "Hari ini, %@",
+                language: language,
+                clock(date, language: language)
+            )
         }
-        return date.formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(locale))
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) {
+            return L10n.format(
+                "date.yesterday_at",
+                fallback: "Kemarin, %@",
+                language: language,
+                clock(date, language: language)
+            )
+        }
+        return date.formatted(
+            .dateTime.day().month(.abbreviated).hour().minute().locale(locale(language))
+        )
     }
 
-    static func duration(_ seconds: TimeInterval) -> String {
+    static func duration(
+        _ seconds: TimeInterval, language: AppLanguage = .indonesian
+    ) -> String {
         let total = Int(seconds.rounded())
         let minutes = total / 60
         let rest = total % 60
+        if language == .english {
+            if minutes == 0 { return "\(rest) sec" }
+            return rest == 0 ? "\(minutes) min" : "\(minutes) min \(rest) sec"
+        }
         if minutes == 0 { return "\(rest) dtk" }
         return rest == 0 ? "\(minutes) mnt" : "\(minutes) mnt \(rest) dtk"
     }
@@ -533,12 +590,22 @@ enum Fmt {
 extension CallRecord {
     /// Interpretation of detected categories. Metadata and caregiver decisions are shown separately.
     var incidentSummary: String {
+        incidentSummary(language: .indonesian)
+    }
+
+    func incidentSummary(language: AppLanguage) -> String {
         if let displayReason {
-            return displayReason
+            return L10n.text(displayReason, language: language)
         }
-        guard !signals.isEmpty else { return "Tidak terdeteksi tanda penipuan pada percakapan yang dianalisis." }
-        let listed = signals.map(\.summaryLabel).formatted(.list(type: .and).locale(Fmt.locale))
-        return "Rambu mendeteksi indikasi \(listed)."
+        guard !signals.isEmpty else {
+            return L10n.text(
+                "Tidak terdeteksi tanda penipuan pada percakapan yang dianalisis.",
+                language: language
+            )
+        }
+        let listed = signals.map { L10n.text($0.summaryLabel, language: language) }
+            .formatted(.list(type: .and).locale(language.locale))
+        return L10n.format("Rambu mendeteksi indikasi %@.", language: language, listed)
     }
 }
 
@@ -585,8 +652,14 @@ extension SignalKind {
 
 extension [SignalKind] {
     var callerSummary: String? {
+        callerSummary(language: .indonesian)
+    }
+
+    func callerSummary(language: AppLanguage) -> String? {
         guard !isEmpty else { return nil }
-        return "Penelepon \(map(\.callerPhrase).formatted(.list(type: .and).locale(Fmt.locale)))."
+        let phrases = map { L10n.text($0.callerPhrase, language: language) }
+            .formatted(.list(type: .and).locale(language.locale))
+        return L10n.format("Penelepon %@.", language: language, phrases)
     }
 }
 
@@ -597,6 +670,10 @@ extension CallRecord {
         case .safe: "Tidak ada tanda penipuan"
         case .unassessed: "Belum bisa dinilai"
         }
+    }
+
+    func verdictHeadline(language: AppLanguage) -> String {
+        L10n.text(verdictHeadline, language: language)
     }
 }
 

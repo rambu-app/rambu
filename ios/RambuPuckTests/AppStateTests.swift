@@ -4,6 +4,111 @@ import Testing
 
 @MainActor
 struct AppStateTests {
+    @Test("Device language selects English only for an English preference")
+    func defaultsLanguageFromDevicePreference() {
+        #expect(AppLanguage.preferred(from: ["en-US", "id-ID"]) == .english)
+        #expect(AppLanguage.preferred(from: ["id-ID", "en-US"]) == .indonesian)
+        #expect(AppLanguage.preferred(from: ["fr-FR"]) == .indonesian)
+        #expect(AppLanguage.preferred(from: []) == .indonesian)
+    }
+
+    @Test("Saved language restores without changing user data")
+    func restoresExplicitLanguage() throws {
+        let saved = SavedState(
+            onboardingComplete: true,
+            persona: .ratna,
+            parent: .ratna,
+            guardians: Person.guardians,
+            extraParents: [],
+            history: [],
+            puck: .demo,
+            narrationEnabled: true,
+            language: .english
+        )
+        let data = try JSONEncoder().encode(saved)
+        let decoded = try JSONDecoder().decode(SavedState.self, from: data)
+        let state = AppState(language: .indonesian, allowsDemoControls: true)
+
+        state.restore(decoded)
+
+        #expect(state.language == .english)
+        #expect(state.parent == .ratna)
+        #expect(state.guardians == Person.guardians)
+        #expect(state.onboardingComplete)
+    }
+
+    @Test("Saved state from before language support remains Indonesian")
+    func oldSaveDefaultsToIndonesian() throws {
+        let json = """
+        {
+          "onboardingComplete": false,
+          "persona": "ratna",
+          "parent": {"id":"parent-draft","name":"","initial":"","relation":"Orang tua","colorHex":28515},
+          "guardians": [],
+          "extraParents": [],
+          "history": [],
+          "puck": {"isPaired":false,"isConnected":false,"battery":0,"isCharging":false,"name":"Rambu Puck","serial":"","firmware":""},
+          "narrationEnabled": true
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(SavedState.self, from: Data(json.utf8))
+
+        #expect(decoded.language == .indonesian)
+    }
+
+    @Test("Changing language preserves family and history state")
+    func languageChangeDoesNotResetState() {
+        let state = AppState(language: .indonesian, allowsDemoControls: true)
+        let history = state.history
+        let parent = state.parent
+        let guardians = state.guardians
+
+        state.language = .english
+
+        #expect(state.history == history)
+        #expect(state.parent == parent)
+        #expect(state.guardians == guardians)
+    }
+
+    @Test("English scam scenarios use English copy and the protected parent's name")
+    func englishScenariosArePersonalized() throws {
+        let template = try #require(Scenario.all(language: .english).first { $0.id == "bank-otp" })
+        let scenario = template.personalized(parentName: "Mrs Taylor", language: .english)
+
+        #expect(scenario.title == "Caller claiming to be from Sentosa Bank")
+        #expect(scenario.lines.first?.text.contains("Mrs Taylor") == true)
+        #expect(scenario.lines.first?.text.contains("Ibu Ratna") == false)
+        #expect(scenario.lines.flatMap(\.signals).contains(.impersonation))
+        #expect(scenario.lines.flatMap(\.signals).contains(.secretCode))
+    }
+
+    @Test("English resources localize dynamic application copy")
+    func englishResourceLookup() {
+        #expect(L10n.text("Profil", language: .english) == "Profile")
+        #expect(L10n.text("Profil", language: .indonesian) == "Profil")
+        #expect(L10n.text("Panggilan masuk terdeteksi", language: .english) == "Incoming call detected")
+        #expect(L10n.text("Terdeteksi oleh puck", language: .english) == "Detected by puck")
+        #expect(L10n.text("Panggilan WhatsApp terdeteksi", language: .english) == "WhatsApp call detected")
+        #expect(L10n.text("Kontak WhatsApp", language: .english) == "WhatsApp contact")
+
+        let visibleCopy = [
+            "Beranda": "Home",
+            "Berhenti": "Stop",
+            "Contoh": "Example",
+            "Ganti": "Change",
+            "Izinkan": "Allow",
+            "Mencari…": "Searching…",
+            "Menunggu…": "Waiting…",
+            "Simulasi": "Simulation",
+            "Ulangi": "Repeat",
+            "Hadiah undian dari nomor asing": "Prize claim from an unknown number",
+        ]
+        for (key, translation) in visibleCopy {
+            #expect(L10n.text(key, language: .english) == translation)
+        }
+    }
+
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")
     func groupsOverlappingEvidenceWithoutRewritingSource() {
         let lines = [
@@ -207,5 +312,47 @@ struct AppStateTests {
         session.protectionStatus = .noSpeech
         state.session = session
         #expect(state.protectionPresentation == .noSpeech)
+    }
+
+    @Test("English formatting covers dates, durations, and family invitations")
+    func englishDynamicFormatting() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(Fmt.day(now, now: now, language: .english).hasPrefix("Today, "))
+        #expect(Fmt.duration(65, language: .english) == "1 min 5 sec")
+        let invite = InviteLink.message(
+            code: "482913",
+            parentName: "Mrs Taylor",
+            expiresAt: now,
+            language: .english
+        )
+        #expect(invite.contains("Mrs Taylor invited you to be a caregiver on Rambu"))
+        #expect(invite.contains("Invitation code: 482913"))
+        #expect(!invite.contains("mengundang"))
+    }
+
+    @Test("Semantic localization keys resolve English with Indonesian fallback copy")
+    func semanticLocalizationKeys() {
+        #expect(
+            L10n.text(
+                "alert.scam.title",
+                fallback: "Bahaya: terindikasi penipuan",
+                language: .english
+            ) == "Danger: possible scam"
+        )
+        #expect(
+            L10n.format(
+                "family.answered_first",
+                fallback: "%@ sudah menjawab lebih dulu",
+                language: .english,
+                "Richard"
+            ) == "Richard answered first"
+        )
+        #expect(
+            L10n.text(
+                "missing.key",
+                fallback: "Teks bawaan",
+                language: .english
+            ) == "Teks bawaan"
+        )
     }
 }

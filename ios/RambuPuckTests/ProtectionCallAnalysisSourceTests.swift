@@ -75,7 +75,8 @@ struct ProtectionCallAnalysisSourceTests {
         CallContext(
             id: UUID(uuidString: "7F011753-8F09-4A45-8812-8A4591A96B3C")!,
             metadata: CallMetadata.production,
-            startedAt: Date(timeIntervalSince1970: 1_759_313_600)
+            startedAt: Date(timeIntervalSince1970: 1_759_313_600),
+            language: .english
         )
     }
 
@@ -92,6 +93,7 @@ struct ProtectionCallAnalysisSourceTests {
             "id": "session-1",
             "call_id": "7f011753-8f09-4a45-8812-8a4591a96b3c",
             "channel": NSNull(),
+            "language": "en",
             "status": status,
             "puck_connected": status != "waiting_for_puck",
             "masked_transcript": transcript,
@@ -171,6 +173,7 @@ struct ProtectionCallAnalysisSourceTests {
         #expect(object["call_id"] as? String == "7F011753-8F09-4A45-8812-8A4591A96B3C")
         #expect(object["title"] as? String == "Panggilan terdeteksi")
         #expect(object["caller_detail"] as? String == "Nomor tidak tersedia")
+        #expect(object["language"] as? String == "en")
     }
 
     @Test("Finish posts end while cancel deletes the remote session")

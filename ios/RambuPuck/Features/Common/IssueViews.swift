@@ -16,15 +16,19 @@ struct IssueBanner: View {
                 .frame(width: 40, height: 40)
                 .background(Brand.signal, in: .rect(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
-                Text(issue.title).font(.headline).foregroundStyle(Brand.ink)
-                Text(issue.detail).font(.subheadline).foregroundStyle(Brand.ink2)
+                Text(LocalizedStringKey(issue.title)).font(.headline).foregroundStyle(Brand.ink)
+                Text(LocalizedStringKey(issue.detail)).font(.subheadline).foregroundStyle(Brand.ink2)
             }
             Spacer(minLength: 0)
             if let action = issue.action {
                 Button {
                     fix()
                 } label: {
-                    if working { ProgressView() } else { Text(action).font(.subheadline.weight(.semibold)) }
+                    if working {
+                        ProgressView()
+                    } else {
+                        Text(LocalizedStringKey(action)).font(.subheadline.weight(.semibold))
+                    }
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Brand.teal)

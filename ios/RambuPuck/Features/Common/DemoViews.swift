@@ -13,7 +13,7 @@ struct ScenarioPicker: View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(Scenario.all) { scenario in
+                    ForEach(Scenario.all(language: model.language)) { scenario in
                         Button {
                             dismiss()
                             call.start(scenario)
@@ -85,7 +85,8 @@ struct DemoSheet: View {
                                 Avatar(person: model.person(for: persona), size: 40)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(model.person(for: persona).name).font(.headline).foregroundStyle(Brand.ink)
-                                    Text(persona.roleLabel).font(.subheadline).foregroundStyle(Brand.ink2)
+                                    Text(LocalizedStringKey(persona.roleLabel))
+                                        .font(.subheadline).foregroundStyle(Brand.ink2)
                                 }
                                 Spacer()
                                 if model.persona == persona {
@@ -103,7 +104,7 @@ struct DemoSheet: View {
 
                 if model.persona.isParent, model.onboardingComplete {
                     Section("Simulasi telepon") {
-                        ForEach(Scenario.all) { scenario in
+                        ForEach(Scenario.all(language: model.language)) { scenario in
                             Button {
                                 dismiss()
                                 call.start(scenario)
@@ -130,7 +131,12 @@ struct DemoSheet: View {
                 if !model.persona.isParent, let alert = model.alerts.first(where: { $0.decision == nil }) {
                     let other = model.otherGuardians(than: model.currentPerson).first ?? .richard
                     Section {
-                        Button("\(other.name) menjawab lebih dulu") {
+                        Button(L10n.format(
+                            "guardian.other_answered",
+                            fallback: "%@ menjawab lebih dulu",
+                            language: model.language,
+                            other.name
+                        )) {
                             family.simulateDecision(by: other, .scam, on: alert.id)
                             dismiss()
                         }

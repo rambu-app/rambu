@@ -50,6 +50,14 @@ cd ios && xcodegen generate && open RambuPuck.xcodeproj
 
 Run on the iPhone, enter the parent's name, and finish the practice call. Then tap **Hubungkan keluarga** on the home screen and create a family. Guardians join with its six-digit code.
 
+### Languages
+
+Rambu supports Indonesian and English. A fresh installation follows the iPhone's preferred language when it is Indonesian or English, and the selection can be changed during onboarding or later from **Profile → Language** without resetting the family or call history.
+
+The selected language also applies to practice calls, spoken guidance, dates and invitations, scam warnings, family decisions, and operational errors. English protection sessions use English transcription and analysis prompts while retaining bilingual safeguards for explicit requests for OTPs, PINs, passwords, and other secrets. Push tokens store the language of their device, so members of the same family can receive personalized warnings and decisions in different languages.
+
+Translations are maintained centrally in the iOS String Catalog at `ios/RambuPuck/Resources/Localizable.xcstrings`; privacy descriptions live in `ios/RambuPuck/Resources/InfoPlist.xcstrings`. User-entered names and caller transcripts are never translated.
+
 ## 5. Puck
 
 **Wire** the INMP441 to the ESP32: SCK→D32, WS→D25, SD→D33, L/R→GND, VDD→3V3, GND→GND.
