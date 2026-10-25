@@ -4,6 +4,73 @@ import Testing
 
 @MainActor
 struct AppStateTests {
+    @Test("Device language selects English only for an English preference")
+    func defaultsLanguageFromDevicePreference() {
+        #expect(AppLanguage.preferred(from: ["en-US", "id-ID"]) == .english)
+        #expect(AppLanguage.preferred(from: ["id-ID", "en-US"]) == .indonesian)
+        #expect(AppLanguage.preferred(from: ["fr-FR"]) == .indonesian)
+        #expect(AppLanguage.preferred(from: []) == .indonesian)
+    }
+
+    @Test("Saved language restores without changing user data")
+    func restoresExplicitLanguage() throws {
+        let saved = SavedState(
+            onboardingComplete: true,
+            persona: .ratna,
+            parent: .ratna,
+            guardians: Person.guardians,
+            extraParents: [],
+            history: [],
+            puck: .demo,
+            narrationEnabled: true,
+            language: .english
+        )
+        let data = try JSONEncoder().encode(saved)
+        let decoded = try JSONDecoder().decode(SavedState.self, from: data)
+        let state = AppState(language: .indonesian, allowsDemoControls: true)
+
+        state.restore(decoded)
+
+        #expect(state.language == .english)
+        #expect(state.parent == .ratna)
+        #expect(state.guardians == Person.guardians)
+        #expect(state.onboardingComplete)
+    }
+
+    @Test("Saved state from before language support remains Indonesian")
+    func oldSaveDefaultsToIndonesian() throws {
+        let json = """
+        {
+          "onboardingComplete": false,
+          "persona": "ratna",
+          "parent": {"id":"parent-draft","name":"","initial":"","relation":"Orang tua","colorHex":28515},
+          "guardians": [],
+          "extraParents": [],
+          "history": [],
+          "puck": {"isPaired":false,"isConnected":false,"battery":0,"isCharging":false,"name":"Rambu Puck","serial":"","firmware":""},
+          "narrationEnabled": true
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(SavedState.self, from: Data(json.utf8))
+
+        #expect(decoded.language == .indonesian)
+    }
+
+    @Test("Changing language preserves family and history state")
+    func languageChangeDoesNotResetState() {
+        let state = AppState(language: .indonesian, allowsDemoControls: true)
+        let history = state.history
+        let parent = state.parent
+        let guardians = state.guardians
+
+        state.language = .english
+
+        #expect(state.history == history)
+        #expect(state.parent == parent)
+        #expect(state.guardians == guardians)
+    }
+
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")
     func groupsOverlappingEvidenceWithoutRewritingSource() {
         let lines = [

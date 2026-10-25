@@ -15,7 +15,7 @@ struct RambuPuckApp: App {
                 .environment(app.family)
                 .environment(app.profile)
                 .environment(app.pilot)
-                .environment(\.locale, Fmt.locale)
+                .environment(\.locale, app.state.language.locale)
                 .tint(Brand.teal)
         }
     }

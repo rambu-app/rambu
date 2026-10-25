@@ -16,6 +16,47 @@ struct SavedState: Codable, Equatable {
     var history: [CallRecord]
     var puck: PuckState
     var narrationEnabled: Bool
+    var language: AppLanguage = .indonesian
+
+    private enum CodingKeys: String, CodingKey {
+        case onboardingComplete, persona, parent, guardians, extraParents, history, puck
+        case narrationEnabled, language
+    }
+
+    init(
+        onboardingComplete: Bool,
+        persona: Persona,
+        parent: Person,
+        guardians: [Person],
+        extraParents: [Person],
+        history: [CallRecord],
+        puck: PuckState,
+        narrationEnabled: Bool,
+        language: AppLanguage = .indonesian
+    ) {
+        self.onboardingComplete = onboardingComplete
+        self.persona = persona
+        self.parent = parent
+        self.guardians = guardians
+        self.extraParents = extraParents
+        self.history = history
+        self.puck = puck
+        self.narrationEnabled = narrationEnabled
+        self.language = language
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        onboardingComplete = try values.decode(Bool.self, forKey: .onboardingComplete)
+        persona = try values.decode(Persona.self, forKey: .persona)
+        parent = try values.decode(Person.self, forKey: .parent)
+        guardians = try values.decode([Person].self, forKey: .guardians)
+        extraParents = try values.decode([Person].self, forKey: .extraParents)
+        history = try values.decode([CallRecord].self, forKey: .history)
+        puck = try values.decode(PuckState.self, forKey: .puck)
+        narrationEnabled = try values.decode(Bool.self, forKey: .narrationEnabled)
+        language = try values.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .indonesian
+    }
 }
 
 struct LocalStore: Sendable {

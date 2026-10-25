@@ -21,6 +21,7 @@
 		262EF32CA4811E7E3131ACBA /* CallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D858B5F3344B8F452868A857 /* CallViewModel.swift */; };
 		31C9F5F79F53B7D2F19C60EE /* BrandTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DFED1BBE7FF071A75558A4 /* BrandTokens.swift */; };
 		3519E3A6F3941C4AD79CE49B /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EDEA58598842DF751D6C31 /* Domain.swift */; };
+		A11A00000000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00000000000000000002 /* AppLanguage.swift */; };
 		35817BCFA820B9F66CFE3B9B /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ACD2EF6AD903547E9A034E /* AppStateTests.swift */; };
 		3BAEBDB7399E26DC1AE84FEE /* CallActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91303AE084840EFA17FD0C49 /* CallActivityAttributes.swift */; };
 		3CFBAB7D6A0A3A3C1D64C2F0 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0D0F2E26B21F780934FE07 /* OnboardingViewModel.swift */; };
@@ -151,6 +152,7 @@
 		AC43E5662306F9A230B35F44 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
 		ACFB9A3C7BA8CA1AC410629D /* FamilyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewModel.swift; sourceTree = "<group>"; };
 		B0EDEA58598842DF751D6C31 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
+		A11A00000000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		B19434D0FC3F3A794D68ECE3 /* ProtectionCallAnalysisSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionCallAnalysisSource.swift; sourceTree = "<group>"; };
 		B7CDCE6EF63A63200F0B2FB4 /* CallViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallViews.swift; sourceTree = "<group>"; };
 		C06AADA1C8FEBDC150FF2568 /* ProtectionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionAPI.swift; sourceTree = "<group>"; };
@@ -329,6 +331,7 @@
 		D31C00CAB8B05BDABBEB45DD /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A11A00000000000000000002 /* AppLanguage.swift */,
 				82C73D063566713B5B01E271 /* AppState.swift */,
 				B0EDEA58598842DF751D6C31 /* Domain.swift */,
 				F507FBDD67EC089971B60425 /* Scenarios.swift */,
@@ -526,6 +529,7 @@
 				08C53254A80489879E8BE5C9 /* Components.swift in Sources */,
 				9E601B732444FC070AADBBF5 /* DemoViews.swift in Sources */,
 				3519E3A6F3941C4AD79CE49B /* Domain.swift in Sources */,
+				A11A00000000000000000001 /* AppLanguage.swift in Sources */,
 				2205332E8C1B59930E054DAF /* FamilyViewModel.swift in Sources */,
 				BF2621CD22F9217364787348 /* GuardianOnboarding.swift in Sources */,
 				AEA4C2444F3A9F021AC710C3 /* GuardianViews.swift in Sources */,
