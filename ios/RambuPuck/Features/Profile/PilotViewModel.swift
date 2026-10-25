@@ -18,6 +18,7 @@ final class PilotViewModel {
     }
 
     func start() {
+        pilot?.updateLanguage(state.language)
         pilot?.onProfile = { [weak self] value in self?.applyProfile(value) }
         pilot?.onAlerts = { [weak self] values in self?.applyAlerts(values) }
         pilot?.onHistory = { [weak self] values in self?.applyHistory(values) }
@@ -28,6 +29,10 @@ final class PilotViewModel {
         state.pilotInviteExpiresAt = pilot?.inviteExpiresAt
         state.pilotRole = pilot?.credentials?.member.role
         pilot?.start()
+    }
+
+    func updateLanguage() {
+        pilot?.updateLanguage(state.language)
     }
 
     func createFamily() async -> Bool {

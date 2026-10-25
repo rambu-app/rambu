@@ -235,7 +235,11 @@ struct PilotDecisionResultDTO: Codable, Sendable {
 private struct CreateFamilyBody: Encodable { let parentName: String }
 private struct JoinFamilyBody: Encodable { let code: String; let name: String; let relation: String }
 private struct DecisionBody: Encodable { let verdict: String }
-private struct PushTokenBody: Encodable { let token: String; let environment: String }
+private struct PushTokenBody: Encodable {
+    let token: String
+    let environment: String
+    let language: String
+}
 private struct PuckNameBody: Encodable { let displayName: String }
 struct PuckPairingDTO: Codable, Sendable { let accessToken: String }
 private struct APIMessage: Decodable { let detail: String }
@@ -323,9 +327,18 @@ struct PilotAPI: Sendable {
                           body: Optional<String>.none)
     }
 
-    func registerPushToken(_ pushToken: String, environment: String, token: String) async throws {
+    func registerPushToken(
+        _ pushToken: String,
+        environment: String,
+        language: AppLanguage,
+        token: String
+    ) async throws {
         let _: EmptyResponse = try await request("api/pilot/push-token", method: "PUT", token: token,
-                                                 body: PushTokenBody(token: pushToken, environment: environment))
+                                                 body: PushTokenBody(
+                                                    token: pushToken,
+                                                    environment: environment,
+                                                    language: language.backendCode
+                                                 ))
     }
 
     private func request<Response: Decodable, Body: Encodable>(
@@ -400,6 +413,7 @@ final class PilotSync {
     private var pollTask: Task<Void, Never>?
     private var operationTask: Task<Void, Never>?
     private var pushToken: String?
+    private var language: AppLanguage = .indonesian
     private var connectionGeneration = 0
 
     init(
@@ -444,6 +458,11 @@ final class PilotSync {
                 await self?.refresh(quietly: true)
             }
         }
+    }
+
+    func updateLanguage(_ language: AppLanguage) {
+        self.language = language
+        registerPushTokenIfPossible()
     }
 
     func createFamily(serverURL: String, parentName: String) async throws -> String {
@@ -610,7 +629,12 @@ final class PilotSync {
             guard let self else { return }
             do {
                 try await PilotAPI(serverURL: credentials.serverURL, session: self.session)
-                    .registerPushToken(pushToken, environment: environment, token: credentials.accessToken)
+                    .registerPushToken(
+                        pushToken,
+                        environment: environment,
+                        language: self.language,
+                        token: credentials.accessToken
+                    )
             } catch {
                 self.report(error)
             }

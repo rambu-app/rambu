@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+import sqlite3
 
 from fastapi.testclient import TestClient
 
@@ -249,6 +250,90 @@ def test_safe_decision_push_is_not_urgent() -> None:
         assert accepted.status_code == 200
         assert pushes.sent[-1][2] == "Tetap jangan beri kode atau transfer."
         assert pushes.sent[-1][4] is False
+
+
+def test_push_notifications_are_localized_for_each_registered_device() -> None:
+    store = PilotStore(":memory:")
+    pushes = RecordingPushSender()
+    app = create_app(service=StubDemoService(), pilot_store=store, push_sender=pushes)
+
+    with TestClient(app) as client:
+        parent = client.post(
+            "/api/pilot/families", json={"parent_name": "Ibu Ratna"}
+        ).json()
+        first = client.post(
+            "/api/pilot/families/join",
+            json={"code": parent["invite_code"], "name": "Sinta", "relation": "Anak"},
+        ).json()
+        second = client.post(
+            "/api/pilot/families/join",
+            json={"code": parent["invite_code"], "name": "Richard", "relation": "Anak"},
+        ).json()
+        registrations = [
+            (parent["access_token"], "aa" * 32, "en"),
+            (first["access_token"], "bb" * 32, "id"),
+            (second["access_token"], "cc" * 32, "en"),
+        ]
+        for access_token, device_token, language in registrations:
+            response = client.put(
+                "/api/pilot/push-token",
+                headers=authorization(access_token),
+                json={
+                    "token": device_token,
+                    "environment": "sandbox",
+                    "language": language,
+                },
+            )
+            assert response.status_code == 204
+
+        assert client.post(
+            "/api/pilot/alerts",
+            headers=authorization(parent["access_token"]),
+            json=alert_payload(),
+        ).status_code == 201
+
+        guardian_pushes = {tuple(sent[0]): sent for sent in pushes.sent}
+        assert "mungkin sedang ditipu" in guardian_pushes[("bb" * 32,)][1]
+        assert "may be getting scammed" in guardian_pushes[("cc" * 32,)][1]
+
+        decision = client.post(
+            f"/api/pilot/alerts/{alert_payload()['id']}/decision",
+            headers=authorization(first["access_token"]),
+            json={"verdict": "scam"},
+        )
+        assert decision.status_code == 200
+        assert pushes.sent[-1][0] == ["aa" * 32]
+        assert pushes.sent[-1][2] == "Hang up now."
+
+
+def test_existing_push_tokens_migrate_to_indonesian(tmp_path) -> None:
+    database = tmp_path / "pilot.db"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE push_tokens (
+                token TEXT PRIMARY KEY,
+                member_id TEXT NOT NULL,
+                environment TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            "INSERT INTO push_tokens VALUES (?, ?, ?, ?)",
+            ("aa" * 32, "member-1", "sandbox", "2026-10-01T10:00:00Z"),
+        )
+
+    store = PilotStore(str(database))
+    store.close()
+
+    with sqlite3.connect(database) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(push_tokens)")}
+        language = connection.execute(
+            "SELECT language FROM push_tokens WHERE token = ?", ("aa" * 32,)
+        ).fetchone()[0]
+    assert "language" in columns
+    assert language == "id"
 
 
 def test_pilot_rejects_invalid_credentials_and_roles() -> None:

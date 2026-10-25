@@ -80,7 +80,10 @@ struct ProfileView: View {
                             Text(language.displayName).tag(language)
                         }
                     }
-                    .onChange(of: model.language) { _, _ in profile.persist() }
+                    .onChange(of: model.language) { _, _ in
+                        profile.persist()
+                        app.pilot.updateLanguage()
+                    }
                 }
 
                 if !model.pilotConnected {

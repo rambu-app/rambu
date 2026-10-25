@@ -297,3 +297,4 @@ class PushTokenRequest(BaseModel):
 
     token: str
     environment: Literal["sandbox", "production"] = "sandbox"
+    language: AppLanguage = "id"

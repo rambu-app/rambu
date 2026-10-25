@@ -136,6 +136,7 @@ class PilotStore:
                     token TEXT PRIMARY KEY,
                     member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
                     environment TEXT NOT NULL,
+                    language TEXT NOT NULL DEFAULT 'id' CHECK(language IN ('id', 'en')),
                     updated_at TEXT NOT NULL
                 );
 
@@ -179,6 +180,7 @@ class PilotStore:
                 """
             )
             self._ensure_protection_session_metadata_columns()
+            self._ensure_push_token_language_column()
 
     def close(self) -> None:
         with self._lock:
@@ -828,6 +830,19 @@ class PilotStore:
                 """
             )
 
+    def _ensure_push_token_language_column(self) -> None:
+        columns = {
+            row["name"]
+            for row in self._connection.execute("PRAGMA table_info(push_tokens)")
+        }
+        if "language" not in columns:
+            self._connection.execute(
+                """
+                ALTER TABLE push_tokens
+                ADD COLUMN language TEXT NOT NULL DEFAULT 'id'
+                """
+            )
+
     def profile(self, token: str) -> PilotProfile:
         member = self.authenticate(token)
         people = self._family_members(member["family_id"])
@@ -850,42 +865,79 @@ class PilotStore:
             session_status=session_status,
         )
 
-    def register_push_token(self, access_token: str, push_token: str, environment: str) -> None:
+    def register_push_token(
+        self,
+        access_token: str,
+        push_token: str,
+        environment: str,
+        language: str = "id",
+    ) -> None:
         member = self.authenticate(access_token)
         cleaned = push_token.strip().lower()
         if not cleaned or any(character not in "0123456789abcdef" for character in cleaned):
             raise ValueError("Token APNs tidak valid.")
         if environment not in {"sandbox", "production"}:
             raise ValueError("Lingkungan APNs tidak valid.")
+        if language not in {"id", "en"}:
+            raise ValueError("Bahasa tidak valid.")
         with self._lock, self._connection:
             self._connection.execute(
                 """
-                INSERT INTO push_tokens (token, member_id, environment, updated_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO push_tokens (token, member_id, environment, language, updated_at)
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(token) DO UPDATE SET
                     member_id = excluded.member_id,
                     environment = excluded.environment,
+                    language = excluded.language,
                     updated_at = excluded.updated_at
                 """,
-                (cleaned, member["id"], environment, _iso(_now())),
+                (cleaned, member["id"], environment, language, _iso(_now())),
             )
+
+    def notification_targets(
+        self, access_token: str, target_role: str, environment: str
+    ) -> dict[str, list[str]]:
+        member = self.authenticate(access_token)
+        return self._family_notification_targets(
+            member["family_id"], target_role, environment
+        )
 
     def notification_tokens(
         self, access_token: str, target_role: str, environment: str
     ) -> list[str]:
-        member = self.authenticate(access_token)
+        targets = self.notification_targets(access_token, target_role, environment)
+        return [token for tokens in targets.values() for token in tokens]
+
+    def _family_notification_targets(
+        self, family_id: str, target_role: str, environment: str
+    ) -> dict[str, list[str]]:
         with self._lock:
             rows = self._connection.execute(
                 """
-                SELECT push_tokens.token
+                SELECT push_tokens.token, push_tokens.language
                 FROM push_tokens
                 JOIN members ON members.id = push_tokens.member_id
                 WHERE members.family_id = ? AND members.role = ?
                   AND push_tokens.environment = ?
                 """,
-                (member["family_id"], target_role, environment),
+                (family_id, target_role, environment),
             ).fetchall()
-        return [row["token"] for row in rows]
+        targets: dict[str, list[str]] = {}
+        for row in rows:
+            targets.setdefault(row["language"], []).append(row["token"])
+        return targets
+
+    def protection_notification_targets(
+        self,
+        puck_token: str,
+        session_id: str,
+        target_role: str,
+        environment: str,
+    ) -> dict[str, list[str]]:
+        family_id = self._protection_notification_family(
+            puck_token, session_id, target_role
+        )
+        return self._family_notification_targets(family_id, target_role, environment)
 
     def protection_notification_tokens(
         self,
@@ -894,6 +946,14 @@ class PilotStore:
         target_role: str,
         environment: str,
     ) -> list[str]:
+        targets = self.protection_notification_targets(
+            puck_token, session_id, target_role, environment
+        )
+        return [token for tokens in targets.values() for token in tokens]
+
+    def _protection_notification_family(
+        self, puck_token: str, session_id: str, target_role: str
+    ) -> str:
         if target_role not in {"parent", "guardian"}:
             raise ValueError("Peran penerima notifikasi tidak valid.")
         puck = self.authenticate_puck(puck_token)
@@ -906,17 +966,7 @@ class PilotStore:
                 raise MissingProtectionSessionError("Sesi perlindungan tidak ditemukan.")
             if session["family_id"] != puck["family_id"] or session["puck_id"] != puck["id"]:
                 raise AuthorizationError("Sesi perlindungan berasal dari keluarga lain.")
-            rows = self._connection.execute(
-                """
-                SELECT push_tokens.token
-                FROM push_tokens
-                JOIN members ON members.id = push_tokens.member_id
-                WHERE members.family_id = ? AND members.role = ?
-                  AND push_tokens.environment = ?
-                """,
-                (puck["family_id"], target_role, environment),
-            ).fetchall()
-        return [row["token"] for row in rows]
+        return puck["family_id"]
 
     def upsert_protection_alert(
         self, puck_token: str, session_id: str
