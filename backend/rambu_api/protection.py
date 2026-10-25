@@ -27,7 +27,7 @@ CONTRACT_FAILURE_CODES = frozenset({"invalid_json", "invalid_response"})
 
 
 class Analyzer(Protocol):
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment: ...
+    def analyze(self, transcript: str, final: bool, language: str = "id") -> RiskAssessment: ...
 
 
 class ProtectionService:
@@ -59,6 +59,7 @@ class ProtectionService:
             request.channel,
             request.title,
             request.caller_detail,
+            request.language,
         )
 
     def create_puck_session(
@@ -71,6 +72,7 @@ class ProtectionService:
             request.channel,
             request.title,
             request.caller_detail,
+            request.language,
         )
 
     def get_parent_session(
@@ -113,7 +115,7 @@ class ProtectionService:
             return current
 
         try:
-            text = self._transcribe_temporary_chunk(audio).strip()
+            text = self._transcribe_temporary_chunk(audio, current.language).strip()
         except Exception:
             self.store.fail_protection_session(
                 puck_token,
@@ -192,7 +194,9 @@ class ProtectionService:
         try:
             for attempt in range(2):
                 try:
-                    assessment = self.analyzer.analyze(transcript, final=final)
+                    assessment = self.analyzer.analyze(
+                        transcript, final=final, language=current.language
+                    )
                     if assessment.risk_level == "needs_review":
                         assessment = assessment.model_copy(update={"risk_level": "high_risk"})
                     return assessment
@@ -238,13 +242,13 @@ class ProtectionService:
     def cancel_session(self, parent_token: str, session_id: str) -> None:
         self.store.delete_protection_session(parent_token, session_id)
 
-    def _transcribe_temporary_chunk(self, audio: bytes) -> str:
+    def _transcribe_temporary_chunk(self, audio: bytes, language: str = "id") -> str:
         temporary_path: Path | None = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temporary:
                 temporary.write(audio)
                 temporary_path = Path(temporary.name)
-            return self.transcriber.transcribe(temporary_path)
+            return self.transcriber.transcribe(temporary_path, language=language)
         finally:
             if temporary_path is not None:
                 temporary_path.unlink(missing_ok=True)

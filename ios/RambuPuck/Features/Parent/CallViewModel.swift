@@ -214,7 +214,8 @@ final class CallViewModel {
         let context = CallContext(
             id: session.id,
             metadata: session.metadata,
-            startedAt: session.startedAt
+            startedAt: session.startedAt,
+            language: state.language
         )
         let sessionID = session.id
         let task = Task { [weak self] in

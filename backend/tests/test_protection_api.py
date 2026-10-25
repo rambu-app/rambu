@@ -20,17 +20,21 @@ class TextTranscriber:
     def __init__(self, text: str = "Halo") -> None:
         self.text = text
         self.calls = 0
+        self.languages: list[str] = []
 
-    def transcribe(self, path: Path) -> str:
+    def transcribe(self, path: Path, language: str = "id") -> str:
         self.calls += 1
+        self.languages.append(language)
         return self.text
 
 
 class LowRiskAnalyzer:
     def __init__(self, error: Exception | None = None) -> None:
         self.error = error
+        self.languages: list[str] = []
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(self, transcript: str, final: bool, language: str = "id") -> RiskAssessment:
+        self.languages.append(language)
         if self.error is not None:
             raise self.error
         return RiskAssessment(
@@ -43,7 +47,9 @@ class LowRiskAnalyzer:
 
 
 class HighRiskAnalyzer:
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         return RiskAssessment(
             risk_level="high_risk",
             signals=["secret_code", "transfer"],
@@ -59,7 +65,9 @@ class SequenceAnalyzer:
     def __init__(self, values: list[RiskAssessment | Exception]) -> None:
         self.values = values
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         value = self.values.pop(0)
         if isinstance(value, Exception):
             raise value
@@ -70,7 +78,9 @@ class BlockingAnalyzer:
     def __init__(self) -> None:
         self.release = threading.Event()
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: str = "id"
+    ) -> RiskAssessment:
         self.release.wait(timeout=5)
         return danger_assessment()
 
@@ -725,6 +735,29 @@ def test_protection_routes_complete_authenticated_parent_and_puck_flow() -> None
         f"/api/protection/sessions/{session_id}", headers=auth(parent.access_token)
     )
     assert deleted.status_code == 204
+
+
+def test_english_protection_session_persists_and_drives_detection_language() -> None:
+    analyzer = LowRiskAnalyzer()
+    client, store, transcriber, _ = build_client(analyzer=analyzer)
+    parent = store.create_family("Mrs Taylor")
+    puck = store.pair_puck(parent.invite_code or "", "Living room Mac")
+
+    created = client.post(
+        "/api/protection/sessions",
+        headers=auth(parent.access_token),
+        json={**session_payload(), "language": "en"},
+    )
+    assert created.status_code == 201
+    assert created.json()["language"] == "en"
+    claimed = client.get("/api/pucks/sessions/active", headers=auth(puck.access_token))
+    assert claimed.json()["language"] == "en"
+
+    uploaded = upload_chunk(client, puck.access_token, created.json()["id"], sequence=0)
+
+    assert uploaded.status_code == 200
+    assert transcriber.languages == ["en"]
+    assert analyzer.languages == ["en"]
 
 
 def test_puck_created_session_pushes_parent_once_and_not_guardian() -> None:

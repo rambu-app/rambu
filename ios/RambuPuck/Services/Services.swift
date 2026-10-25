@@ -13,6 +13,19 @@ struct CallContext: Sendable {
     let id: UUID
     let metadata: CallMetadata
     let startedAt: Date
+    let language: AppLanguage
+
+    init(
+        id: UUID,
+        metadata: CallMetadata,
+        startedAt: Date,
+        language: AppLanguage = .indonesian
+    ) {
+        self.id = id
+        self.metadata = metadata
+        self.startedAt = startedAt
+        self.language = language
+    }
 }
 
 /// Hasil pemeriksaan satu potongan audio ±5 detik dari puck.

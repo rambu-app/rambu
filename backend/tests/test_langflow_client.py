@@ -204,7 +204,26 @@ def test_analysis_mode_matches_final_flag(final, expected_mode) -> None:
     assert json.loads(calls[0]["input_value"]) == {
         "masked_transcript": "Halo.",
         "analysis_mode": expected_mode,
+        "language": "id",
     }
+
+
+def test_english_language_is_sent_and_explicit_secret_request_is_upgraded() -> None:
+    calls: list[dict[str, object]] = []
+
+    def transport(_url, _headers, payload):
+        calls.append(payload)
+        return envelope(assessment(risk_level="low", signals=[], evidence=[]))
+
+    client = LangflowClient("http://localhost:7861", "rambu", "secret", transport=transport)
+
+    result = client.analyze("Please read me the OTP now.", final=False, language="en")
+
+    assert json.loads(calls[0]["input_value"])["language"] == "en"
+    assert result.risk_level == "high_risk"
+    assert result.signals == ["secret_code"]
+    assert result.evidence[0].quote.lower() == "read me the otp"
+    assert "hang up" in result.recommended_action.lower()
 
 
 @pytest.mark.parametrize(

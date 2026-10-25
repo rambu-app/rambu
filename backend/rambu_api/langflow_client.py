@@ -1,7 +1,7 @@
 import json
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -10,13 +10,20 @@ from pydantic import ValidationError
 from .models import Evidence, RiskAssessment, validate_assessment
 
 
-_SECRET_TERM = r"(?:kode\s+)?(?:otp|pin)(?:-?nya)?|kata\s+sandi|password|cvv"
+AppLanguage = Literal["id", "en"]
+
+_SECRET_TERM = (
+    r"(?:kode\s+)?(?:otp|pin)(?:-?nya)?|kata\s+sandi|password|cvv|passcode|"
+    r"security\s+code|verification\s+code"
+)
 _SECRET_REQUEST = (
     r"(?:tolong\s+)?(?:sebutkan|bacakan|berikan|kirimkan|bagikan|masukkan|"
-    r"input(?:kan)?|kasih(?:kan)?|minta)"
+    r"input(?:kan)?|kasih(?:kan)?|minta|read(?:\s+me)?|tell(?:\s+me)?|give(?:\s+me)?|"
+    r"send(?:\s+me)?|share|enter|type|provide)"
 )
 _NEGATED_REQUEST = re.compile(
-    r"\b(?:jangan|tidak\s+usah|tidak\s+boleh|dilarang|tolak|menolak)\b",
+    r"\b(?:jangan|tidak\s+usah|tidak\s+boleh|dilarang|tolak|menolak|do\s+not|"
+    r"don't|never|must\s+not|shouldn't|refuse|refused|won't)\b",
     flags=re.IGNORECASE,
 )
 _ACTIVE_SECRET_PATTERNS = (
@@ -81,7 +88,9 @@ class LangflowClient:
         self.api_key = api_key
         self.transport = transport or self._http_transport
 
-    def analyze(self, transcript: str, final: bool) -> RiskAssessment:
+    def analyze(
+        self, transcript: str, final: bool, language: AppLanguage = "id"
+    ) -> RiskAssessment:
         headers = {"Content-Type": "application/json"}
         headers["x-api-key"] = self.api_key
         payload = {
@@ -89,6 +98,7 @@ class LangflowClient:
                 {
                     "masked_transcript": transcript,
                     "analysis_mode": "final" if final else "live",
+                    "language": language,
                 },
                 ensure_ascii=False,
             ),
@@ -124,7 +134,7 @@ class LangflowClient:
                 url,
                 reason="response_not_json",
             ) from error
-        return _extract_assessment(response, transcript, url)
+        return _extract_assessment(response, transcript, url, language)
 
     def probe(self) -> None:
         assessment = self.analyze(
@@ -155,7 +165,9 @@ class LangflowClient:
             return json.loads(response.read().decode("utf-8"))
 
 
-def _extract_assessment(value: Any, transcript: str, endpoint: str) -> RiskAssessment:
+def _extract_assessment(
+    value: Any, transcript: str, endpoint: str, language: AppLanguage = "id"
+) -> RiskAssessment:
     try:
         text = value["outputs"][0]["outputs"][0]["results"]["message"]["text"]
     except (KeyError, IndexError, TypeError) as error:
@@ -184,7 +196,7 @@ def _extract_assessment(value: Any, transcript: str, endpoint: str) -> RiskAsses
     try:
         assessment = RiskAssessment.model_validate(candidate)
         assessment = validate_assessment(assessment, transcript)
-        return _enforce_explicit_secret_request(assessment, transcript)
+        return _enforce_explicit_secret_request(assessment, transcript, language)
     except ValidationError as error:
         raise LangflowFailure(
             "invalid_response",
@@ -210,6 +222,7 @@ def _extract_assessment(value: Any, transcript: str, endpoint: str) -> RiskAsses
 def _enforce_explicit_secret_request(
     assessment: RiskAssessment,
     transcript: str,
+    language: AppLanguage = "id",
 ) -> RiskAssessment:
     if assessment.risk_level == "high_risk":
         return assessment
@@ -240,9 +253,15 @@ def _enforce_explicit_secret_request(
             "risk_level": "high_risk",
             "signals": signals,
             "evidence": evidence,
-            "explanation": "Penelepon meminta kode rahasia yang tidak boleh dibagikan.",
+            "explanation": (
+                "The caller is asking for a secret code that must not be shared."
+                if language == "en"
+                else "Penelepon meminta kode rahasia yang tidak boleh dibagikan."
+            ),
             "recommended_action": (
-                "Akhiri panggilan, jangan berikan kode, dan hubungi institusi lewat kanal resmi."
+                "Hang up, do not share the code, and contact the organization through an official channel."
+                if language == "en"
+                else "Akhiri panggilan, jangan berikan kode, dan hubungi institusi lewat kanal resmi."
             ),
         }
     )

@@ -1,11 +1,13 @@
 import wave
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Literal, Protocol
+
+AppLanguage = Literal["id", "en"]
 
 
 class Transcriber(Protocol):
     def probe(self) -> None: ...
-    def transcribe(self, path: Path) -> str: ...
+    def transcribe(self, path: Path, language: AppLanguage = "id") -> str: ...
 
 
 class FasterWhisperTranscriber:
@@ -28,7 +30,7 @@ class FasterWhisperTranscriber:
     def probe(self) -> None:
         self._load_model()
 
-    def transcribe(self, path: Path) -> str:
+    def transcribe(self, path: Path, language: AppLanguage = "id") -> str:
         # Runtime puck chunks are WAV. Dataset evaluation also accepts formats
         # supported by faster-whisper/PyAV, including MP3.
         if path.suffix.lower() == ".wav":
@@ -41,7 +43,7 @@ class FasterWhisperTranscriber:
 
         segments, _ = model.transcribe(
             str(path),
-            language="id",
+            language=language,
             vad_filter=True,
             beam_size=5,
         )

@@ -154,6 +154,7 @@ class PilotStore:
                     parent_id TEXT NOT NULL REFERENCES members(id),
                     call_id TEXT NOT NULL,
                     channel TEXT CHECK(channel IN ('cellular', 'whatsapp')),
+                    language TEXT NOT NULL DEFAULT 'id' CHECK(language IN ('id', 'en')),
                     status TEXT NOT NULL CHECK(status IN (
                         'waiting_for_puck', 'listening', 'completed', 'error'
                     )),
@@ -328,12 +329,15 @@ class PilotStore:
         channel: str | None,
         title: str | None = None,
         caller_detail: str | None = None,
+        language: str = "id",
     ) -> ProtectionSessionSnapshot:
         member = self.authenticate(token)
         if member["role"] != "parent":
             raise AuthorizationError("Hanya orang tua yang dapat memulai perlindungan.")
         if channel not in {None, "cellular", "whatsapp"}:
             raise ValueError("Kanal panggilan tidak valid.")
+        if language not in {"id", "en"}:
+            raise ValueError("Bahasa tidak valid.")
         normalized_call_id = str(call_id).lower()
         with self._lock:
             existing = self._connection.execute(
@@ -362,8 +366,8 @@ class PilotStore:
                     """
                     INSERT INTO protection_sessions (
                         id, family_id, parent_id, call_id, title, caller_detail,
-                        channel, status, started_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'waiting_for_puck', ?)
+                        channel, language, status, started_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'waiting_for_puck', ?)
                     """,
                     (
                         session_id,
@@ -373,6 +377,7 @@ class PilotStore:
                         title or "Panggilan terdeteksi",
                         caller_detail or "Nomor tidak tersedia",
                         channel,
+                        language,
                         _iso(started_at),
                     ),
                 )
@@ -389,10 +394,13 @@ class PilotStore:
         channel: str | None,
         title: str | None = None,
         caller_detail: str | None = None,
+        language: str = "id",
     ) -> tuple[ProtectionSessionSnapshot, bool]:
         puck = self.authenticate_puck(token)
         if channel not in {None, "cellular", "whatsapp"}:
             raise ValueError("Kanal panggilan tidak valid.")
+        if language not in {"id", "en"}:
+            raise ValueError("Bahasa tidak valid.")
         normalized_call_id = str(call_id).lower()
         now = _iso(_now())
         with self._lock:
@@ -429,8 +437,8 @@ class PilotStore:
                     """
                     INSERT INTO protection_sessions (
                         id, family_id, parent_id, call_id, title, caller_detail,
-                        channel, status, started_at, puck_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'listening', ?, ?)
+                        channel, language, status, started_at, puck_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'listening', ?, ?)
                     """,
                     (
                         session_id,
@@ -440,6 +448,7 @@ class PilotStore:
                         title or "Panggilan terdeteksi",
                         caller_detail or "Nomor tidak tersedia",
                         channel,
+                        language,
                         _iso(started_at),
                         puck["id"],
                     ),
@@ -769,6 +778,7 @@ class PilotStore:
             title=row["title"],
             caller_detail=row["caller_detail"],
             channel=row["channel"],
+            language=row["language"],
             status=row["status"],
             puck_connected=row["puck_id"] is not None,
             masked_transcript=row["masked_transcript"],
@@ -808,6 +818,13 @@ class PilotStore:
                 """
                 ALTER TABLE protection_sessions
                 ADD COLUMN caller_detail TEXT NOT NULL DEFAULT 'Nomor tidak tersedia'
+                """
+            )
+        if "language" not in columns:
+            self._connection.execute(
+                """
+                ALTER TABLE protection_sessions
+                ADD COLUMN language TEXT NOT NULL DEFAULT 'id'
                 """
             )
 
