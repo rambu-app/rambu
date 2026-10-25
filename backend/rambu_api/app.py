@@ -134,7 +134,12 @@ def create_app(
     push_environment = os.getenv("APNS_ENVIRONMENT", "sandbox")
 
     def send_protection_warning(
-        tokens: list[str], title: str, body: str, call_id: str, session_id: str
+        tokens: list[str],
+        title: str,
+        body: str,
+        call_id: str,
+        session_id: str,
+        urgent: bool,
     ) -> None:
         if not tokens:
             PUSH_LOGGER.error(
@@ -143,7 +148,7 @@ def create_app(
             )
             return
         try:
-            pushes.send(tokens, title, body, call_id)
+            pushes.send(tokens, title, body, call_id, urgent=urgent)
         except Exception:
             PUSH_LOGGER.exception("protection push failed session=%s", session_id)
 
@@ -165,6 +170,7 @@ def create_app(
                         f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
                         "Ketuk untuk melihat kalimat pemicu dan memutuskan.",
                         str(alert.id),
+                        urgent=alert.level in {"review", "danger"},
                     )
                 except Exception:
                     PUSH_LOGGER.exception("guardian push failed session=%s", session_id)
@@ -173,7 +179,14 @@ def create_app(
                 token, session_id, "parent", push_environment
             )
             title, body = _protection_warning(snapshot)
-            send_protection_warning(targets, title, body, str(snapshot.call_id), snapshot.id)
+            send_protection_warning(
+                targets,
+                title,
+                body,
+                str(snapshot.call_id),
+                snapshot.id,
+                urgent=True,
+            )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -425,6 +438,7 @@ def create_app(
                     "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
                     str(snapshot.call_id),
                     snapshot.id,
+                    False,
                 )
             return snapshot
         except HTTPException:
@@ -456,6 +470,7 @@ def create_app(
                     "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
                     str(snapshot.call_id),
                     snapshot.id,
+                    False,
                 )
             return snapshot
         except HTTPException:
@@ -587,6 +602,7 @@ def create_app(
                 background_tasks.add_task(
                     pushes.send, targets, f"{alert.level.title()}: {alert.parent.name} mungkin sedang ditipu",
                     "Ketuk untuk melihat kalimat pemicu dan memutuskan.", str(alert.id),
+                    urgent=alert.level in {"review", "danger"},
                 )
             return alert
         except HTTPException:
@@ -627,7 +643,14 @@ def create_app(
             targets = pilots.notification_tokens(token, "parent", push_environment)
             title = f"{decision.by.name}: {'ini penipuan' if decision.verdict == 'scam' else 'telepon aman'}"
             body = "Tutup telepon sekarang." if decision.verdict == "scam" else "Tetap jangan beri kode atau transfer."
-            background_tasks.add_task(pushes.send, targets, title, body, alert_id)
+            background_tasks.add_task(
+                pushes.send,
+                targets,
+                title,
+                body,
+                alert_id,
+                urgent=decision.verdict == "scam",
+            )
             return PilotDecisionResult(accepted=True, decision=decision)
         except DecisionConflict as error:
             body = PilotDecisionResult(accepted=False, decision=error.decision)

@@ -77,10 +77,17 @@ class BlockingAnalyzer:
 
 class RecordingProtectionPushSender:
     def __init__(self) -> None:
-        self.sent: list[tuple[list[str], str, str, str]] = []
+        self.sent: list[tuple[list[str], str, str, str, bool]] = []
 
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None:
-        self.sent.append((tokens, title, body, alert_id))
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None:
+        self.sent.append((tokens, title, body, alert_id, urgent))
 
     def close(self) -> None:
         pass
@@ -242,6 +249,7 @@ def test_high_risk_chunk_pushes_parent_once_when_risk_increases() -> None:
             "Bahaya: terindikasi penipuan",
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
             session_payload()["call_id"],
+            True,
         )
     ]
 
@@ -278,6 +286,7 @@ def test_risky_chunk_persists_alert_and_pushes_guardian_without_parent_publish()
     assert alerts[0]["evidence"][0]["speaker"] == "unknown"
     assert [sent[0] for sent in pushes.sent].count(["aa" * 32]) == 1
     assert [sent[0] for sent in pushes.sent].count(["bb" * 32]) == 1
+    assert all(sent[4] is True for sent in pushes.sent)
 
 
 def test_all_risky_chunks_use_red_and_notify_guardian_once() -> None:
@@ -306,6 +315,7 @@ def test_all_risky_chunks_use_red_and_notify_guardian_once() -> None:
     guardian_pushes = [sent for sent in pushes.sent if sent[0] == ["bb" * 32]]
     assert len(guardian_pushes) == 1
     assert "Danger" in guardian_pushes[0][1]
+    assert guardian_pushes[0][4] is True
     alerts = client.get(
         "/api/pilot/alerts", headers=auth(guardian.access_token)
     ).json()
@@ -750,6 +760,7 @@ def test_puck_created_session_pushes_parent_once_and_not_guardian() -> None:
             "Panggilan WhatsApp terdeteksi",
             "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
             session_payload()["call_id"],
+            False,
         )
     ]
 
@@ -821,6 +832,7 @@ def test_puck_joining_parent_session_pushes_parent_once_and_not_guardian() -> No
             "Panggilan WhatsApp terdeteksi",
             "Rambu Puck mulai mendengarkan dan melindungi panggilan ini.",
             session_payload()["call_id"],
+            False,
         )
     ]
 
@@ -1078,6 +1090,7 @@ def test_chunk_upload_responds_before_slow_analysis_and_analysis_completes_later
             "Bahaya: terindikasi penipuan",
             "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
             session_payload()["call_id"],
+            True,
         )
     ]
 

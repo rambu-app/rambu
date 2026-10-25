@@ -12,10 +12,17 @@ from .test_api import StubDemoService
 
 class RecordingPushSender:
     def __init__(self) -> None:
-        self.sent: list[tuple[list[str], str, str, str]] = []
+        self.sent: list[tuple[list[str], str, str, str, bool]] = []
 
-    def send(self, tokens: list[str], title: str, body: str, alert_id: str) -> None:
-        self.sent.append((tokens, title, body, alert_id))
+    def send(
+        self,
+        tokens: list[str],
+        title: str,
+        body: str,
+        alert_id: str,
+        urgent: bool = False,
+    ) -> None:
+        self.sent.append((tokens, title, body, alert_id, urgent))
 
     def close(self) -> None:
         pass
@@ -166,6 +173,7 @@ def test_two_devices_share_alert_and_first_guardian_decision_wins() -> None:
         assert [person["name"] for person in published.json()["recipients"]] == ["Sinta", "Richard"]
         assert pushes.sent[0][0] == ["bb" * 32]
         assert "mungkin sedang ditipu" in pushes.sent[0][1]
+        assert pushes.sent[0][4] is True
 
         duplicate = client.post(
             "/api/pilot/alerts",
@@ -191,6 +199,7 @@ def test_two_devices_share_alert_and_first_guardian_decision_wins() -> None:
         assert accepted.json()["decision"]["by"]["name"] == "Sinta"
         assert pushes.sent[1][0] == ["aa" * 32]
         assert pushes.sent[1][2] == "Tutup telepon sekarang."
+        assert pushes.sent[1][4] is True
 
         rejected = client.post(
             f"/api/pilot/alerts/{alert_payload()['id']}/decision",
@@ -207,6 +216,39 @@ def test_two_devices_share_alert_and_first_guardian_decision_wins() -> None:
         )
         assert ended.status_code == 200
         assert ended.json()["call_ended"] is True
+
+
+def test_safe_decision_push_is_not_urgent() -> None:
+    store = PilotStore(":memory:")
+    pushes = RecordingPushSender()
+    app = create_app(service=StubDemoService(), pilot_store=store, push_sender=pushes)
+
+    with TestClient(app) as client:
+        parent = client.post("/api/pilot/families", json={"parent_name": "Ibu Ratna"}).json()
+        guardian = client.post(
+            "/api/pilot/families/join",
+            json={"code": parent["invite_code"], "name": "Sinta", "relation": "Anak"},
+        ).json()
+        assert client.put(
+            "/api/pilot/push-token",
+            headers=authorization(parent["access_token"]),
+            json={"token": "aa" * 32, "environment": "sandbox"},
+        ).status_code == 204
+        assert client.post(
+            "/api/pilot/alerts",
+            headers=authorization(parent["access_token"]),
+            json=alert_payload(),
+        ).status_code == 201
+
+        accepted = client.post(
+            f"/api/pilot/alerts/{alert_payload()['id']}/decision",
+            headers=authorization(guardian["access_token"]),
+            json={"verdict": "safe"},
+        )
+
+        assert accepted.status_code == 200
+        assert pushes.sent[-1][2] == "Tetap jangan beri kode atau transfer."
+        assert pushes.sent[-1][4] is False
 
 
 def test_pilot_rejects_invalid_credentials_and_roles() -> None:
