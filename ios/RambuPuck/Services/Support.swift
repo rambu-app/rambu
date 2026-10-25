@@ -100,11 +100,11 @@ final class Narrator {
         self.enabled = enabled
     }
 
-    func speak(_ text: String) {
+    func speak(_ text: String, language: AppLanguage = .indonesian) {
         guard enabled else { return }
         synthesizer.stopSpeaking(at: .immediate)
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "id-ID")
+        utterance.voice = AVSpeechSynthesisVoice(language: language.speechCode)
         utterance.rate = 0.46
         synthesizer.speak(utterance)
     }

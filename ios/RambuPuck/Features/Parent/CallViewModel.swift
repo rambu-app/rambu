@@ -46,7 +46,8 @@ final class CallViewModel {
 
     @discardableResult
     func start(_ template: Scenario) -> Task<Void, Never> {
-        let scenario = template.personalized(parentName: state.parent.name)
+        let localized = Scenario.all(language: state.language).first { $0.id == template.id } ?? template
+        let scenario = localized.personalized(parentName: state.parent.name, language: state.language)
         cancelRemoteSession()
         cancelTasks()
         if let old = state.session {
@@ -377,7 +378,8 @@ final class CallViewModel {
         }
         let previous = current.level
 
-        current.heard.append(chunk.line)
+        let line = localizedFixtureLine(for: chunk.line, session: current) ?? chunk.line
+        current.heard.append(line)
         for signal in chunk.signals where !current.signals.contains(signal) {
             current.signals.append(signal)
         }
@@ -414,7 +416,7 @@ final class CallViewModel {
 
         let publishesLocally = !analysis.usesAuthoritativeRemoteAlerts
         let isFirstAlert = publishesLocally && !state.alerts.contains { $0.id == current.id }
-        if publishesLocally, current.level > previous || chunk.line.isFlagged {
+        if publishesLocally, current.level > previous || line.isFlagged {
             let alert = makeAlert(from: current)
             family.publish(alert)
             pilot.publish(alert)
@@ -433,6 +435,14 @@ final class CallViewModel {
         if current.level > previous, state.persona.isParent {
             profile.present(parentWarning(for: current))
         }
+    }
+
+    private func localizedFixtureLine(for line: TranscriptLine, session: CallSession) -> TranscriptLine? {
+        guard let fixtureID = session.metadata.fixtureID,
+              let scenario = Scenario.all(language: state.language)
+                .first(where: { $0.id == fixtureID })?
+                .personalized(parentName: state.parent.name, language: state.language) else { return nil }
+        return scenario.lines.first { $0.id == line.id }
     }
 
     private func completeEndingSession(_ sessionID: UUID) {
@@ -521,15 +531,19 @@ final class CallViewModel {
     }
 
     private func parentWarning(for session: CallSession) -> Toast {
-        let names = state.guardians.map(\.name).formatted(.list(type: .and).locale(Fmt.locale))
-        let delivery = state.guardians.isEmpty ? "Belum ada pengawas terhubung." : "Sudah dikirim ke \(names)."
+        let language = state.language
+        let names = state.guardians.map(\.name).formatted(.list(type: .and).locale(language.locale))
+        let delivery = state.guardians.isEmpty
+            ? L10n.text("Belum ada pengawas terhubung.", language: language)
+            : L10n.format("Sudah dikirim ke %@.", language: language, names)
         let danger = session.level == .danger
         return Toast(
             id: "\(session.id)-\(session.level.rawValue)",
-            title: danger ? "Bahaya: terindikasi penipuan" : "Bahaya: telepon mencurigakan",
+            title: L10n.text(danger ? "Bahaya: terindikasi penipuan" : "Bahaya: telepon mencurigakan", language: language),
             body: danger
-                ? "Hati-hati. Jangan transfer atau sebut kode. \(delivery)"
-                : "\(session.headline). Jangan beri data dulu. \(delivery)",
+                ? L10n.format("Hati-hati. Jangan transfer atau sebut kode. %@", language: language, delivery)
+                : L10n.format("%@ Jangan beri data dulu. %@", language: language,
+                              L10n.text(session.headline, language: language), delivery),
             level: session.level,
             alertID: session.id
         )

@@ -35,6 +35,7 @@
 		54059A3D01E926E13A4F6EE7 /* BackendCallAnalysisSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2D615BE25C1586D42EDBAA /* BackendCallAnalysisSource.swift */; };
 		5F59D4EC7D7E5420CCAF45C7 /* UrgencyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23DF15C38B1752E23E9A027 /* UrgencyFeedback.swift */; };
 		600000000000000000000001 /* rambu-urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = 600000000000000000000002 /* rambu-urgent.caf */; };
+		A11A00000000000000000003 /* en.lproj in Resources */ = {isa = PBXBuildFile; fileRef = A11A00000000000000000004 /* en.lproj */; };
 		5F665C1C1DAD5A302D7732D6 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F4C5FA7C6526844B3B2720 /* OnboardingFlow.swift */; };
 		64DFA0A4A53C7B841B46C9D8 /* HistoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2564934BEF6BC601943839 /* HistoryViews.swift */; };
 		706541C9D3A3FC780CF75DBC /* Scenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = F507FBDD67EC089971B60425 /* Scenarios.swift */; };
@@ -123,6 +124,7 @@
 		519F314BDE69004DF091C360 /* CallActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallActivityMonitor.swift; sourceTree = "<group>"; };
 		5388DEE6DA8A8DCC072B05AF /* ToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastOverlay.swift; sourceTree = "<group>"; };
 		600000000000000000000002 /* rambu-urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "rambu-urgent.caf"; sourceTree = "<group>"; };
+		A11A00000000000000000004 /* en.lproj */ = {isa = PBXFileReference; lastKnownFileType = folder; path = en.lproj; sourceTree = "<group>"; };
 		584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallStatusView.swift; sourceTree = "<group>"; };
 		6197E4EFD4B427356A6CE399 /* PilotViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotViewModelTests.swift; sourceTree = "<group>"; };
 		629638BD82BF294DA2FC4031 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
@@ -236,6 +238,7 @@
 		600000000000000000000003 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A11A00000000000000000004 /* en.lproj */,
 				600000000000000000000002 /* rambu-urgent.caf */,
 			);
 			path = Resources;
@@ -453,6 +456,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
+				en,
 				id,
 			);
 			mainGroup = 5BC1FC6B341EE206FF06FBD3;
@@ -475,6 +479,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D32AB0A138E33C90D9CF4041 /* Assets.xcassets in Resources */,
+				A11A00000000000000000003 /* en.lproj in Resources */,
 				600000000000000000000001 /* rambu-urgent.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

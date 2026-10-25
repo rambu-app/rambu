@@ -89,11 +89,11 @@ struct StepScaffold<Content: View, Actions: View>: View {
                         StepProgress(current: progress.0, total: progress.1)
                             .padding(.bottom, 4)
                     }
-                    Text(title).font(Brand.display(.largeTitle)).foregroundStyle(Brand.ink)
+                    Text(LocalizedStringKey(title)).font(Brand.display(.largeTitle)).foregroundStyle(Brand.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     if let message {
-                        Text(message).font(.body).foregroundStyle(Brand.ink2)
+                        Text(LocalizedStringKey(message)).font(.body).foregroundStyle(Brand.ink2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -121,7 +121,7 @@ struct NameField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let title {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink2)
+                Text(LocalizedStringKey(title)).font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink2)
             }
             TextField(prompt, text: $text)
                 .font(.title3.weight(.semibold))
@@ -215,6 +215,13 @@ struct WelcomeStep: View {
         .scrollBounceBehavior(.basedOnSize)
         .safeAreaBar(edge: .bottom) {
             VStack(spacing: 10) {
+                Picker("Bahasa", selection: Bindable(model).language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Bahasa aplikasi")
                 Button {
                     model.persona = .ratna
                     model.onboardingStep = model.allowsDemoControls ? .tutorial : .parentProfile

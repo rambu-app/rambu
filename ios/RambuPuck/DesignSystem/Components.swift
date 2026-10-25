@@ -32,7 +32,7 @@ struct WideLabel: View {
     var body: some View {
         HStack(spacing: 8) {
             if let systemImage { Image(systemName: systemImage) }
-            Text(title)
+            Text(LocalizedStringKey(title))
         }
         .font(.headline)
         .frame(maxWidth: .infinity, minHeight: 32)
@@ -92,10 +92,10 @@ struct SectionHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(Brand.display(.headline)).foregroundStyle(Brand.ink)
+            Text(LocalizedStringKey(title)).font(Brand.display(.headline)).foregroundStyle(Brand.ink)
             Spacer()
             if let trailing {
-                Text(trailing).font(.subheadline).foregroundStyle(Brand.ink3)
+                Text(LocalizedStringKey(trailing)).font(.subheadline).foregroundStyle(Brand.ink3)
             }
         }
         .padding(.horizontal, 4)

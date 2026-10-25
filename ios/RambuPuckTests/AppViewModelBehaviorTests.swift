@@ -5,7 +5,7 @@ import Testing
 @MainActor
 struct AppViewModelBehaviorTests {
     private func makeModel(persona: Persona = .ratna) -> AppViewModel {
-        AppViewModel(
+        let model = AppViewModel(
             persona: persona,
             onboardingComplete: true,
             allowsDemoControls: true,
@@ -14,6 +14,23 @@ struct AppViewModelBehaviorTests {
             notifications: false,
             speech: false
         )
+        model.state.language = .indonesian
+        return model
+    }
+
+    @Test("English risk warnings are personalized and contain no Indonesian operational copy")
+    func englishParentWarning() async throws {
+        let model = makeModel()
+        model.state.language = .english
+        model.state.parent = model.state.parent.renamed("Mrs Taylor")
+
+        await model.call.start(.bankOTP).value
+
+        let warning = try #require(model.state.toast)
+        #expect(warning.title == "Danger: possible scam")
+        #expect(warning.body == "Be careful. Do not transfer money or share codes. Sent to Sinta and Richard.")
+        #expect(model.state.session?.metadata.title == "Caller claiming to be from Sentosa Bank")
+        #expect(model.state.session?.heard.first?.text.contains("Mrs Taylor") == true)
     }
 
     @Test("Telepon wajar tidak pernah dikirim ke pengawas")
@@ -106,7 +123,7 @@ struct AppViewModelBehaviorTests {
 
     @Test("Tingkat risiko tidak pernah turun selama satu panggilan")
     func levelIsMonotonic() async throws {
-        for scenario in Scenario.all {
+        for scenario in Scenario.all() {
             let context = CallContext(id: UUID(), metadata: scenario.callMetadata, startedAt: .now)
             var levels: [RiskLevel] = []
             for try await chunk in ScenarioAnalysis(interval: .zero, initialDelay: .zero).assessments(for: context) {

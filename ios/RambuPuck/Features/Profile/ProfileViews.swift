@@ -74,6 +74,15 @@ struct ProfileView: View {
                     .tint(Brand.teal)
                 }
 
+                Section("Bahasa") {
+                    Picker("Bahasa aplikasi", selection: Bindable(model).language) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .onChange(of: model.language) { _, _ in profile.persist() }
+                }
+
                 if !model.pilotConnected {
                     Section("Nama") {
                         TextField("Nama panggilan", text: $name)

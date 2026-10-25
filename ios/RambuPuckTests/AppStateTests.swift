@@ -71,6 +71,24 @@ struct AppStateTests {
         #expect(state.guardians == guardians)
     }
 
+    @Test("English scam scenarios use English copy and the protected parent's name")
+    func englishScenariosArePersonalized() throws {
+        let template = try #require(Scenario.all(language: .english).first { $0.id == "bank-otp" })
+        let scenario = template.personalized(parentName: "Mrs Taylor", language: .english)
+
+        #expect(scenario.title == "Caller claiming to be from Sentosa Bank")
+        #expect(scenario.lines.first?.text.contains("Mrs Taylor") == true)
+        #expect(scenario.lines.first?.text.contains("Ibu Ratna") == false)
+        #expect(scenario.lines.flatMap(\.signals).contains(.impersonation))
+        #expect(scenario.lines.flatMap(\.signals).contains(.secretCode))
+    }
+
+    @Test("English resources localize dynamic application copy")
+    func englishResourceLookup() {
+        #expect(L10n.text("Profil", language: .english) == "Profile")
+        #expect(L10n.text("Profil", language: .indonesian) == "Profil")
+    }
+
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")
     func groupsOverlappingEvidenceWithoutRewritingSource() {
         let lines = [

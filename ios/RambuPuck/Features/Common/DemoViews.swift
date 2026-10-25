@@ -13,7 +13,7 @@ struct ScenarioPicker: View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(Scenario.all) { scenario in
+                    ForEach(Scenario.all(language: model.language)) { scenario in
                         Button {
                             dismiss()
                             call.start(scenario)
@@ -103,7 +103,7 @@ struct DemoSheet: View {
 
                 if model.persona.isParent, model.onboardingComplete {
                     Section("Simulasi telepon") {
-                        ForEach(Scenario.all) { scenario in
+                        ForEach(Scenario.all(language: model.language)) { scenario in
                             Button {
                                 dismiss()
                                 call.start(scenario)

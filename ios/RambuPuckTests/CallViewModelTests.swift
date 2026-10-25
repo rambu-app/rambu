@@ -9,7 +9,7 @@ struct CallViewModelTests {
         escalationDelay: Duration = .seconds(60),
         speakerCheckDelay: Duration = .seconds(3)
     ) -> (AppState, CallViewModel) {
-        let state = AppState(onboardingComplete: true, allowsDemoControls: true)
+        let state = AppState(onboardingComplete: true, language: .indonesian, allowsDemoControls: true)
         let profile = ProfileViewModel(
             state: state,
             notifier: RambuNotifier(enabled: false),
