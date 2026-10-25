@@ -66,7 +66,7 @@ struct GuardianProfileStep: View {
                 HStack(spacing: 8) {
                     ForEach(relations, id: \.self) { option in
                         Button { relation = option } label: {
-                            Text(option)
+                            Text(LocalizedStringKey(option))
                                 .font(.headline)
                                 .foregroundStyle(relation == option ? .white : Brand.ink)
                                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -107,8 +107,19 @@ struct GuardianWaitingStep: View {
         StepScaffold(
             title: connected ? "Terhubung" : "Menunggu izin",
             message: connected
-                ? "Anda menjaga \(model.parent.name) bersama \(partner.name). Cukup satu yang menjawab."
-                : "\(model.parent.name) perlu mengizinkan di HP-nya."
+                ? L10n.format(
+                    "guardian.protecting_together",
+                    fallback: "Anda menjaga %@ bersama %@. Cukup satu yang menjawab.",
+                    language: model.language,
+                    model.parent.name,
+                    partner.name
+                )
+                : L10n.format(
+                    "guardian.needs_approval",
+                    fallback: "%@ perlu mengizinkan di HP-nya.",
+                    language: model.language,
+                    model.parent.name
+                )
         ) {
             // Foto asli: Tia Rahayu, Pexels.
             Image("PhotoGuardian")
@@ -120,13 +131,24 @@ struct GuardianWaitingStep: View {
                 .overlay(alignment: .bottom) {
                     Group {
                         if connected {
-                            PushBanner(toast: Toast(id: "contoh", title: "Bahaya: \(model.parent.name) mungkin ditipu",
+                            PushBanner(toast: Toast(id: "contoh", title: L10n.format(
+                                                    "family.alert_title_with_level",
+                                                    fallback: "%@: %@ mungkin sedang ditipu",
+                                                    language: model.language,
+                                                    L10n.text("Bahaya", language: model.language),
+                                                    model.parent.name
+                                                ),
                                                     body: "Ketuk untuk melihat dan memutuskan.", level: .danger, alertID: nil))
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         } else {
                             HStack(spacing: 10) {
                                 ProgressView()
-                                Text("Menunggu \(model.parent.name)…").font(.subheadline.weight(.semibold))
+                                Text(L10n.format(
+                                    "guardian.waiting",
+                                    fallback: "Menunggu %@…",
+                                    language: model.language,
+                                    model.parent.name
+                                )).font(.subheadline.weight(.semibold))
                             }
                             .foregroundStyle(Brand.ink)
                             .padding(.horizontal, 16).padding(.vertical, 12)

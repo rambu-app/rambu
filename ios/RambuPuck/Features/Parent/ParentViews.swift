@@ -96,10 +96,10 @@ private struct PuckStatusCard: View {
             .frame(height: 150)
 
             VStack(spacing: 6) {
-                Label(content.title, systemImage: content.symbol)
+                Label(LocalizedStringKey(content.title), systemImage: content.symbol)
                     .font(Brand.display(.title3))
                     .foregroundStyle(content.tint)
-                Text(content.detail)
+                Text(LocalizedStringKey(content.detail))
                     .font(.subheadline)
                     .foregroundStyle(Brand.ink2)
                     .multilineTextAlignment(.center)
@@ -202,7 +202,7 @@ private struct PuckWifiCard: View {
                 .background(Brand.canvas, in: .rect(cornerRadius: 14, style: .continuous))
 
             if let tokenError {
-                Label(tokenError, systemImage: "exclamationmark.triangle.fill")
+                Label(L10n.text(tokenError, language: model.language), systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.dangerInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -212,7 +212,7 @@ private struct PuckWifiCard: View {
                 Label("Puck sedang masuk Wi-Fi…", systemImage: "wifi")
                     .font(.subheadline).foregroundStyle(Brand.ink2)
             case .failed(let message):
-                Label(message, systemImage: "exclamationmark.triangle.fill")
+                Label(L10n.text(message, language: model.language), systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.dangerInk)
                     .fixedSize(horizontal: false, vertical: true)
             case .idle, .connected:
@@ -259,8 +259,8 @@ private struct PuckStep: View {
                 .frame(width: 36, height: 36)
                 .background(Brand.tealSoft, in: .circle)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline).foregroundStyle(Brand.ink)
-                Text(detail).font(.subheadline).foregroundStyle(Brand.ink2)
+                Text(LocalizedStringKey(title)).font(.headline).foregroundStyle(Brand.ink)
+                Text(LocalizedStringKey(detail)).font(.subheadline).foregroundStyle(Brand.ink2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -333,9 +333,9 @@ private struct ProtectionStatusCard: View {
                 .frame(width: 48, height: 48)
                 .background(Brand.tealSoft, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text(content.title).font(.headline).foregroundStyle(Brand.ink)
+                Text(LocalizedStringKey(content.title)).font(.headline).foregroundStyle(Brand.ink)
                 if !content.detail.isEmpty {
-                    Text(content.detail)
+                    Text(LocalizedStringKey(content.detail))
                         .font(.subheadline)
                         .foregroundStyle(Brand.ink2)
                         .fixedSize(horizontal: false, vertical: true)

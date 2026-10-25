@@ -153,8 +153,21 @@ struct WelcomeStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showPush = false
 
-    private let sample = Toast(id: "sambutan", title: "Bahaya: terindikasi penipuan",
-                               body: "Sudah dikirim ke Sinta dan Richard.", level: .danger, alertID: nil)
+    private var sample: Toast {
+        Toast(
+            id: "sambutan",
+            title: L10n.text("Bahaya: terindikasi penipuan", language: model.language),
+            body: L10n.format(
+                "family.sent_to_two",
+                fallback: "Sudah dikirim ke %@ dan %@.",
+                language: model.language,
+                "Sinta",
+                "Richard"
+            ),
+            level: .danger,
+            alertID: nil
+        )
+    }
 
     var body: some View {
         ScrollView {

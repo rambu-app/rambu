@@ -203,8 +203,11 @@ final class CallViewModel {
         guard let session = state.session, session.id == id, !session.speakerOn else { return }
         profile.present(Toast(
             id: "speaker-\(id)",
-            title: "Nyalakan loudspeaker",
-            body: "Rambu belum mendengar suara telepon. Ketuk Speaker supaya bisa ikut menjaga.",
+            title: L10n.text("Nyalakan loudspeaker", language: state.language),
+            body: L10n.text(
+                "Rambu belum mendengar suara telepon. Ketuk Speaker supaya bisa ikut menjaga.",
+                language: state.language
+            ),
             level: .review,
             alertID: nil
         ))
@@ -294,8 +297,15 @@ final class CallViewModel {
         record(failure, sessionID: sessionID)
         profile.present(Toast(
             id: "analysis-lifecycle-\(sessionID?.uuidString ?? UUID().uuidString)",
-            title: state.allowsDemoControls ? failure.title : "Analisis belum berhasil",
-            body: state.allowsDemoControls ? failure.detail : "Hasil panggilan ini belum tersedia. Periksa koneksi lalu coba lagi.",
+            title: state.allowsDemoControls
+                ? L10n.text(failure.title, language: state.language)
+                : L10n.text("Analisis belum berhasil", language: state.language),
+            body: state.allowsDemoControls
+                ? L10n.text(failure.detail, language: state.language)
+                : L10n.text(
+                    "Hasil panggilan ini belum tersedia. Periksa koneksi lalu coba lagi.",
+                    language: state.language
+                ),
             level: .review,
             alertID: nil
         ))
@@ -317,8 +327,15 @@ final class CallViewModel {
         }
         profile.present(Toast(
             id: "analysis-error-\(sessionID)",
-            title: state.allowsDemoControls ? failure.title : "Analisis belum berhasil",
-            body: state.allowsDemoControls ? failure.detail : "Hasil panggilan ini belum tersedia. Periksa koneksi lalu coba lagi.",
+            title: state.allowsDemoControls
+                ? L10n.text(failure.title, language: state.language)
+                : L10n.text("Analisis belum berhasil", language: state.language),
+            body: state.allowsDemoControls
+                ? L10n.text(failure.detail, language: state.language)
+                : L10n.text(
+                    "Hasil panggilan ini belum tersedia. Periksa koneksi lalu coba lagi.",
+                    language: state.language
+                ),
             level: .review,
             alertID: nil
         ))
@@ -498,16 +515,26 @@ final class CallViewModel {
         if state.persona.isParent {
             profile.present(Toast(
                 id: "unanswered-\(id)",
-                title: "Belum ada jawaban",
-                body: "Pengawas belum menjawab. Jangan lakukan tindakan apa pun dulu.",
+                title: L10n.text("Belum ada jawaban", language: state.language),
+                body: L10n.text(
+                    "Pengawas belum menjawab. Jangan lakukan tindakan apa pun dulu.",
+                    language: state.language
+                ),
                 level: alert.level,
                 alertID: id
             ))
         } else {
             profile.present(Toast(
                 id: "unanswered-\(id)",
-                title: "\(alert.parent.name) menunggu jawaban",
-                body: "Belum ada pengawas yang menjawab peringatan.",
+                title: L10n.format(
+                    "%@ menunggu jawaban",
+                    language: state.language,
+                    alert.parent.name
+                ),
+                body: L10n.text(
+                    "Belum ada pengawas yang menjawab peringatan.",
+                    language: state.language
+                ),
                 level: alert.level,
                 alertID: id
             ))
@@ -540,7 +567,13 @@ final class CallViewModel {
         let danger = session.level == .danger
         return Toast(
             id: "\(session.id)-\(session.level.rawValue)",
-            title: L10n.text(danger ? "Bahaya: terindikasi penipuan" : "Bahaya: telepon mencurigakan", language: language),
+            title: L10n.text(
+                danger ? "alert.scam.title" : "alert.suspicious.title",
+                fallback: danger
+                    ? "Bahaya: terindikasi penipuan"
+                    : "Bahaya: telepon mencurigakan",
+                language: language
+            ),
             body: danger
                 ? L10n.format("Hati-hati. Jangan transfer atau sebut kode. %@", language: language, delivery)
                 : L10n.format("%@ Jangan beri data dulu. %@", language: language,

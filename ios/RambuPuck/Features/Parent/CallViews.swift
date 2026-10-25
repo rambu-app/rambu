@@ -68,6 +68,7 @@ private struct CallBackdrop: View {
 
 private struct CallerHeader: View {
     let session: CallSession
+    @Environment(AppState.self) private var model
 
     var body: some View {
         VStack(spacing: 8) {
@@ -77,10 +78,14 @@ private struct CallerHeader: View {
                 .frame(width: 84, height: 84)
                 .background(.white.opacity(0.14), in: .circle)
                 .accessibilityHidden(true)
-            Text(session.metadata.callerName)
+            Text(session.metadata.fixtureID == nil
+                ? L10n.text(session.metadata.callerName, language: model.language)
+                : session.metadata.callerName)
                 .font(.system(.title, design: .default, weight: .semibold))
                 .foregroundStyle(.white)
-            Text(session.metadata.callerDetail)
+            Text(session.metadata.fixtureID == nil
+                ? L10n.text(session.metadata.callerDetail, language: model.language)
+                : session.metadata.callerDetail)
                 .font(.subheadline).foregroundStyle(.white.opacity(0.7))
             HStack(spacing: 6) {
                 if session.metadata.channel == .whatsapp {
@@ -103,6 +108,7 @@ private struct CallControls: View {
     let speakerOn: Bool
     let onSpeaker: () -> Void
     let onEnd: () -> Void
+    @Environment(AppState.self) private var model
 
     private let others: [(String, String)] = [
         ("FaceTime", "video.fill"),
@@ -120,10 +126,18 @@ private struct CallControls: View {
                         control("Speaker", "speaker.wave.3.fill", on: speakerOn)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(speakerOn ? "Speaker, menyala" : "Speaker, mati. Ketuk untuk menyalakan")
+                    .accessibilityLabel(L10n.text(
+                        speakerOn ? "Speaker, menyala" : "Speaker, mati. Ketuk untuk menyalakan",
+                        language: model.language
+                    ))
                     ForEach(others, id: \.0) { item in
                         control(item.0, item.1, on: false)
-                            .accessibilityLabel("\(item.0), tidak aktif di simulasi")
+                            .accessibilityLabel(L10n.format(
+                                "simulation.control_disabled",
+                                fallback: "%@, tidak aktif di simulasi",
+                                language: model.language,
+                                item.0
+                            ))
                     }
                 }
                 .padding(.horizontal, 36)
@@ -137,7 +151,7 @@ private struct CallControls: View {
                     .background(Color(hex: 0xEB4D3D), in: .circle)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Akhiri panggilan")
+            .accessibilityLabel(L10n.text("Akhiri panggilan", language: model.language))
         }
         .sensoryFeedback(.selection, trigger: speakerOn)
     }
@@ -150,7 +164,9 @@ private struct CallControls: View {
                 .frame(width: 72, height: 72)
                 .background(on ? AnyShapeStyle(.white) : AnyShapeStyle(.clear), in: .circle)
                 .glassEffect(on ? .identity : .regular, in: .circle)
-            Text(title).font(.caption).foregroundStyle(.white.opacity(0.9))
+            Text(L10n.text(title, language: model.language))
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.9))
         }
         .accessibilityElement(children: .combine)
     }

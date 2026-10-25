@@ -85,7 +85,10 @@ final class ProfileViewModel {
 
     func narrate(_ text: String) {
         guard state.narrationEnabled else { return }
-        narrator.speak(text, language: state.language)
+        narrator.speak(
+            L10n.text(text, language: state.language),
+            language: state.language
+        )
     }
 
     func stopNarration() {

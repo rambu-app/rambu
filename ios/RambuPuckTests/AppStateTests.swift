@@ -293,4 +293,46 @@ struct AppStateTests {
         state.session = session
         #expect(state.protectionPresentation == .noSpeech)
     }
+
+    @Test("English formatting covers dates, durations, and family invitations")
+    func englishDynamicFormatting() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(Fmt.day(now, now: now, language: .english).hasPrefix("Today, "))
+        #expect(Fmt.duration(65, language: .english) == "1 min 5 sec")
+        let invite = InviteLink.message(
+            code: "482913",
+            parentName: "Mrs Taylor",
+            expiresAt: now,
+            language: .english
+        )
+        #expect(invite.contains("Mrs Taylor invited you to be a caregiver on Rambu"))
+        #expect(invite.contains("Invitation code: 482913"))
+        #expect(!invite.contains("mengundang"))
+    }
+
+    @Test("Semantic localization keys resolve English with Indonesian fallback copy")
+    func semanticLocalizationKeys() {
+        #expect(
+            L10n.text(
+                "alert.scam.title",
+                fallback: "Bahaya: terindikasi penipuan",
+                language: .english
+            ) == "Danger: possible scam"
+        )
+        #expect(
+            L10n.format(
+                "family.answered_first",
+                fallback: "%@ sudah menjawab lebih dulu",
+                language: .english,
+                "Richard"
+            ) == "Richard answered first"
+        )
+        #expect(
+            L10n.text(
+                "missing.key",
+                fallback: "Teks bawaan",
+                language: .english
+            ) == "Teks bawaan"
+        )
+    }
 }

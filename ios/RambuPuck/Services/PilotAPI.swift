@@ -265,9 +265,16 @@ enum PilotAPIError: LocalizedError {
         }
     }
 
-    static func displayMessage(for error: Error) -> String {
-        if let error = error as? PilotAPIError { return error.localizedDescription }
-        return "Belum dapat terhubung ke server. Periksa koneksi internet lalu coba lagi."
+    static func displayMessage(
+        for error: Error,
+        language: AppLanguage = .indonesian
+    ) -> String {
+        let message = if let error = error as? PilotAPIError {
+            error.localizedDescription
+        } else {
+            "Belum dapat terhubung ke server. Periksa koneksi internet lalu coba lagi."
+        }
+        return L10n.text(message, language: language)
     }
 }
 
@@ -527,7 +534,7 @@ final class PilotSync {
             await refreshAlerts(quietly: true)
             return result.accepted ? .accepted(result.decision.decision) : .alreadyDecided(result.decision.decision)
         } catch {
-            onError?(PilotAPIError.displayMessage(for: error))
+            onError?(PilotAPIError.displayMessage(for: error, language: language))
             return nil
         }
     }
@@ -564,7 +571,11 @@ final class PilotSync {
         } catch {
             guard generation == connectionGeneration, !Task.isCancelled else { return }
             onServerStatus?(.unavailable)
-            onError?("Keluarga belum dapat diperbarui. \(PilotAPIError.displayMessage(for: error))")
+            onError?(L10n.format(
+                "Keluarga belum dapat diperbarui. %@",
+                language: language,
+                PilotAPIError.displayMessage(for: error, language: language)
+            ))
         }
     }
 
@@ -578,7 +589,9 @@ final class PilotSync {
             onAlerts?(values.map(\.alert))
         } catch {
             guard generation == connectionGeneration, !Task.isCancelled else { return }
-            if !quietly { onError?(PilotAPIError.displayMessage(for: error)) }
+            if !quietly {
+                onError?(PilotAPIError.displayMessage(for: error, language: language))
+            }
         }
     }
 
@@ -610,7 +623,7 @@ final class PilotSync {
     }
 
     private func report(_ error: Error) {
-        onError?(PilotAPIError.displayMessage(for: error))
+        onError?(PilotAPIError.displayMessage(for: error, language: language))
     }
 
     private func receivePushToken(_ token: String) {

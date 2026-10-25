@@ -4,7 +4,7 @@ struct ServerConnectionLabel: View {
     @Environment(AppState.self) private var model
 
     var body: some View {
-        Label(model.pilotServerStatus.message,
+        Label(LocalizedStringKey(model.pilotServerStatus.message),
               systemImage: model.pilotServerStatus == .reachable ? "network" : "network.slash")
             .font(.subheadline).foregroundStyle(Brand.ink2)
             .fixedSize(horizontal: false, vertical: true)
@@ -116,7 +116,15 @@ struct FamilySetupContent: View {
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
-                        SectionHeader(title: "Pendamping Anda", trailing: "\(model.guardians.count) orang")
+                        SectionHeader(
+                            title: "Pendamping Anda",
+                            trailing: L10n.format(
+                                "family.people_count",
+                                fallback: "%d orang",
+                                language: model.language,
+                                model.guardians.count
+                            )
+                        )
                         VStack(alignment: .leading, spacing: 14) {
                             ForEach(Array(model.guardians.enumerated()), id: \.element.id) { index, person in
                                 if index > 0 { Divider() }
@@ -201,7 +209,8 @@ struct FamilySetupContent: View {
             Avatar(person: person, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text(person.name).font(.headline).foregroundStyle(Brand.ink)
-                Text(detail).font(.subheadline).foregroundStyle(Brand.ink2)
+                Text(L10n.text(detail, language: model.language))
+                    .font(.subheadline).foregroundStyle(Brand.ink2)
             }
         }
         .accessibilityElement(children: .combine)

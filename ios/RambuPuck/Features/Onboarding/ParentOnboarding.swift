@@ -58,7 +58,12 @@ struct PairPuckStep: View {
                 if let found, phase == .found {
                     HStack(spacing: 14) {
                         Image(systemName: "checkmark.circle.fill").font(.title2).foregroundStyle(Brand.safe)
-                        Text("\(found.name) ditemukan").font(.headline).foregroundStyle(Brand.ink)
+                        Text(L10n.format(
+                            "puck.found",
+                            fallback: "%@ ditemukan",
+                            language: model.language,
+                            found.name
+                        )).font(.headline).foregroundStyle(Brand.ink)
                         Spacer(minLength: 0)
                         Label("\(found.battery)%", systemImage: found.batterySymbol)
                             .font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink2)
@@ -140,8 +145,8 @@ struct ConsentStep: View {
                             .frame(width: 56, height: 56)
                             .background(Brand.hero, in: .rect(cornerRadius: 18, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(point.title).font(.headline).foregroundStyle(Brand.ink)
-                            Text(point.detail).font(.subheadline).foregroundStyle(Brand.ink2)
+                            Text(LocalizedStringKey(point.title)).font(.headline).foregroundStyle(Brand.ink)
+                            Text(LocalizedStringKey(point.detail)).font(.subheadline).foregroundStyle(Brand.ink2)
                         }
                         .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
@@ -211,7 +216,7 @@ struct InviteGuardiansStep: View {
             Avatar(person: person, size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text(person.name).font(.headline).foregroundStyle(Brand.ink)
-                Text(isApproved ? "Terhubung" : person.relation)
+                Text(LocalizedStringKey(isApproved ? "Terhubung" : person.relation))
                     .font(.subheadline)
                     .foregroundStyle(isApproved ? Brand.safeInk : Brand.ink2)
             }

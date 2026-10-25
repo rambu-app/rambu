@@ -38,14 +38,22 @@ struct HistoryList: View {
                         ForEach(handled) { alert in
                             NavigationLink(value: alert.id) {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(alert.title).font(.headline).foregroundStyle(Brand.ink)
+                                    Text(alert.title(language: model.language))
+                                        .font(.headline).foregroundStyle(Brand.ink)
                                     if let decision = alert.decision {
-                                        Label("\(decision.by.name): \(decision.verdict.pastTitle)",
+                                        Label(L10n.format(
+                                              "decision.by_verdict",
+                                              fallback: "%@: %@",
+                                              language: model.language,
+                                              decision.by.name,
+                                              L10n.text(decision.verdict.pastTitle, language: model.language)),
                                               systemImage: decision.verdict == .scam ? "hand.raised.fill" : "checkmark.circle.fill")
                                             .font(.subheadline)
                                             .foregroundStyle(decision.verdict == .scam ? Brand.dangerInk : Brand.safeInk)
                                     }
-                                    Text(alert.callEnded ? "Panggilan selesai" : "Menunggu panggilan selesai")
+                                    Text(LocalizedStringKey(
+                                        alert.callEnded ? "Panggilan selesai" : "Menunggu panggilan selesai"
+                                    ))
                                         .font(.caption).foregroundStyle(Brand.ink2)
                                 }
                                 .padding(.vertical, 4)
@@ -83,17 +91,22 @@ struct HistoryRow: View {
         HStack(alignment: .top, spacing: 12) {
             HistoryTile(presentation: record.historyPresentation)
             VStack(alignment: .leading, spacing: 3) {
-                Text(record.title)
+                Text(L10n.text(record.title, language: model.language))
                     .font(.headline).foregroundStyle(Brand.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 8) {
                     HistoryBadge(presentation: record.historyPresentation)
-                    Label(Fmt.day(record.startedAt), systemImage: record.channel.symbol)
+                    Label(Fmt.day(record.startedAt, language: model.language), systemImage: record.channel.symbol)
                         .font(.subheadline).foregroundStyle(Brand.ink2)
                         .labelStyle(CompactLabelStyle())
                 }
                 if let decision = record.decision {
-                    Label("\(decision.by.name): \(decision.verdict.pastTitle)",
+                    Label(L10n.format(
+                          "decision.by_verdict",
+                          fallback: "%@: %@",
+                          language: model.language,
+                          decision.by.name,
+                          L10n.text(decision.verdict.pastTitle, language: model.language)),
                           systemImage: decision.verdict == .scam ? "hand.raised.fill" : "checkmark.circle.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(decision.verdict == .scam ? Brand.dangerInk : Brand.safeInk)
@@ -129,23 +142,39 @@ struct CallDetail: View {
                 VStack(alignment: .leading, spacing: 22) {
                     VerdictCard(
                         presentation: record.historyPresentation,
-                        headline: record.verdictHeadline,
-                        summary: record.displayReason ?? record.signals.callerSummary ?? record.incidentSummary,
-                        details: [record.channel.label, Fmt.day(record.startedAt), Fmt.duration(record.duration)]
+                        headline: record.verdictHeadline(language: model.language),
+                        summary: record.signals.callerSummary(language: model.language)
+                            ?? record.incidentSummary(language: model.language),
+                        details: [
+                            L10n.text(record.channel.label, language: model.language),
+                            Fmt.day(record.startedAt, language: model.language),
+                            Fmt.duration(record.duration, language: model.language),
+                        ]
                     )
 
                     if record.displayReason == nil && !record.signals.isEmpty {
-                        AdviceSection(items: record.signals.map { ($0.advice, "nosign") }
-                            + [("Hubungi keluarga jika ragu.", "person.2.fill")])
+                        AdviceSection(items: record.signals.map {
+                            (L10n.text($0.advice, language: model.language), "nosign")
+                        } + [(
+                            L10n.text("Hubungi keluarga jika ragu.", language: model.language),
+                            "person.2.fill"
+                        )])
                     }
 
                     if let decision = record.decision {
                         HStack(spacing: 12) {
                             Avatar(person: decision.by, size: 40)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(decision.by.name): \(decision.verdict.pastTitle)")
+                                Text(L10n.format(
+                                    "decision.by_verdict",
+                                    fallback: "%@: %@",
+                                    language: model.language,
+                                    decision.by.name,
+                                    L10n.text(decision.verdict.pastTitle, language: model.language)
+                                ))
                                     .font(.headline).foregroundStyle(Brand.ink)
-                                Text(Fmt.day(decision.at)).font(.subheadline).foregroundStyle(Brand.ink2)
+                                Text(Fmt.day(decision.at, language: model.language))
+                                    .font(.subheadline).foregroundStyle(Brand.ink2)
                             }
                         }
                         .card()
@@ -176,7 +205,7 @@ private struct HistoryBadge: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: presentation.symbol)
-            Text(presentation.title)
+            Text(LocalizedStringKey(presentation.title))
         }
         .font(.subheadline.weight(.bold))
         .foregroundStyle(presentation.glyph)
@@ -199,6 +228,6 @@ private struct HistoryTile: View {
             .foregroundStyle(presentation.glyph)
             .frame(width: size, height: size)
             .background(presentation.tint, in: .rect(cornerRadius: size * 0.3, style: .continuous))
-            .accessibilityLabel(presentation.title)
+            .accessibilityLabel(Text(LocalizedStringKey(presentation.title)))
     }
 }

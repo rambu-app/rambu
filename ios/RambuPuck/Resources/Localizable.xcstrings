@@ -1,0 +1,4459 @@
+{
+  "sourceLanguage": "id",
+  "strings": {
+    "%@ Jangan beri data dulu. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Do not share personal information yet. %@"
+          }
+        }
+      }
+    },
+    "%@ akan diberi tahu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ will be notified."
+          }
+        }
+      }
+    },
+    "%@ menunggu jawaban": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is waiting for an answer"
+          }
+        }
+      }
+    },
+    "%@ mungkin sedang ditipu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ may be getting scammed"
+          }
+        }
+      }
+    },
+    "%@ orang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ people"
+          }
+        }
+      }
+    },
+    "%@ sudah menjawab lebih dulu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ answered first"
+          }
+        }
+      }
+    },
+    "%@ sudah menjawab.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ has answered."
+          }
+        }
+      }
+    },
+    "%@ yakin ini penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ believes this is a scam."
+          }
+        }
+      }
+    },
+    "%@: %@ mungkin sedang ditipu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@ may be getting scammed"
+          }
+        }
+      }
+    },
+    "%@: ini penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: this is a scam"
+          }
+        }
+      }
+    },
+    "%@: telepon aman": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: call is safe"
+          }
+        }
+      }
+    },
+    "6 angka dari aplikasi Rambu orang tua Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 6-digit code from the protected parent's Rambu app."
+          }
+        }
+      }
+    },
+    "Ada bahaya? Rambu kabari": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu alerts you to danger"
+          }
+        }
+      }
+    },
+    "Ada notifikasi dari Rambu. Ketuk notifikasinya.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is a notification from Rambu. Tap it."
+          }
+        }
+      }
+    },
+    "Ada telepon dari nomor tidak dikenal. Ketuk Jawab.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is a call from an unknown number. Tap Answer."
+          }
+        }
+      }
+    },
+    "Akses keluarga sudah tidak berlaku. Hubungkan keluarga kembali.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family access is no longer valid. Connect the family again."
+          }
+        }
+      }
+    },
+    "Aktif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
+          }
+        }
+      }
+    },
+    "Alamat server tidak valid.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server address is invalid."
+          }
+        }
+      }
+    },
+    "Aman": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safe"
+          }
+        }
+      }
+    },
+    "Aman, kata %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safe, according to %@"
+          }
+        }
+      }
+    },
+    "Anak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Child"
+          }
+        }
+      }
+    },
+    "Analisis belum berhasil": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis was unsuccessful"
+          }
+        }
+      }
+    },
+    "Analisis belum berhasil. Hasil panggilan ini belum tersedia.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis was unsuccessful. This call result is unavailable."
+          }
+        }
+      }
+    },
+    "Analisis berhenti dan tidak menghasilkan penilaian aman.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis stopped without confirming that the call was safe."
+          }
+        }
+      }
+    },
+    "Analisis panggilan gagal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call analysis failed"
+          }
+        }
+      }
+    },
+    "Analisis selesai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis complete"
+          }
+        }
+      }
+    },
+    "Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
+    "Anda dan anak langsung diberi tahu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You and your family are alerted immediately."
+          }
+        }
+      }
+    },
+    "Anda menerima peringatan saat Rambu mendeteksi tanda penipuan dalam panggilannya.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You receive alerts when Rambu detects scam indicators in their calls."
+          }
+        }
+      }
+    },
+    "Anda yang memutuskan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You stay in control"
+          }
+        }
+      }
+    },
+    "Aslinya tiap orang memakai HP sendiri.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In real use, each person uses their own phone."
+          }
+        }
+      }
+    },
+    "Baca kalimatnya": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the words"
+          }
+        }
+      }
+    },
+    "Bacakan peringatan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read alerts aloud"
+          }
+        }
+      }
+    },
+    "Bagikan kode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share code"
+          }
+        }
+      }
+    },
+    "Bagikan kode ke anak atau anggota keluarga. Mereka memasukkannya di Rambu pada HP mereka.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the code with a family member. They enter it in Rambu on their phone."
+          }
+        }
+      }
+    },
+    "Bagus!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great!"
+          }
+        }
+      }
+    },
+    "Bagus. Begitu cara Rambu memberi tahu Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great. That is how Rambu alerts you."
+          }
+        }
+      }
+    },
+    "Bagus. Begitu cara Rambu memperingatkan Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great. That is how Rambu warns you."
+          }
+        }
+      }
+    },
+    "Bahasa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "Bahasa Indonesia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bahasa Indonesia"
+          }
+        }
+      }
+    },
+    "Bahasa aplikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App language"
+          }
+        }
+      }
+    },
+    "Bahaya": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger"
+          }
+        }
+      }
+    },
+    "Bahaya: Ibu mungkin ditipu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger: your parent may be getting scammed"
+          }
+        }
+      }
+    },
+    "Bahaya: telepon mencurigakan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger: suspicious call"
+          }
+        }
+      }
+    },
+    "Bahaya: terindikasi penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger: possible scam"
+          }
+        }
+      }
+    },
+    "Bantu keluarga mengenali penipuan telepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help your family recognize phone scams."
+          }
+        }
+      }
+    },
+    "Bantuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
+          }
+        }
+      }
+    },
+    "Batal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Baterai puck lemah": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck battery is low"
+          }
+        }
+      }
+    },
+    "Begitu cara Rambu memberi tahu Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is how Rambu alerts you."
+          }
+        }
+      }
+    },
+    "Begitu cara Rambu memperingatkan Anda saat ada penipu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is how Rambu warns you about a scammer."
+          }
+        }
+      }
+    },
+    "Belum ada jawaban": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No answer yet"
+          }
+        }
+      }
+    },
+    "Belum ada pengawas terhubung.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No caregivers are connected yet."
+          }
+        }
+      }
+    },
+    "Belum ada pengawas yang menjawab peringatan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No caregiver has answered the alert yet."
+          }
+        }
+      }
+    },
+    "Belum ada riwayat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No call history yet"
+          }
+        }
+      }
+    },
+    "Belum ada tanda penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scam indicators yet."
+          }
+        }
+      }
+    },
+    "Belum bisa dinilai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not assessed yet"
+          }
+        }
+      }
+    },
+    "Belum dapat menerima data keluarga. Coba lagi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family data could not be received. Try again."
+          }
+        }
+      }
+    },
+    "Belum dapat terhubung ke server. Coba lagi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not connect to the server. Try again."
+          }
+        }
+      }
+    },
+    "Belum dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not connect to the server. Check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "Belum dipasangkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not paired"
+          }
+        }
+      }
+    },
+    "Belum terhubung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected"
+          }
+        }
+      }
+    },
+    "Belum tersambung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected"
+          }
+        }
+      }
+    },
+    "Berlaku %d menit lagi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid for %d more minutes"
+          }
+        }
+      }
+    },
+    "Berlaku kurang dari 1 menit lagi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid for less than 1 more minute"
+          }
+        }
+      }
+    },
+    "Bicara seperti biasa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talk as usual"
+          }
+        }
+      }
+    },
+    "Bluetooth mati": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth is off"
+          }
+        }
+      }
+    },
+    "Buat kode baru": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create new code"
+          }
+        }
+      }
+    },
+    "Buat kode baru untuk membagikan undangan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a new code to share an invitation."
+          }
+        }
+      }
+    },
+    "Buat kode undangan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create invitation code"
+          }
+        }
+      }
+    },
+    "Buka peringatan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open alert"
+          }
+        }
+      }
+    },
+    "Cari puck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find puck"
+          }
+        }
+      }
+    },
+    "Coba dulu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it"
+          }
+        }
+      }
+    },
+    "Coba lagi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
+    "Coba putuskan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make a decision"
+          }
+        }
+      }
+    },
+    "Contoh peringatan. Menurut Anda?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a sample alert. What do you think?"
+          }
+        }
+      }
+    },
+    "Contoh telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sample calls"
+          }
+        }
+      }
+    },
+    "Contoh untuk demo, boleh diganti": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo example; you can change it"
+          }
+        }
+      }
+    },
+    "Contoh: Ibu Ratna": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Example: Mrs Taylor"
+          }
+        }
+      }
+    },
+    "Cucu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grandchild"
+          }
+        }
+      }
+    },
+    "Cuplikan percakapan membantu pendamping menilai peringatan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call excerpts help caregivers assess an alert."
+          }
+        }
+      }
+    },
+    "Dekatkan puck ke HP.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the puck closer to the phone."
+          }
+        }
+      }
+    },
+    "Desakan waktu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates urgency"
+          }
+        }
+      }
+    },
+    "Detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
+    "Ditandai Rambu: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flagged by Rambu: %@"
+          }
+        }
+      }
+    },
+    "Ditangani": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handled"
+          }
+        }
+      }
+    },
+    "Gabung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join"
+          }
+        }
+      }
+    },
+    "Geser ke kiri untuk menghapus. Minimal satu pengawas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left to remove. Keep at least one caregiver."
+          }
+        }
+      }
+    },
+    "HP ini berhenti menyinkronkan peringatan keluarga. Data keluarga di server tidak dihapus.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone will stop syncing family alerts. Family data on the server will not be deleted."
+          }
+        }
+      }
+    },
+    "Hanya kalimat yang mencurigakan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only suspicious excerpts are shared."
+          }
+        }
+      }
+    },
+    "Hapus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Hapus riwayat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear history"
+          }
+        }
+      }
+    },
+    "Hapus semua riwayat?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all history?"
+          }
+        }
+      }
+    },
+    "Hari ini, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today, %@"
+          }
+        }
+      }
+    },
+    "Hasil panggilan ini belum tersedia. Periksa koneksi lalu coba lagi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This call result is unavailable. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "Hati-hati. Jangan transfer atau sebut kode.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Be careful. Do not transfer money or share codes."
+          }
+        }
+      }
+    },
+    "Hati-hati. Jangan transfer atau sebut kode. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Be careful. Do not transfer money or share codes. %@"
+          }
+        }
+      }
+    },
+    "Hubungan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relationship"
+          }
+        }
+      }
+    },
+    "Hubungi keluarga jika ragu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact your family if you are unsure."
+          }
+        }
+      }
+    },
+    "Hubungi lembaganya lewat nomor resmi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact the organization through its official number."
+          }
+        }
+      }
+    },
+    "Hubungkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "Hubungkan akun orang tua ke server Rambu sebelum menerima panggilan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect the protected parent's account to the Rambu server before taking a call."
+          }
+        }
+      }
+    },
+    "Hubungkan dengan orang tua": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect with a parent"
+          }
+        }
+      }
+    },
+    "Hubungkan keluarga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect family"
+          }
+        }
+      }
+    },
+    "Ingatkan untuk tidak memasang aplikasi apa pun.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind them not to install any apps."
+          }
+        }
+      }
+    },
+    "Ingatkan untuk tidak memberikan kode OTP atau PIN.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind them not to share an OTP code or PIN."
+          }
+        }
+      }
+    },
+    "Ingatkan untuk tidak mentransfer uang.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind them not to transfer money."
+          }
+        }
+      }
+    },
+    "Ini telepon pura-pura. Tunggu sebentar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a practice call. Wait a moment."
+          }
+        }
+      }
+    },
+    "Isi daya sebelum habis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charge it before the battery runs out."
+          }
+        }
+      }
+    },
+    "Jaga orang tua lain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protect another parent"
+          }
+        }
+      }
+    },
+    "Jangan beri data apa pun dulu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not share any personal information yet."
+          }
+        }
+      }
+    },
+    "Jangan berikan OTP, PIN, atau kata sandi. Hubungi keluarga jika ragu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not share OTP codes, PINs, or passwords. Contact family if unsure."
+          }
+        }
+      }
+    },
+    "Jangan berikan kode OTP, PIN, atau kata sandi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not share OTP codes, PINs, or passwords."
+          }
+        }
+      }
+    },
+    "Jangan berikan kode atau transfer. Tutup telepon sekarang.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not share codes or transfer money. Hang up now."
+          }
+        }
+      }
+    },
+    "Jangan lakukan tindakan apa pun dulu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not take any action yet."
+          }
+        }
+      }
+    },
+    "Jangan pasang aplikasi yang diminta penelepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not install apps requested by the caller."
+          }
+        }
+      }
+    },
+    "Jangan terburu-buru. Tutup telepon dulu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not rush. Hang up first."
+          }
+        }
+      }
+    },
+    "Jangan transfer atau sebut kode.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not transfer money or share codes."
+          }
+        }
+      }
+    },
+    "Jangan transfer uang.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not transfer money."
+          }
+        }
+      }
+    },
+    "Jangan transfer. Jangan sebut kode.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not transfer money or share any codes."
+          }
+        }
+      }
+    },
+    "Jawabannya: %@. Cukup satu jawaban.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their answer: %@. Only one answer is needed."
+          }
+        }
+      }
+    },
+    "Jumlah pendamping sudah mencapai batas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The caregiver limit has been reached."
+          }
+        }
+      }
+    },
+    "Keluar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        }
+      }
+    },
+    "Keluar dan mulai ulang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out and start over"
+          }
+        }
+      }
+    },
+    "Keluar dan mulai ulang?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out and start over?"
+          }
+        }
+      }
+    },
+    "Keluarga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family"
+          }
+        }
+      }
+    },
+    "Keluarga belum dapat diperbarui. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family data could not be updated. %@"
+          }
+        }
+      }
+    },
+    "Keluarga melihat cuplikan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family sees relevant excerpts"
+          }
+        }
+      }
+    },
+    "Keluarga terhubung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family connected"
+          }
+        }
+      }
+    },
+    "Kemarin, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday, %@"
+          }
+        }
+      }
+    },
+    "Kembali": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Kembali ke telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to call"
+          }
+        }
+      }
+    },
+    "Kemungkinan penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Possible scam"
+          }
+        }
+      }
+    },
+    "Ketuk Pasangkan pada pesan yang muncul di iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap Pair in the message shown on your iPhone."
+          }
+        }
+      }
+    },
+    "Ketuk notifikasinya.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the notification."
+          }
+        }
+      }
+    },
+    "Ketuk untuk melihat dan memutuskan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to review and decide."
+          }
+        }
+      }
+    },
+    "Ketuk untuk melihat kalimatnya dan memutuskan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to review the triggering words and decide."
+          }
+        }
+      }
+    },
+    "Ketuk untuk mengundang anak atau keluarga.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to invite a family member."
+          }
+        }
+      }
+    },
+    "Kirim tautan ini ke anak Anda. Mereka tinggal mengetuknya.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send this link to your family member. They only need to tap it."
+          }
+        }
+      }
+    },
+    "Kode 6 angka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6-digit code"
+          }
+        }
+      }
+    },
+    "Kode baru belum berhasil dibuat. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new code could not be created. %@"
+          }
+        }
+      }
+    },
+    "Kode belum diisi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code has not been entered"
+          }
+        }
+      }
+    },
+    "Kode diisi dari tautan undangan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code filled from invitation link"
+          }
+        }
+      }
+    },
+    "Kode kedaluwarsa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code expired"
+          }
+        }
+      }
+    },
+    "Kode sudah kedaluwarsa. Minta orang tua membuat kode baru.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The code has expired. Ask the protected parent to create a new one."
+          }
+        }
+      }
+    },
+    "Kode tersalin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code copied"
+          }
+        }
+      }
+    },
+    "Kode tidak ditemukan. Periksa kembali kode dari orang tua.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code not found. Check the code from the protected parent."
+          }
+        }
+      }
+    },
+    "Kode undangan belum berhasil dibuat. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The invitation code could not be created. %@"
+          }
+        }
+      }
+    },
+    "Kode undangan enam angka": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Six-digit invitation code"
+          }
+        }
+      }
+    },
+    "Kontak tersimpan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved contact"
+          }
+        }
+      }
+    },
+    "Lanjut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "Lewati": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        }
+      }
+    },
+    "Lihat sebagai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View as"
+          }
+        }
+      }
+    },
+    "Loudspeaker mati di telepon berikutnya": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speakerphone off on the next call"
+          }
+        }
+      }
+    },
+    "Maskot Rambu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu mascot"
+          }
+        }
+      }
+    },
+    "Masukkan kode dari aplikasi Rambu orang tua.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the code from the protected parent's Rambu app."
+          }
+        }
+      }
+    },
+    "Masukkan kode undangan 6 angka.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the 6-digit invitation code."
+          }
+        }
+      }
+    },
+    "Matikan suara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off voice guidance"
+          }
+        }
+      }
+    },
+    "Membuat kode…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating code…"
+          }
+        }
+      }
+    },
+    "Memeriksa koneksi server…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking server connection…"
+          }
+        }
+      }
+    },
+    "Meminta kode OTP atau PIN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks for an OTP or PIN"
+          }
+        }
+      }
+    },
+    "Meminta kode OTP selalu tanda penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking for an OTP code is always a scam indicator."
+          }
+        }
+      }
+    },
+    "Meminta transfer uang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks for a money transfer"
+          }
+        }
+      }
+    },
+    "Menandai %@, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marked %@, %@"
+          }
+        }
+      }
+    },
+    "Menerima": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received"
+          }
+        }
+      }
+    },
+    "Menerima, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Received at %@"
+          }
+        }
+      }
+    },
+    "Mengaku dari lembaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claims to represent an organization"
+          }
+        }
+      }
+    },
+    "Menghubungkan…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        }
+      }
+    },
+    "Menunggu Rambu Puck. Audio belum dianalisis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Rambu Puck. Audio has not been analyzed yet."
+          }
+        }
+      }
+    },
+    "Menunggu analisis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for analysis"
+          }
+        }
+      }
+    },
+    "Menunggu izin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for approval"
+          }
+        }
+      }
+    },
+    "Menunggu panggilan selesai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the call to end"
+          }
+        }
+      }
+    },
+    "Menyuruh pasang aplikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks you to install an app"
+          }
+        }
+      }
+    },
+    "Minta orang tua menutup telepon dan menelepon balik lewat nomor resmi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask the protected parent to hang up and call back using an official number."
+          }
+        }
+      }
+    },
+    "Mode demo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo mode"
+          }
+        }
+      }
+    },
+    "Mulai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        }
+      }
+    },
+    "Mulai menjaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start protecting"
+          }
+        }
+      }
+    },
+    "Nama": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "Nama panggilan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred name"
+          }
+        }
+      }
+    },
+    "Nomor tidak dikenal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown number"
+          }
+        }
+      }
+    },
+    "Nomor tidak tersedia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number unavailable"
+          }
+        }
+      }
+    },
+    "Notifikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        }
+      }
+    },
+    "Notifikasi mati": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off"
+          }
+        }
+      }
+    },
+    "Nyalakan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on"
+          }
+        }
+      }
+    },
+    "Nyalakan loudspeaker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on speakerphone"
+          }
+        }
+      }
+    },
+    "Nyalakan speaker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on speakerphone"
+          }
+        }
+      }
+    },
+    "Nyalakan suara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on voice guidance"
+          }
+        }
+      }
+    },
+    "Orang tua": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protected parent"
+          }
+        }
+      }
+    },
+    "Orang tua langsung diminta menutup telepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The protected parent is told to hang up immediately."
+          }
+        }
+      }
+    },
+    "Panggilan WhatsApp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WhatsApp call"
+          }
+        }
+      }
+    },
+    "Panggilan aktif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active call"
+          }
+        }
+      }
+    },
+    "Panggilan masih berlangsung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call in progress"
+          }
+        }
+      }
+    },
+    "Panggilan selesai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call ended"
+          }
+        }
+      }
+    },
+    "Panggilan terakhir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latest call"
+          }
+        }
+      }
+    },
+    "Panggilan terdeteksi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call detected"
+          }
+        }
+      }
+    },
+    "Pasangkan puck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair puck"
+          }
+        }
+      }
+    },
+    "Pasangkan sekali, lalu puck mendengarkan sendiri saat ada panggilan masuk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair once, then the puck listens automatically when calls arrive."
+          }
+        }
+      }
+    },
+    "Pembicara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speaker"
+          }
+        }
+      }
+    },
+    "Pendamping": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caregiver"
+          }
+        }
+      }
+    },
+    "Pendamping Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your caregivers"
+          }
+        }
+      }
+    },
+    "Penelepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller"
+          }
+        }
+      }
+    },
+    "Penelepon %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The caller %@."
+          }
+        }
+      }
+    },
+    "Penelepon meminta kode rahasia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller is asking for a secret code"
+          }
+        }
+      }
+    },
+    "Penelepon meminta transfer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller is asking for money"
+          }
+        }
+      }
+    },
+    "Penelepon mendesak Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller is pressuring you"
+          }
+        }
+      }
+    },
+    "Penelepon mengaku dari lembaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller claims to represent an organization"
+          }
+        }
+      }
+    },
+    "Penelepon menyuruh pasang aplikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller is asking you to install an app"
+          }
+        }
+      }
+    },
+    "Penelepon terdeteksi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caller detected"
+          }
+        }
+      }
+    },
+    "Penerima": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recipients"
+          }
+        }
+      }
+    },
+    "Pengaturan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Pengawas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caregivers"
+          }
+        }
+      }
+    },
+    "Pengawas belum bisa dikabari.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caregivers cannot be notified yet."
+          }
+        }
+      }
+    },
+    "Pengawas belum menjawab. Jangan lakukan tindakan apa pun dulu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No caregiver has answered yet. Do not take any action for now."
+          }
+        }
+      }
+    },
+    "Pengawas dikabari kalau ada tanda penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caregivers will be notified if scam indicators appear."
+          }
+        }
+      }
+    },
+    "Pengawas sudah diberi tahu, menunggu jawaban.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caregivers have been notified; waiting for an answer."
+          }
+        }
+      }
+    },
+    "Penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scam"
+          }
+        }
+      }
+    },
+    "Percakapan belum terdengar jelas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The call cannot be heard clearly yet."
+          }
+        }
+      }
+    },
+    "Peringatan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts"
+          }
+        }
+      }
+    },
+    "Peringatan dan bukti sudah dikirim ke pengawas.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The alert and evidence were sent to caregivers."
+          }
+        }
+      }
+    },
+    "Peringatan ditangani": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handled alerts"
+          }
+        }
+      }
+    },
+    "Peringatan masuk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert arrives"
+          }
+        }
+      }
+    },
+    "Peringatan tidak akan muncul.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts will not appear."
+          }
+        }
+      }
+    },
+    "Peringatan tidak ditemukan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert not found"
+          }
+        }
+      }
+    },
+    "Perlindungan panggilan belum siap": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call protection is not ready"
+          }
+        }
+      }
+    },
+    "Pilih Aman atau Penipuan di bawah agar %@ tahu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Safe or Scam below so %@ knows."
+          }
+        }
+      }
+    },
+    "Pilih Pasangkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Pair"
+          }
+        }
+      }
+    },
+    "Profil": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        }
+      }
+    },
+    "Profil dan riwayat lokal di HP ini dihapus. Data keluarga di server tetap tersimpan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The local profile and history on this phone will be deleted. Family data on the server will remain."
+          }
+        }
+      }
+    },
+    "Profil disimpan di HP ini. Keluarga, peringatan, dan hasil analisis disinkronkan saat terhubung.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your profile is saved on this phone. Family, alerts, and analysis results sync when connected."
+          }
+        }
+      }
+    },
+    "Puck mulai mendengarkan sendiri saat ada panggilan masuk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The puck starts listening automatically when a call arrives."
+          }
+        }
+      }
+    },
+    "Puck siap": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck ready"
+          }
+        }
+      }
+    },
+    "Puck terputus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck disconnected"
+          }
+        }
+      }
+    },
+    "Rambu belum mendengar suara telepon. Ketuk Speaker supaya bisa ikut menjaga.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu cannot hear the call yet. Tap Speaker so it can help protect you."
+          }
+        }
+      }
+    },
+    "Rambu memberi peringatan. Ketuk peringatannya.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu issued an alert. Tap it."
+          }
+        }
+      }
+    },
+    "Rambu memberi tahu jika ada tanda penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu alerts you if it detects scam indicators."
+          }
+        }
+      }
+    },
+    "Rambu mendengarkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu is listening"
+          }
+        }
+      }
+    },
+    "Rambu mendeteksi indikasi %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu detected %@."
+          }
+        }
+      }
+    },
+    "Rambu mendeteksi tanda penipuan pada panggilan ini.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu detected scam indicators in this call."
+          }
+        }
+      }
+    },
+    "Rambu menganalisis percakapan dan memberi peringatan saat ada tanda penipuan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu analyzes calls and alerts your family when it detects signs of a scam."
+          }
+        }
+      }
+    },
+    "Rambu sedang mendengarkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu is listening"
+          }
+        }
+      }
+    },
+    "Rambu tidak bisa mendengar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu cannot listen."
+          }
+        }
+      }
+    },
+    "Rambu tidak dapat menyelesaikan analisis panggilan ini.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu could not complete this call analysis."
+          }
+        }
+      }
+    },
+    "Rambu tidak menutup telepon Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu never hangs up your call."
+          }
+        }
+      }
+    },
+    "Riwayat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        }
+      }
+    },
+    "Riwayat tidak ditemukan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call history not found"
+          }
+        }
+      }
+    },
+    "Saat ini": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        }
+      }
+    },
+    "Saat orang tua ditelepon penipu.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a scammer calls the protected parent."
+          }
+        }
+      }
+    },
+    "Salin kode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy code"
+          }
+        }
+      }
+    },
+    "Sambungkan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        }
+      }
+    },
+    "Sambungkan puck ke Wi-Fi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect puck to Wi-Fi"
+          }
+        }
+      }
+    },
+    "Saudara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relative"
+          }
+        }
+      }
+    },
+    "Saya orang tua": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I am the protected parent"
+          }
+        }
+      }
+    },
+    "Saya pendamping": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I am a caregiver"
+          }
+        }
+      }
+    },
+    "Selesai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Semua data di sini fiktif.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All data here is fictional."
+          }
+        }
+      }
+    },
+    "Semua percakapan fiktif.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All conversations are fictional."
+          }
+        }
+      }
+    },
+    "Seorang ibu menelepon dengan raut cemas di rumah": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A worried parent making a phone call at home"
+          }
+        }
+      }
+    },
+    "Server terhubung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server connected"
+          }
+        }
+      }
+    },
+    "Simulasi gangguan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue simulation"
+          }
+        }
+      }
+    },
+    "Simulasi telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call simulation"
+          }
+        }
+      }
+    },
+    "Speaker, mati. Ketuk untuk menyalakan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speakerphone, off. Tap to turn it on"
+          }
+        }
+      }
+    },
+    "Speaker, menyala": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speakerphone, on"
+          }
+        }
+      }
+    },
+    "Status telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call status"
+          }
+        }
+      }
+    },
+    "Sudah dikirim ke %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %@."
+          }
+        }
+      }
+    },
+    "Supaya Rambu ikut mendengar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So Rambu can listen too."
+          }
+        }
+      }
+    },
+    "Supaya puck bisa mendengar penelepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So the puck can hear the caller."
+          }
+        }
+      }
+    },
+    "Tandai aman?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as safe?"
+          }
+        }
+      }
+    },
+    "Tekan Speaker supaya Rambu bisa ikut mendengar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap Speaker so Rambu can listen too."
+          }
+        }
+      }
+    },
+    "Telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call"
+          }
+        }
+      }
+    },
+    "Telepon seluler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cellular call"
+          }
+        }
+      }
+    },
+    "Telepon sudah selesai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The call has ended"
+          }
+        }
+      }
+    },
+    "Tepat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct"
+          }
+        }
+      }
+    },
+    "Terdeteksi %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected at %@"
+          }
+        }
+      }
+    },
+    "Terdeteksi %@ lalu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected %@ ago"
+          }
+        }
+      }
+    },
+    "Tergabung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        }
+      }
+    },
+    "Terindikasi penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Possible scam detected"
+          }
+        }
+      }
+    },
+    "Terkirim ke %@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %@ · %@"
+          }
+        }
+      }
+    },
+    "Tetap jangan beri kode atau transfer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still do not share codes or transfer money."
+          }
+        }
+      }
+    },
+    "Tidak ada audio yang dianalisis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No audio was analyzed"
+          }
+        }
+      }
+    },
+    "Tidak ada internet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No internet connection"
+          }
+        }
+      }
+    },
+    "Tidak ada peringatan baru": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new alerts"
+          }
+        }
+      }
+    },
+    "Tidak ada sesi analisis aktif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active analysis session"
+          }
+        }
+      }
+    },
+    "Tidak ada suara yang dapat dianalisis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No speech could be analyzed."
+          }
+        }
+      }
+    },
+    "Tidak ada tanda penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scam indicators"
+          }
+        }
+      }
+    },
+    "Tidak ada tanda penipuan yang terdeteksi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scam indicators were detected."
+          }
+        }
+      }
+    },
+    "Tidak dapat dinilai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not assess"
+          }
+        }
+      }
+    },
+    "Tidak dapat terhubung ke server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot connect to server"
+          }
+        }
+      }
+    },
+    "Tidak perlu menjawab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No response needed"
+          }
+        }
+      }
+    },
+    "Tidak terdeteksi tanda penipuan pada percakapan yang dianalisis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scam indicators were detected in the analyzed conversation."
+          }
+        }
+      }
+    },
+    "Tombol terkunci": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Button locked"
+          }
+        }
+      }
+    },
+    "Tutup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "Tutup telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang up"
+          }
+        }
+      }
+    },
+    "Tutup telepon sekarang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang up now"
+          }
+        }
+      }
+    },
+    "Tutup telepon sekarang.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang up now."
+          }
+        }
+      }
+    },
+    "Tutup telepon. Bank tidak pernah meminta kode lewat telepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang up. Banks never ask for codes over the phone."
+          }
+        }
+      }
+    },
+    "Ulangi dari awal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start over"
+          }
+        }
+      }
+    },
+    "Ulangi latihan telepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat call practice"
+          }
+        }
+      }
+    },
+    "Ulangi tutorial": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repeat tutorial"
+          }
+        }
+      }
+    },
+    "Undang keluarga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite family"
+          }
+        }
+      }
+    },
+    "Undang pendamping lain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite another caregiver"
+          }
+        }
+      }
+    },
+    "Undang pengawas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite a caregiver"
+          }
+        }
+      }
+    },
+    "Ya, aman": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, safe"
+          }
+        }
+      }
+    },
+    "aman": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "safe"
+          }
+        }
+      }
+    },
+    "desakan untuk segera bertindak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pressure to act immediately"
+          }
+        }
+      }
+    },
+    "meminta kode OTP atau PIN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is asking for an OTP code or PIN"
+          }
+        }
+      }
+    },
+    "meminta transfer uang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is asking for a money transfer"
+          }
+        }
+      }
+    },
+    "mendesak Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is pressuring you"
+          }
+        }
+      }
+    },
+    "mengaku dari lembaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "claims to represent an organization"
+          }
+        }
+      }
+    },
+    "menyuruh memasang aplikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is asking you to install an app"
+          }
+        }
+      }
+    },
+    "penipuan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scam"
+          }
+        }
+      }
+    },
+    "penyamaran sebagai lembaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "impersonation of an organization"
+          }
+        }
+      }
+    },
+    "permintaan kode OTP atau PIN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a request for an OTP code or PIN"
+          }
+        }
+      }
+    },
+    "permintaan memasang aplikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a request to install an app"
+          }
+        }
+      }
+    },
+    "permintaan transfer uang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a request for a money transfer"
+          }
+        }
+      }
+    },
+    "sekarang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "now"
+          }
+        }
+      }
+    },
+    "alert.scam.title": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bahaya: terindikasi penipuan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger: possible scam"
+          }
+        }
+      }
+    },
+    "family.answered_first": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sudah menjawab lebih dulu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ answered first"
+          }
+        }
+      }
+    },
+    "family.answer_summary": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jawabannya: %@. Cukup satu jawaban."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their answer: %@. Only one answer is needed."
+          }
+        }
+      }
+    },
+    "family.alert_title_with_level": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@ mungkin sedang ditipu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@ may be getting scammed"
+          }
+        }
+      }
+    },
+    "family.alert_title": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mungkin sedang ditipu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ may be getting scammed"
+          }
+        }
+      }
+    },
+    "family.decision.scam": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: ini penipuan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: this is a scam"
+          }
+        }
+      }
+    },
+    "family.decision.safe": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: telepon aman"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: call is safe"
+          }
+        }
+      }
+    },
+    "family.sent_to": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sudah dikirim ke %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %@."
+          }
+        }
+      }
+    },
+    "family.sent_to_two": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sudah dikirim ke %@ dan %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to %@ and %@."
+          }
+        }
+      }
+    },
+    "date.today_at": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hari ini, %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today, %@"
+          }
+        }
+      }
+    },
+    "date.yesterday_at": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kemarin, %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday, %@"
+          }
+        }
+      }
+    },
+    "invite.valid_minutes": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berlaku %d menit lagi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid for %d more minutes"
+          }
+        }
+      }
+    },
+    "alert.suspicious.title": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bahaya: telepon mencurigakan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danger: suspicious call"
+          }
+        }
+      }
+    },
+    "Akhiri latihan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End practice"
+          }
+        }
+      }
+    },
+    "Akhiri panggilan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End call"
+          }
+        }
+      }
+    },
+    "Analisis sedang berjalan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis in progress"
+          }
+        }
+      }
+    },
+    "Belum ada sesi analisis aktif": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active analysis session"
+          }
+        }
+      }
+    },
+    "Bluetooth menyala": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluetooth is on"
+          }
+        }
+      }
+    },
+    "Contoh latihan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice example"
+          }
+        }
+      }
+    },
+    "Cukup satu pengawas yang menjawab.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only one caregiver needs to answer."
+          }
+        }
+      }
+    },
+    "Cukup satu yang menjawab": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only one answer is needed"
+          }
+        }
+      }
+    },
+    "Dengarkan penelepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen to the caller."
+          }
+        }
+      }
+    },
+    "Di punggung HP, seperti pegangan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the back of the phone, like a grip."
+          }
+        }
+      }
+    },
+    "Gunakan speaker saat menelepon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use speakerphone during calls"
+          }
+        }
+      }
+    },
+    "Hubungkan keluarga dulu di Beranda, lalu coba lagi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your family from Home, then try again."
+          }
+        }
+      }
+    },
+    "Internet putus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internet disconnected"
+          }
+        }
+      }
+    },
+    "Isi kode demo 482 913": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter demo code 482 913"
+          }
+        }
+      }
+    },
+    "Isi kode demo 715 204": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter demo code 715 204"
+          }
+        }
+      }
+    },
+    "Jarak sekitar satu jengkal.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep it about a handspan away."
+          }
+        }
+      }
+    },
+    "Jika ada peringatan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If an alert appears"
+          }
+        }
+      }
+    },
+    "Kata sandi Wi-Fi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi password"
+          }
+        }
+      }
+    },
+    "Keluar dari keluarga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave family"
+          }
+        }
+      }
+    },
+    "Keluar dari keluarga di HP ini?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave the family on this phone?"
+          }
+        }
+      }
+    },
+    "Kirim ke HP anak Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send it to your family member's phone."
+          }
+        }
+      }
+    },
+    "Kirim tautan ke anak Anda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send the link to your family member."
+          }
+        }
+      }
+    },
+    "Letakkan puck dekat HP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Place the puck near the phone"
+          }
+        }
+      }
+    },
+    "Lihat dan putuskan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review and decide"
+          }
+        }
+      }
+    },
+    "Lihat tombol yang terkunci.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the locked button."
+          }
+        }
+      }
+    },
+    "Lihat transkripsi otomatis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View automatic transcript"
+          }
+        }
+      }
+    },
+    "Masukkan kode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter code"
+          }
+        }
+      }
+    },
+    "Mencari puck…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching for puck…"
+          }
+        }
+      }
+    },
+    "Menunggu hasil akhir panggilan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the final call result."
+          }
+        }
+      }
+    },
+    "Menyelesaikan analisis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finishing analysis"
+          }
+        }
+      }
+    },
+    "Mode demo, ganti peran": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demo mode, switch roles"
+          }
+        }
+      }
+    },
+    "Muncul di atas layar saat menelepon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appears at the top of the screen during calls."
+          }
+        }
+      }
+    },
+    "Nama Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name"
+          }
+        }
+      }
+    },
+    "Nama Wi-Fi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wi-Fi name"
+          }
+        }
+      }
+    },
+    "Papan tombol": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keypad"
+          }
+        }
+      }
+    },
+    "Pasang puck": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attach puck"
+          }
+        }
+      }
+    },
+    "Pasangkan ulang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair again"
+          }
+        }
+      }
+    },
+    "Pastikan puck menyala dan dekat HP.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make sure the puck is on and near the phone."
+          }
+        }
+      }
+    },
+    "Pemantauan panggilan berhenti": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call monitoring stopped"
+          }
+        }
+      }
+    },
+    "Pengawas lain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another caregiver"
+          }
+        }
+      }
+    },
+    "Perbarui keluarga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh family"
+          }
+        }
+      }
+    },
+    "Percakapan perlu terdengar jelas agar dapat dianalisis.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The call must be clearly audible for analysis."
+          }
+        }
+      }
+    },
+    "Percakapan tidak terdengar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call cannot be heard"
+          }
+        }
+      }
+    },
+    "Peringatan lewat notifikasi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts through notifications"
+          }
+        }
+      }
+    },
+    "Peringatan panggilan Anda dibagikan kepada pendamping ini.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your call alerts are shared with this caregiver."
+          }
+        }
+      }
+    },
+    "Permintaan masuk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incoming request"
+          }
+        }
+      }
+    },
+    "Pilih satu jawaban": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose one answer"
+          }
+        }
+      }
+    },
+    "Puck memakai Wi-Fi ini": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck uses this Wi-Fi network"
+          }
+        }
+      }
+    },
+    "Puck sedang masuk Wi-Fi…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck is joining Wi-Fi…"
+          }
+        }
+      }
+    },
+    "Puck tersambung": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puck connected"
+          }
+        }
+      }
+    },
+    "Saat menerima panggilan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When receiving a call"
+          }
+        }
+      }
+    },
+    "Sebelum mulai": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you begin"
+          }
+        }
+      }
+    },
+    "Semua cuplikan yang tersimpan dari transkripsi otomatis, bukan rekaman lengkap. Kata-kata bisa salah terbaca.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All saved excerpts come from automatic transcription, not full recordings. Some words may be transcribed incorrectly."
+          }
+        }
+      }
+    },
+    "Seorang perempuan melihat HP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A woman looking at her phone"
+          }
+        }
+      }
+    },
+    "Server dapat dihubungi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server is reachable"
+          }
+        }
+      }
+    },
+    "Siapa Anda?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who are you?"
+          }
+        }
+      }
+    },
+    "Siapa nama Anda?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is your name?"
+          }
+        }
+      }
+    },
+    "Status belum tersedia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status unavailable"
+          }
+        }
+      }
+    },
+    "Tanda yang ditemukan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected indicators"
+          }
+        }
+      }
+    },
+    "Tautan ini untuk pengawas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This link is for a caregiver"
+          }
+        }
+      }
+    },
+    "Tempel di punggung HP, lalu tekan tombolnya sampai lampu berkedip.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attach it to the back of the phone, then hold its button until the light flashes."
+          }
+        }
+      }
+    },
+    "Tempel puck di HP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attach the puck to the phone"
+          }
+        }
+      }
+    },
+    "Transkripsi otomatis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic transcript"
+          }
+        }
+      }
+    },
+    "Ulangi demo dari awal?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart the demo?"
+          }
+        }
+      }
+    },
+    "Undang pendamping Anda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite your caregiver"
+          }
+        }
+      }
+    },
+    "Untuk melihat banner di beranda dan pengingat loudspeaker.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see Home alerts and speakerphone reminders."
+          }
+        }
+      }
+    },
+    "Yang Anda dampingi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People you support"
+          }
+        }
+      }
+    },
+    "Yang Anda jaga": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People you protect"
+          }
+        }
+      }
+    },
+    "Yang sebaiknya dilakukan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What to do next"
+          }
+        }
+      }
+    },
+    "guardian.now_protecting.title": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sekarang Anda menjaga %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are now protecting %@"
+          }
+        }
+      }
+    },
+    "guardian.now_protecting.body": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peringatan dari HP %@ akan masuk ke sini."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts from %@'s phone will appear here."
+          }
+        }
+      }
+    },
+    "guardian.protecting_together": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda menjaga %@ bersama %@. Cukup satu yang menjawab."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are protecting %@ with %@. Only one person needs to answer."
+          }
+        }
+      }
+    },
+    "guardian.needs_approval": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ perlu mengizinkan di HP-nya."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ needs to approve the request on their phone."
+          }
+        }
+      }
+    },
+    "guardian.parent_notified": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ akan diberi tahu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ will be notified."
+          }
+        }
+      }
+    },
+    "guardian.other_answered": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ menjawab lebih dulu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ answered first"
+          }
+        }
+      }
+    },
+    "accessibility.code": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kode %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code %@"
+          }
+        }
+      }
+    },
+    "accessibility.notification": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifikasi Rambu. %@. %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rambu notification. %@. %@"
+          }
+        }
+      }
+    },
+    "simulation.control_disabled": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, tidak aktif di simulasi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, disabled in the simulation"
+          }
+        }
+      }
+    },
+    "accessibility.profile": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@'s profile"
+          }
+        }
+      }
+    },
+    "accessibility.step": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langkah %d dari %d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step %d of %d"
+          }
+        }
+      }
+    },
+    "puck.found": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ditemukan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ found"
+          }
+        }
+      }
+    },
+    "evidence.excerpt_number": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuplikan %d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excerpt %d"
+          }
+        }
+      }
+    },
+    "decision.by_verdict": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %@"
+          }
+        }
+      }
+    },
+    "decision.marked": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ menandai %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ marked %@"
+          }
+        }
+      }
+    },
+    "guardian.together": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bersama %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Together with %@"
+          }
+        }
+      }
+    },
+    "guardian.waiting": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menunggu %@…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for %@…"
+          }
+        }
+      }
+    },
+    "evidence.flagged_by": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditandai Rambu: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flagged by Rambu: %@"
+          }
+        }
+      }
+    },
+    "person.you": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (Anda)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (You)"
+          }
+        }
+      }
+    },
+    "Memanggil…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calling…"
+          }
+        }
+      }
+    },
+    "iOS menghentikan pemantauan panggilan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "iOS stopped call monitoring." } } }
+    },
+    "Alamat server Rambu tidak valid.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The Rambu server address is invalid." } } }
+    },
+    "Skenario panggilan tidak tersedia.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The call scenario is unavailable." } } }
+    },
+    "Respons server Rambu tidak dapat dibaca.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The response from the Rambu server could not be read." } } }
+    },
+    "Server Rambu tidak dapat dihubungi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The Rambu server could not be reached." } } }
+    },
+    "Respons jaringan Rambu tidak valid.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The response from the Rambu server is invalid." } } }
+    },
+    "Risiko rendah berisi bukti yang tidak valid.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The low-risk result contains invalid evidence." } } }
+    },
+    "Hasil berisiko tidak memiliki bukti.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The risk result does not include evidence." } } }
+    },
+    "Bukti analisis tidak sesuai transkrip.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The analysis evidence does not match the transcript." } } }
+    },
+    "Status sesi backend tidak dikenal.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The backend session status is unknown." } } }
+    },
+    "Sesi gagal tanpa keterangan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The session failed without an explanation." } } }
+    },
+    "Tingkat risiko backend tidak dikenal.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The backend risk level is unknown." } } }
+    },
+    "Jenis tanda backend tidak dikenal.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The backend signal type is unknown." } } }
+    },
+    "Hubungkan akun orang tua sebelum memantau panggilan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Connect the parent's account before monitoring calls." } } }
+    },
+    "Puck tidak ditemukan. Pastikan puck menyala dan dekat HP.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck not found. Make sure it is turned on and near the phone." } } }
+    },
+    "Bluetooth mati. Nyalakan Bluetooth lalu coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Bluetooth is off. Turn it on, then try again." } } }
+    },
+    "Izinkan Bluetooth untuk Rambu di Pengaturan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Allow Bluetooth access for Rambu in Settings." } } }
+    },
+    "Gagal terhubung ke puck. Coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Could not connect to the puck. Try again." } } }
+    },
+    "Wi-Fi belum terkirim. Coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Wi-Fi details were not sent. Try again." } } }
+    },
+    "Pairing dibatalkan. Coba lagi dan pilih Pasangkan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Pairing was canceled. Try again and choose Pair." } } }
+    },
+    "Puck tidak bisa masuk Wi-Fi. Periksa nama dan kata sandi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The puck could not join Wi-Fi. Check the network name and password." } } }
+    },
+    "LATIHAN": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "PRACTICE" } } }
+    },
+    "Ayah": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Father" } } }
+    },
+    "Nenek": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Grandmother" } } }
+    },
+    "Ibu": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Mother" } } }
+    },
+    "family.people_count": {
+      "localizations": {
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d orang"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d people"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

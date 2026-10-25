@@ -46,7 +46,11 @@ final class PilotViewModel {
             state.pilotInviteExpiresAt = pilot.inviteExpiresAt
             return true
         } catch {
-            state.pilotError = "Kode undangan belum berhasil dibuat. \(PilotAPIError.displayMessage(for: error))"
+            state.pilotError = L10n.format(
+                "Kode undangan belum berhasil dibuat. %@",
+                language: state.language,
+                PilotAPIError.displayMessage(for: error, language: state.language)
+            )
             return false
         }
     }
@@ -70,7 +74,10 @@ final class PilotViewModel {
             profile.persist()
             return true
         } catch {
-            state.pilotError = PilotAPIError.displayMessage(for: error)
+            state.pilotError = PilotAPIError.displayMessage(
+                for: error,
+                language: state.language
+            )
             return false
         }
     }
@@ -82,7 +89,11 @@ final class PilotViewModel {
             state.pilotInviteCode = try await pilot.renewInvite()
             state.pilotInviteExpiresAt = pilot.inviteExpiresAt
         } catch {
-            state.pilotError = "Kode baru belum berhasil dibuat. \(PilotAPIError.displayMessage(for: error))"
+            state.pilotError = L10n.format(
+                "Kode baru belum berhasil dibuat. %@",
+                language: state.language,
+                PilotAPIError.displayMessage(for: error, language: state.language)
+            )
         }
     }
 

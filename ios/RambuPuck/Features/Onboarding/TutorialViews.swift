@@ -27,7 +27,10 @@ struct TutorialCarousel: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.glass)
-                .accessibilityLabel(model.narrationEnabled ? "Matikan suara" : "Nyalakan suara")
+                .accessibilityLabel(L10n.text(
+                    model.narrationEnabled ? "Matikan suara" : "Nyalakan suara",
+                    language: model.language
+                ))
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -107,11 +110,11 @@ private struct TutorialPage: View {
             TutorialVisual(visual: card.visual, isActive: isActive)
                 .frame(height: 330)
             VStack(spacing: 8) {
-                Text(card.title)
+                Text(LocalizedStringKey(card.title))
                     .font(Brand.display(.title))
                     .foregroundStyle(Brand.ink)
                     .multilineTextAlignment(.center)
-                Text(card.line)
+                Text(LocalizedStringKey(card.line))
                     .font(.title3)
                     .foregroundStyle(Brand.ink2)
                     .multilineTextAlignment(.center)

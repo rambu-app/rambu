@@ -80,7 +80,12 @@ struct ProfileButton: View {
         } label: {
             Avatar(person: model.currentPerson, size: 30)
         }
-        .accessibilityLabel("Profil \(model.currentPerson.name)")
+        .accessibilityLabel(L10n.format(
+            "accessibility.profile",
+            fallback: "Profil %@",
+            language: model.language,
+            model.currentPerson.name
+        ))
     }
 }
 
@@ -148,6 +153,7 @@ struct FlowLayout: Layout {
 struct StepProgress: View {
     let current: Int
     let total: Int
+    @Environment(AppState.self) private var model
 
     var body: some View {
         HStack(spacing: 6) {
@@ -160,7 +166,13 @@ struct StepProgress: View {
         .frame(maxWidth: 48 * CGFloat(total))
         .animation(.smooth, value: current)
         .accessibilityElement()
-        .accessibilityLabel("Langkah \(current) dari \(total)")
+        .accessibilityLabel(L10n.format(
+            "accessibility.step",
+            fallback: "Langkah %d dari %d",
+            language: model.language,
+            current,
+            total
+        ))
     }
 }
 
@@ -169,7 +181,7 @@ struct GlassChip: View {
     let text: String
 
     var body: some View {
-        Label(text, systemImage: systemImage)
+        Label(LocalizedStringKey(text), systemImage: systemImage)
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .lineLimit(1)
@@ -186,6 +198,7 @@ struct DigitBoxes: View {
     let digits: String
     var count = 6
     var showsCursor = false
+    @Environment(AppState.self) private var model
 
     var body: some View {
         HStack(spacing: 8) {
@@ -195,7 +208,16 @@ struct DigitBoxes: View {
             }
         }
         .accessibilityElement()
-        .accessibilityLabel(digits.isEmpty ? "Kode belum diisi" : "Kode \(digits.map(String.init).joined(separator: " "))")
+        .accessibilityLabel(
+            digits.isEmpty
+                ? L10n.text("Kode belum diisi", language: model.language)
+                : L10n.format(
+                    "accessibility.code",
+                    fallback: "Kode %@",
+                    language: model.language,
+                    digits.map(String.init).joined(separator: " ")
+                )
+        )
     }
 
     private func box(at index: Int) -> some View {

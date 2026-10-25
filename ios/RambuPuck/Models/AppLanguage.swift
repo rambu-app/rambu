@@ -19,13 +19,43 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable, Sendable {
 
 enum L10n {
     static func text(_ key: String, language: AppLanguage) -> String {
+        text(key, fallback: key, language: language)
+    }
+
+    static func text(
+        _ key: String,
+        fallback: String,
+        language: AppLanguage
+    ) -> String {
         guard language != .indonesian,
               let path = Bundle.main.path(forResource: language.rawValue, ofType: "lproj"),
-              let bundle = Bundle(path: path) else { return key }
-        return bundle.localizedString(forKey: key, value: key, table: nil)
+              let bundle = Bundle(path: path) else { return fallback }
+        return bundle.localizedString(forKey: key, value: fallback, table: nil)
     }
 
     static func format(_ key: String, language: AppLanguage, _ arguments: CVarArg...) -> String {
-        String(format: text(key, language: language), locale: language.locale, arguments: arguments)
+        format(key, fallback: key, language: language, arguments: arguments)
+    }
+
+    static func format(
+        _ key: String,
+        fallback: String,
+        language: AppLanguage,
+        _ arguments: CVarArg...
+    ) -> String {
+        format(key, fallback: fallback, language: language, arguments: arguments)
+    }
+
+    private static func format(
+        _ key: String,
+        fallback: String,
+        language: AppLanguage,
+        arguments: [CVarArg]
+    ) -> String {
+        String(
+            format: text(key, fallback: fallback, language: language),
+            locale: language.locale,
+            arguments: arguments
+        )
     }
 }

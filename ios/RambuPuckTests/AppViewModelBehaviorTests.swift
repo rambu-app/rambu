@@ -175,6 +175,7 @@ struct AppViewModelBehaviorTests {
                              analysis: ScenarioAnalysis(interval: .zero, initialDelay: .zero),
                              liveActivities: false, notifications: false, speech: false,
                              escalationDelay: .milliseconds(50))
+        model.state.language = .indonesian
         await model.call.start(.bankOTP).value
         try await Task.sleep(for: .milliseconds(200))
 
@@ -190,6 +191,7 @@ struct AppViewModelBehaviorTests {
                              analysis: ScenarioAnalysis(interval: .zero, initialDelay: .zero),
                              liveActivities: false, notifications: false, speech: false,
                              speakerCheckDelay: .milliseconds(10))
+        model.state.language = .indonesian
         model.state.speakerOffNextCall = true
         await model.call.start(.bankOTP).value
 
@@ -271,6 +273,7 @@ struct AppViewModelBehaviorTests {
             callActivity: monitor,
             isProtectionConfigured: { true }
         )
+        model.state.language = .indonesian
         let id = UUID()
         let connected = CallActivityEvent(id: id, state: .connected, at: .now)
 
@@ -312,6 +315,7 @@ struct AppViewModelBehaviorTests {
             callActivity: monitor,
             isProtectionConfigured: { false }
         )
+        model.state.language = .indonesian
 
         model.startCallMonitoring()
         monitor.send(CallActivityEvent(id: UUID(), state: .connected, at: .now))
@@ -403,6 +407,7 @@ struct AppViewModelBehaviorTests {
             callActivity: monitor,
             isProtectionConfigured: { true }
         )
+        model.state.language = .indonesian
 
         model.startCallMonitoring()
         monitor.fail(BackendAnalysisError.transport(detail: "CallKit berhenti."))

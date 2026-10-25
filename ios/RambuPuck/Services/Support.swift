@@ -143,14 +143,34 @@ enum InviteLink {
         URL(string: "\(webBase)?kode=\(code)")!
     }
 
-    static func message(code: String, parentName: String, expiresAt: Date? = nil) -> String {
-        let expiry = expiresAt.map { " Kode berlaku sampai pukul \(Fmt.clock($0))." } ?? ""
+    static func message(
+        code: String,
+        parentName: String,
+        expiresAt: Date? = nil,
+        language: AppLanguage = .indonesian
+    ) -> String {
+        if language == .english {
+            let expiry = expiresAt.map {
+                " The code is valid until \(Fmt.clock($0, language: language))."
+            } ?? ""
+            return "\(parentName) invited you to be a caregiver on Rambu. Invitation code: \(code). Open Rambu, choose I am a caregiver, then enter this code.\(expiry)"
+        }
+        let expiry = expiresAt.map {
+            " Kode berlaku sampai pukul \(Fmt.clock($0, language: language))."
+        } ?? ""
         return "\(parentName) mengundang Anda menjadi pendamping di Rambu. Kode undangan: \(code). Buka Rambu, pilih Saya pendamping, lalu masukkan kode ini.\(expiry)"
     }
 
-    static func whatsAppURL(code: String, parentName: String) -> URL {
+    static func whatsAppURL(
+        code: String,
+        parentName: String,
+        language: AppLanguage = .indonesian
+    ) -> URL {
         var components = URLComponents(string: "https://wa.me/")!
-        components.queryItems = [URLQueryItem(name: "text", value: message(code: code, parentName: parentName))]
+        components.queryItems = [URLQueryItem(
+            name: "text",
+            value: message(code: code, parentName: parentName, language: language)
+        )]
         return components.url!
     }
 

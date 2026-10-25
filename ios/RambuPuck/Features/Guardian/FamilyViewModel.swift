@@ -50,8 +50,18 @@ final class FamilyViewModel {
         if case .alreadyDecided(let existing) = outcome, existing.by != state.currentPerson {
             state.toast = Toast(
                 id: "late-\(alertID)",
-                title: "\(existing.by.name) sudah menjawab lebih dulu",
-                body: "Jawabannya: \(existing.verdict.pastTitle). Cukup satu jawaban.",
+                title: L10n.format(
+                    "family.answered_first",
+                    fallback: "%@ sudah menjawab lebih dulu",
+                    language: state.language,
+                    existing.by.name
+                ),
+                body: L10n.format(
+                    "family.answer_summary",
+                    fallback: "Jawabannya: %@. Cukup satu jawaban.",
+                    language: state.language,
+                    L10n.text(existing.verdict.pastTitle, language: state.language)
+                ),
                 level: existing.verdict == .scam ? .danger : .safe,
                 alertID: alertID
             )
@@ -82,8 +92,17 @@ final class FamilyViewModel {
             if isNew, !state.persona.isParent {
                 present(Toast(
                     id: "alert-\(alert.id)",
-                    title: "\(alert.level.title): \(alert.title)",
-                    body: "Ketuk untuk melihat kalimatnya dan memutuskan.",
+                    title: L10n.format(
+                        "family.alert_title_with_level",
+                        fallback: "%@: %@ mungkin sedang ditipu",
+                        language: state.language,
+                        L10n.text(alert.level.title, language: state.language),
+                        alert.parent.name
+                    ),
+                    body: L10n.text(
+                        "Ketuk untuk melihat kalimatnya dan memutuskan.",
+                        language: state.language
+                    ),
                     level: alert.level,
                     alertID: alert.id
                 ))
@@ -110,10 +129,23 @@ final class FamilyViewModel {
                 let scam = decision.verdict == .scam
                 present(Toast(
                     id: "decision-\(alertID)",
-                    title: scam ? "\(decision.by.name): ini penipuan" : "\(decision.by.name): telepon aman",
+                    title: L10n.format(
+                        scam ? "family.decision.scam" : "family.decision.safe",
+                        fallback: scam ? "%@: ini penipuan" : "%@: telepon aman",
+                        language: state.language,
+                        decision.by.name
+                    ),
                     body: state.persona.isParent
-                        ? (scam ? "Tutup telepon sekarang." : "Tetap jangan beri kode atau transfer.")
-                        : "Sudah dikirim ke \(state.parent.name).",
+                        ? L10n.text(
+                            scam ? "Tutup telepon sekarang." : "Tetap jangan beri kode atau transfer.",
+                            language: state.language
+                        )
+                        : L10n.format(
+                            "family.sent_to",
+                            fallback: "Sudah dikirim ke %@.",
+                            language: state.language,
+                            state.parent.name
+                        ),
                     level: scam ? .danger : .safe,
                     alertID: alertID
                 ))
@@ -138,8 +170,17 @@ final class FamilyViewModel {
             if previous == nil, !state.persona.isParent, !alert.callEnded, alert.decision == nil {
                 present(Toast(
                     id: "remote-alert-\(alert.id)",
-                    title: "\(alert.level.title): \(alert.title)",
-                    body: "Ketuk untuk melihat kalimatnya dan memutuskan.",
+                    title: L10n.format(
+                        "family.alert_title_with_level",
+                        fallback: "%@: %@ mungkin sedang ditipu",
+                        language: state.language,
+                        L10n.text(alert.level.title, language: state.language),
+                        alert.parent.name
+                    ),
+                    body: L10n.text(
+                        "Ketuk untuk melihat kalimatnya dan memutuskan.",
+                        language: state.language
+                    ),
                     level: alert.level,
                     alertID: alert.id
                 ))
@@ -163,8 +204,18 @@ final class FamilyViewModel {
             if decision.by != state.currentPerson {
                 state.toast = Toast(
                     id: "late-\(alertID)",
-                    title: "\(decision.by.name) sudah menjawab lebih dulu",
-                    body: "Jawabannya: \(decision.verdict.pastTitle). Cukup satu jawaban.",
+                    title: L10n.format(
+                        "family.answered_first",
+                        fallback: "%@ sudah menjawab lebih dulu",
+                        language: state.language,
+                        decision.by.name
+                    ),
+                    body: L10n.format(
+                        "family.answer_summary",
+                        fallback: "Jawabannya: %@. Cukup satu jawaban.",
+                        language: state.language,
+                        L10n.text(decision.verdict.pastTitle, language: state.language)
+                    ),
                     level: decision.verdict == .scam ? .danger : .safe,
                     alertID: alertID
                 )
