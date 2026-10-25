@@ -284,7 +284,9 @@ struct ParentHome: View {
                         VStack(alignment: .leading, spacing: 10) {
                             SectionHeader(title: "Panggilan terakhir")
                             NavigationLink(value: last.id) {
-                                HistoryRow(record: last, forGuardian: false).card(padding: 16)
+                                HistoryRow(record: last, forGuardian: false)
+                                    .clipShape(.rect(cornerRadius: 24, style: .continuous))
+                                    .card(padding: 0)
                             }
                             .buttonStyle(.plain)
                         }
