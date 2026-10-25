@@ -38,15 +38,21 @@ final class RambuNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     func post(_ toast: Toast) {
         guard let center else { return }
+        let content = notificationContent(for: toast)
+        center.add(UNNotificationRequest(identifier: toast.id, content: content, trigger: nil))
+    }
+
+    func notificationContent(for toast: Toast) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = toast.title
         content.body = toast.body
-        content.sound = .default
+        content.sound = toast.notificationSoundName.map {
+            UNNotificationSound(named: UNNotificationSoundName($0))
+        } ?? .default
         content.threadIdentifier = toast.alertID?.uuidString ?? "rambu"
         if let id = toast.alertID { content.userInfo = ["alertID": id.uuidString] }
         if let attachment = mascotAttachment(for: toast.level) { content.attachments = [attachment] }
-
-        center.add(UNNotificationRequest(identifier: toast.id, content: content, trigger: nil))
+        return content
     }
 
     /// Thumbnail maskot yang memegang rambu sesuai tingkat risiko, tampil di sisi kanan push.

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UserNotifications
 @testable import RambuPuck
 
 @MainActor
@@ -30,6 +31,19 @@ struct ProfileViewModelTests {
 
         #expect(!safe.isUrgent)
         #expect(safe.notificationSoundName == nil)
+    }
+
+    @Test("Local notification content uses the urgent sound only for risk warnings")
+    func localNotificationContentUsesUrgentSoundOnlyForRiskWarnings() {
+        let notifier = RambuNotifier(enabled: false)
+        let danger = Toast(id: "danger", title: "Danger", body: "Stop", level: .danger, alertID: nil)
+        let safe = Toast(id: "safe", title: "Safe", body: "All clear", level: .safe, alertID: nil)
+
+        let dangerContent = notifier.notificationContent(for: danger)
+        let safeContent = notifier.notificationContent(for: safe)
+
+        #expect(dangerContent.sound == UNNotificationSound(named: UNNotificationSoundName("rambu-urgent.caf")))
+        #expect(safeContent.sound == .default)
     }
 
     @Test("An urgent in-app fallback triggers feedback once")
