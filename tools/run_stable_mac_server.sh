@@ -7,6 +7,7 @@ REPOSITORY_ROOT="$(cd "${SCRIPT_DIRECTORY}/.." && pwd)"
 BACKEND_ENVIRONMENT_FILE="${REPOSITORY_ROOT}/backend/.env"
 MENU_APP="${REPOSITORY_ROOT}/build/Rambu Puck.app"
 PUBLIC_URL="${RAMBU_PUBLIC_URL:-https://rambu-api.sfatimah.com}"
+BACKEND_URL="http://127.0.0.1:8001"
 TUNNEL_TOKEN_FILE="${RAMBU_TUNNEL_TOKEN_FILE:-${HOME}/.config/rambu/cloudflare-tunnel-token}"
 HEALTH_ATTEMPTS="${RAMBU_HEALTH_ATTEMPTS:-60}"
 HEALTH_INTERVAL="${RAMBU_HEALTH_INTERVAL:-0.5}"
@@ -19,7 +20,7 @@ Start the persistent-address Rambu stack on this Mac:
   Langflow, backend, a named Cloudflare Tunnel, and the Rambu Puck menu app.
 
 The Cloudflare tunnel must publish:
-  https://rambu-api.sfatimah.com -> http://localhost:8000
+  https://rambu-api.sfatimah.com -> http://localhost:8001
 
 Store its token outside the repository at:
   ~/.config/rambu/cloudflare-tunnel-token
@@ -107,6 +108,13 @@ service_is_ready() {
   curl --fail --silent --show-error --max-time 3 "$1" >/dev/null 2>&1
 }
 
+rambu_backend_is_ready() {
+  local response
+
+  response="$(curl --fail --silent --show-error --max-time 3 "$1" 2>/dev/null)" || return 1
+  [[ "${response}" == *'"status":"ready"'* ]]
+}
+
 OWNED_PIDS=""
 LAST_STARTED_PID=""
 LOG_DIRECTORY=""
@@ -132,10 +140,11 @@ wait_for_service() {
   local url="$2"
   local pid="$3"
   local log_file="$4"
+  local readiness_probe="${5:-service_is_ready}"
   local attempt
 
   for attempt in $(seq 1 "${HEALTH_ATTEMPTS}"); do
-    if service_is_ready "${url}"; then
+    if "${readiness_probe}" "${url}"; then
       return 0
     fi
     if [[ -n "${pid}" ]] && ! kill -0 "${pid}" 2>/dev/null; then
@@ -210,13 +219,14 @@ run_server() {
   fi
   printf '✓ Langflow flow is ready.\n'
 
-  if service_is_ready "http://127.0.0.1:8000/health"; then
+  if rambu_backend_is_ready "${BACKEND_URL}/health"; then
     printf '✓ Backend is already running.\n'
   else
     start_background_process "${backend_log}" \
       uv run --project backend uvicorn rambu_api.app:app \
-      --host 127.0.0.1 --port 8000 --env-file backend/.env
-    wait_for_service "backend" "http://127.0.0.1:8000/health" "${LAST_STARTED_PID}" "${backend_log}"
+      --host 127.0.0.1 --port 8001 --env-file backend/.env
+    wait_for_service "backend" "${BACKEND_URL}/health" \
+      "${LAST_STARTED_PID}" "${backend_log}" rambu_backend_is_ready
     printf '✓ Backend is ready.\n'
   fi
 
@@ -224,7 +234,7 @@ run_server() {
     cloudflared tunnel --no-autoupdate run --token-file "${TUNNEL_TOKEN_FILE}"
   tunnel_pid="${LAST_STARTED_PID}"
   wait_for_service "public backend at ${PUBLIC_URL}" \
-    "${PUBLIC_URL}/health" "${tunnel_pid}" "${tunnel_log}"
+    "${PUBLIC_URL}/health" "${tunnel_pid}" "${tunnel_log}" rambu_backend_is_ready
   printf '✓ Named Cloudflare Tunnel is ready.\n'
 
   if ! open "${MENU_APP}"; then

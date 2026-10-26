@@ -149,8 +149,14 @@ def test_stable_launcher_uses_named_tunnel_and_opens_menu_app(tmp_path: Path) ->
         "curl",
         'case "$*" in\n'
         '  *"127.0.0.1:7861/health"*) exit 0 ;;\n'
-        '  *"127.0.0.1:8000/health"*) test -f "$RAMBU_TEST_BACKEND_READY" ;;\n'
-        '  *"rambu-api.sfatimah.com/health"*) exit 0 ;;\n'
+        '  *"127.0.0.1:8000/health"*) printf \'%s\\n\' \'{"status":"ok","service":"summon-interviewer"}\'; exit 0 ;;\n'
+        '  *"127.0.0.1:8001/health"*)\n'
+        '    if test -f "$RAMBU_TEST_BACKEND_READY"; then\n'
+        '      printf \'%s\\n\' \'{"status":"ready"}\'\n'
+        '    else\n'
+        '      printf \'%s\\n\' \'{"status":"ok","service":"not-rambu"}\'\n'
+        '    fi ;;\n'
+        '  *"rambu-api.sfatimah.com/health"*) printf \'%s\\n\' \'{"status":"ready"}\'; exit 0 ;;\n'
         '  *) exit 1 ;;\n'
         "esac",
     )
@@ -189,7 +195,7 @@ def test_stable_launcher_uses_named_tunnel_and_opens_menu_app(tmp_path: Path) ->
     assert "tunnel --no-autoupdate run" in commands
     assert "--url" not in commands
     assert "trycloudflare.com" not in commands
-    assert "uvicorn rambu_api.app:app --host 127.0.0.1 --port 8000" in commands
+    assert "uvicorn rambu_api.app:app --host 127.0.0.1 --port 8001" in commands
     assert "Rambu Puck.app" in commands
     assert "pair --code" not in commands
     assert "rambu-puck-agent listen" not in commands
@@ -204,7 +210,8 @@ def test_public_health_failure_stops_before_opening_the_menu_app(tmp_path: Path)
         fake_bin,
         "curl",
         'case "$*" in\n'
-        '  *"127.0.0.1"*) exit 0 ;;\n'
+        '  *"127.0.0.1:7861/health"*) exit 0 ;;\n'
+        '  *"127.0.0.1:8001/health"*) printf \'%s\\n\' \'{"status":"ready"}\'; exit 0 ;;\n'
         '  *) printf "%s\\n" "not reachable" >&2; exit 22 ;;\n'
         "esac",
     )
