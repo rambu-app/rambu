@@ -21,7 +21,6 @@
 		262EF32CA4811E7E3131ACBA /* CallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D858B5F3344B8F452868A857 /* CallViewModel.swift */; };
 		31C9F5F79F53B7D2F19C60EE /* BrandTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DFED1BBE7FF071A75558A4 /* BrandTokens.swift */; };
 		3519E3A6F3941C4AD79CE49B /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EDEA58598842DF751D6C31 /* Domain.swift */; };
-		A11A00000000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00000000000000000002 /* AppLanguage.swift */; };
 		35817BCFA820B9F66CFE3B9B /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0ACD2EF6AD903547E9A034E /* AppStateTests.swift */; };
 		3BAEBDB7399E26DC1AE84FEE /* CallActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91303AE084840EFA17FD0C49 /* CallActivityAttributes.swift */; };
 		3CFBAB7D6A0A3A3C1D64C2F0 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0D0F2E26B21F780934FE07 /* OnboardingViewModel.swift */; };
@@ -29,21 +28,21 @@
 		42EEBDACAEE13DBA46D625DF /* CallViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19268EF8B8AAFE56CB1E4B54 /* CallViewModelTests.swift */; };
 		45C9A03B93E57C41EDFA5EBE /* AppViewModelBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D879990D8387FAFDCB177D8 /* AppViewModelBehaviorTests.swift */; };
 		4A6CAC85000D33B3040DCA1C /* ProtectionCallAnalysisSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81308CA0D02E32C5314DDCB6 /* ProtectionCallAnalysisSourceTests.swift */; };
+		4AC85A130625DA9A75581FAB /* PuckNetworkProvisioningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C3506837A7DF8A7E870E4E /* PuckNetworkProvisioningTests.swift */; };
 		4F2CE3D39E879D0D3F80A419 /* PushBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D833E86F0B75BF98C91CBD79 /* PushBanner.swift */; };
 		530E3EC772DB134178BF0434 /* CallStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */; };
 		53A61864CD45F6EC363E3256 /* TestAnalysisSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC31B86E067B078F143C7FD3 /* TestAnalysisSource.swift */; };
 		54059A3D01E926E13A4F6EE7 /* BackendCallAnalysisSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2D615BE25C1586D42EDBAA /* BackendCallAnalysisSource.swift */; };
 		5F59D4EC7D7E5420CCAF45C7 /* UrgencyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23DF15C38B1752E23E9A027 /* UrgencyFeedback.swift */; };
-		600000000000000000000001 /* rambu-urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = 600000000000000000000002 /* rambu-urgent.caf */; };
-		A11A00000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A11A00000000000000000006 /* Localizable.xcstrings */; };
-		A11A00000000000000000007 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A11A00000000000000000008 /* InfoPlist.xcstrings */; };
 		5F665C1C1DAD5A302D7732D6 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F4C5FA7C6526844B3B2720 /* OnboardingFlow.swift */; };
 		64DFA0A4A53C7B841B46C9D8 /* HistoryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2564934BEF6BC601943839 /* HistoryViews.swift */; };
 		706541C9D3A3FC780CF75DBC /* Scenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = F507FBDD67EC089971B60425 /* Scenarios.swift */; };
 		70780ED35ED00C3295C60C81 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 629638BD82BF294DA2FC4031 /* AppViewModel.swift */; };
 		71757F5BA9B88838F65F13CC /* Mascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE025E71C0581D1C225224FF /* Mascot.swift */; };
 		81A35F3B49B46E52142134CF /* CallActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91303AE084840EFA17FD0C49 /* CallActivityAttributes.swift */; };
+		92DB447037EA73914EB64260 /* rambu-urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = DEF90A05CE5083DE5FCAD06E /* rambu-urgent.caf */; };
 		99CA9228671A3B125C47FD17 /* OnboardingViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F665B1BCE82624C765384CC /* OnboardingViewModelTests.swift */; };
+		9A996AC6DCC32854D73B786C /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = F98378112DFF1E2F47932B98 /* InfoPlist.xcstrings */; };
 		9DB85FF86E6CB4DCCCC67546 /* CallViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7CDCE6EF63A63200F0B2FB4 /* CallViews.swift */; };
 		9E601B732444FC070AADBBF5 /* DemoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7D248A50874923A5773C5B /* DemoViews.swift */; };
 		A055F61D163E18E07EFCA272 /* AppViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC43E5662306F9A230B35F44 /* AppViewModelTests.swift */; };
@@ -54,11 +53,14 @@
 		AB064A7B899635EFC2A78A56 /* RambuAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9789563CF2D3BDD9236709F8 /* RambuAppDelegate.swift */; };
 		AEA4C2444F3A9F021AC710C3 /* GuardianViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A862CC980FBCAD88AEECD0 /* GuardianViews.swift */; };
 		B3E832FFCAE34EF8F6054722 /* RambuPuckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC01F61E0E715FC4C1E3A6CB /* RambuPuckApp.swift */; };
+		B932FE5ED17617D1434BF718 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99AD5BD3F5E9BD87925F7FE /* AppLanguage.swift */; };
 		BE03E3A3EAF7111DAF59B3E5 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A341DD11FE777AEBCF01573B /* ProfileViewModel.swift */; };
 		BF2621CD22F9217364787348 /* GuardianOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1C235124B472B6340D7ACB /* GuardianOnboarding.swift */; };
 		C5F8141288FA49B3E0A96368 /* Illustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C3F4F81427499DA7905F205 /* Illustrations.swift */; };
+		C765797E416C8AF907E43BCF /* PuckNetworkProvisioning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC080D39F920B83BE506449 /* PuckNetworkProvisioning.swift */; };
 		C77EFB6842B87DEB060C0946 /* Support.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D9204B33F579FD3246A5D6 /* Support.swift */; };
 		C869ACA58E303F53C0F1C15F /* PilotSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0C312C22648E7173AA45F2 /* PilotSetupView.swift */; };
+		CCA1C54A84D98A18B170E82C /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FB0CF74B3E0893463FFAF50E /* Localizable.xcstrings */; };
 		CF6C1FEC36A542614581EFBF /* PracticeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1895E2E895061C7B2730C99 /* PracticeViews.swift */; };
 		D32AB0A138E33C90D9CF4041 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07FB2AA968E7685E5A7F9560 /* Assets.xcassets */; };
 		D8700001363B381322D5280F /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = 254EDE427C00FEAD4D6BF286 /* Services.swift */; };
@@ -114,9 +116,10 @@
 		254EDE427C00FEAD4D6BF286 /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
 		27DD64632E430D53BEB6E067 /* PilotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotViewModel.swift; sourceTree = "<group>"; };
 		32F4C5FA7C6526844B3B2720 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
-		3369AA22200DFAE58EEC64F7 /* RambuPuckWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RambuPuckWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3369AA22200DFAE58EEC64F7 /* RambuPuckWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = RambuPuckWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		35A862CC980FBCAD88AEECD0 /* GuardianViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianViews.swift; sourceTree = "<group>"; };
 		44B119C571D30C720BA86A00 /* IssueViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueViews.swift; sourceTree = "<group>"; };
+		46C3506837A7DF8A7E870E4E /* PuckNetworkProvisioningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuckNetworkProvisioningTests.swift; sourceTree = "<group>"; };
 		4D879990D8387FAFDCB177D8 /* AppViewModelBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelBehaviorTests.swift; sourceTree = "<group>"; };
 		4E442EBB1B89D5BEFA4B336A /* CallActivityMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallActivityMonitorTests.swift; sourceTree = "<group>"; };
 		4F665B1BCE82624C765384CC /* OnboardingViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModelTests.swift; sourceTree = "<group>"; };
@@ -124,9 +127,7 @@
 		507E3EC86822C5E1CF0D93FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		519F314BDE69004DF091C360 /* CallActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallActivityMonitor.swift; sourceTree = "<group>"; };
 		5388DEE6DA8A8DCC072B05AF /* ToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastOverlay.swift; sourceTree = "<group>"; };
-		600000000000000000000002 /* rambu-urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "rambu-urgent.caf"; sourceTree = "<group>"; };
-		A11A00000000000000000006 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		A11A00000000000000000008 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		55AA49226FA1381174407FD0 /* RambuPuckWidgetsRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RambuPuckWidgetsRelease.entitlements; sourceTree = "<group>"; };
 		584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallStatusView.swift; sourceTree = "<group>"; };
 		6197E4EFD4B427356A6CE399 /* PilotViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotViewModelTests.swift; sourceTree = "<group>"; };
 		629638BD82BF294DA2FC4031 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
@@ -135,20 +136,20 @@
 		70D9204B33F579FD3246A5D6 /* Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Support.swift; sourceTree = "<group>"; };
 		7426E7D445E89B52B25F83A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		74E49F75DDD008C191F3D55C /* ParentOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentOnboarding.swift; sourceTree = "<group>"; };
-		7681D4A10BB857FF3E4ADBA5 /* RambuPuck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RambuPuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7681D4A10BB857FF3E4ADBA5 /* RambuPuck.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = RambuPuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF654B5013C8198BA3E1168 /* RambuPuckWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RambuPuckWidgets.swift; sourceTree = "<group>"; };
 		81308CA0D02E32C5314DDCB6 /* ProtectionCallAnalysisSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionCallAnalysisSourceTests.swift; sourceTree = "<group>"; };
 		8195A3D0B1997A51D52BA2CB /* FamilyViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewModelTests.swift; sourceTree = "<group>"; };
 		82C73D063566713B5B01E271 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		8B2564934BEF6BC601943839 /* HistoryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViews.swift; sourceTree = "<group>"; };
-		8EE978BC30710B2100956E8E /* RambuPuckWidgetsRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RambuPuckWidgetsRelease.entitlements; sourceTree = "<group>"; };
 		8FC844283417105CF59A4E3B /* PilotAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotAPI.swift; sourceTree = "<group>"; };
 		91303AE084840EFA17FD0C49 /* CallActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallActivityAttributes.swift; sourceTree = "<group>"; };
 		9578F342B212F7B8FFA9063E /* ProfileViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModelTests.swift; sourceTree = "<group>"; };
 		9789563CF2D3BDD9236709F8 /* RambuAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RambuAppDelegate.swift; sourceTree = "<group>"; };
-		98AE9A49065B9F67BA237979 /* RambuPuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RambuPuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		98AE9A49065B9F67BA237979 /* RambuPuckTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RambuPuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AA31C9DFE6C9E5A28F74189 /* RambuPuck.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RambuPuck.entitlements; sourceTree = "<group>"; };
 		9B24C0B3C24156603217FFBC /* BackendCallAnalysisSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendCallAnalysisSourceTests.swift; sourceTree = "<group>"; };
+		9BC080D39F920B83BE506449 /* PuckNetworkProvisioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuckNetworkProvisioning.swift; sourceTree = "<group>"; };
 		9E1C235124B472B6340D7ACB /* GuardianOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuardianOnboarding.swift; sourceTree = "<group>"; };
 		A14FC06D1DC47049CD2579C5 /* TutorialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialViews.swift; sourceTree = "<group>"; };
 		A341DD11FE777AEBCF01573B /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
@@ -156,7 +157,6 @@
 		AC43E5662306F9A230B35F44 /* AppViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModelTests.swift; sourceTree = "<group>"; };
 		ACFB9A3C7BA8CA1AC410629D /* FamilyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyViewModel.swift; sourceTree = "<group>"; };
 		B0EDEA58598842DF751D6C31 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
-		A11A00000000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		B19434D0FC3F3A794D68ECE3 /* ProtectionCallAnalysisSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionCallAnalysisSource.swift; sourceTree = "<group>"; };
 		B7CDCE6EF63A63200F0B2FB4 /* CallViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallViews.swift; sourceTree = "<group>"; };
 		C06AADA1C8FEBDC150FF2568 /* ProtectionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionAPI.swift; sourceTree = "<group>"; };
@@ -168,11 +168,15 @@
 		D833E86F0B75BF98C91CBD79 /* PushBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushBanner.swift; sourceTree = "<group>"; };
 		D858B5F3344B8F452868A857 /* CallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallViewModel.swift; sourceTree = "<group>"; };
 		DA7D248A50874923A5773C5B /* DemoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoViews.swift; sourceTree = "<group>"; };
+		DEF90A05CE5083DE5FCAD06E /* rambu-urgent.caf */ = {isa = PBXFileReference; path = "rambu-urgent.caf"; sourceTree = "<group>"; };
 		DF0D0F2E26B21F780934FE07 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		EC31B86E067B078F143C7FD3 /* TestAnalysisSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAnalysisSource.swift; sourceTree = "<group>"; };
 		EE025E71C0581D1C225224FF /* Mascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mascot.swift; sourceTree = "<group>"; };
 		F0ACD2EF6AD903547E9A034E /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
 		F507FBDD67EC089971B60425 /* Scenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scenarios.swift; sourceTree = "<group>"; };
+		F98378112DFF1E2F47932B98 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		F99AD5BD3F5E9BD87925F7FE /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		FB0CF74B3E0893463FFAF50E /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		FC0C312C22648E7173AA45F2 /* PilotSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotSetupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -197,7 +201,7 @@
 				F12BEB0CBC8503D9E7999DED /* DesignSystem */,
 				2DCA120CA21EDF32D384C618 /* Features */,
 				D31C00CAB8B05BDABBEB45DD /* Models */,
-				600000000000000000000003 /* Resources */,
+				EFB7C47F1270F2842F6E6D7C /* Resources */,
 				722EFC4DA5F1A40D3CC86A7F /* Services */,
 			);
 			path = RambuPuck;
@@ -237,16 +241,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		600000000000000000000003 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				A11A00000000000000000006 /* Localizable.xcstrings */,
-				A11A00000000000000000008 /* InfoPlist.xcstrings */,
-				600000000000000000000002 /* rambu-urgent.caf */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		6DCB7BE303F95ABDB061580D /* RambuPuckTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -261,6 +255,7 @@
 				6197E4EFD4B427356A6CE399 /* PilotViewModelTests.swift */,
 				9578F342B212F7B8FFA9063E /* ProfileViewModelTests.swift */,
 				81308CA0D02E32C5314DDCB6 /* ProtectionCallAnalysisSourceTests.swift */,
+				46C3506837A7DF8A7E870E4E /* PuckNetworkProvisioningTests.swift */,
 				EC31B86E067B078F143C7FD3 /* TestAnalysisSource.swift */,
 			);
 			path = RambuPuckTests;
@@ -275,6 +270,7 @@
 				8FC844283417105CF59A4E3B /* PilotAPI.swift */,
 				C06AADA1C8FEBDC150FF2568 /* ProtectionAPI.swift */,
 				B19434D0FC3F3A794D68ECE3 /* ProtectionCallAnalysisSource.swift */,
+				9BC080D39F920B83BE506449 /* PuckNetworkProvisioning.swift */,
 				254EDE427C00FEAD4D6BF286 /* Services.swift */,
 				70D9204B33F579FD3246A5D6 /* Support.swift */,
 				D23DF15C38B1752E23E9A027 /* UrgencyFeedback.swift */,
@@ -305,9 +301,9 @@
 		9D3ACEB8E7F4F2AC052E2077 /* RambuPuckWidgets */ = {
 			isa = PBXGroup;
 			children = (
-				8EE978BC30710B2100956E8E /* RambuPuckWidgetsRelease.entitlements */,
 				507E3EC86822C5E1CF0D93FD /* Info.plist */,
 				7DF654B5013C8198BA3E1168 /* RambuPuckWidgets.swift */,
+				55AA49226FA1381174407FD0 /* RambuPuckWidgetsRelease.entitlements */,
 			);
 			path = RambuPuckWidgets;
 			sourceTree = "<group>";
@@ -337,7 +333,7 @@
 		D31C00CAB8B05BDABBEB45DD /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A11A00000000000000000002 /* AppLanguage.swift */,
+				F99AD5BD3F5E9BD87925F7FE /* AppLanguage.swift */,
 				82C73D063566713B5B01E271 /* AppState.swift */,
 				B0EDEA58598842DF751D6C31 /* Domain.swift */,
 				F507FBDD67EC089971B60425 /* Scenarios.swift */,
@@ -356,6 +352,16 @@
 				A14FC06D1DC47049CD2579C5 /* TutorialViews.swift */,
 			);
 			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		EFB7C47F1270F2842F6E6D7C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F98378112DFF1E2F47932B98 /* InfoPlist.xcstrings */,
+				FB0CF74B3E0893463FFAF50E /* Localizable.xcstrings */,
+				DEF90A05CE5083DE5FCAD06E /* rambu-urgent.caf */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		F12BEB0CBC8503D9E7999DED /* DesignSystem */ = {
@@ -444,12 +450,18 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					64A87743DAD85BC878022384 = {
+						DevelopmentTeam = X343JBU8CX;
 						ProvisioningStyle = Automatic;
 					};
 					D7E763B5D8B7AF2BD72D44BE = {
+						DevelopmentTeam = X343JBU8CX;
+						ProvisioningStyle = Automatic;
+					};
+					FDDB49AECDDB4120E9115001 = {
+						DevelopmentTeam = X343JBU8CX;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -482,9 +494,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				D32AB0A138E33C90D9CF4041 /* Assets.xcassets in Resources */,
-				A11A00000000000000000005 /* Localizable.xcstrings in Resources */,
-				A11A00000000000000000007 /* InfoPlist.xcstrings in Resources */,
-				600000000000000000000001 /* rambu-urgent.caf in Resources */,
+				9A996AC6DCC32854D73B786C /* InfoPlist.xcstrings in Resources */,
+				CCA1C54A84D98A18B170E82C /* Localizable.xcstrings in Resources */,
+				92DB447037EA73914EB64260 /* rambu-urgent.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -517,6 +529,7 @@
 				42963518B268AEDBABD2A1EE /* PilotViewModelTests.swift in Sources */,
 				FBA42146BA73716407796465 /* ProfileViewModelTests.swift in Sources */,
 				4A6CAC85000D33B3040DCA1C /* ProtectionCallAnalysisSourceTests.swift in Sources */,
+				4AC85A130625DA9A75581FAB /* PuckNetworkProvisioningTests.swift in Sources */,
 				53A61864CD45F6EC363E3256 /* TestAnalysisSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -526,6 +539,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1F6D72CB4D5E4D1EE3F8ACFA /* AlertDetailView.swift in Sources */,
+				B932FE5ED17617D1434BF718 /* AppLanguage.swift in Sources */,
 				A72CE525687EC9A818338C8D /* AppState.swift in Sources */,
 				70780ED35ED00C3295C60C81 /* AppViewModel.swift in Sources */,
 				54059A3D01E926E13A4F6EE7 /* BackendCallAnalysisSource.swift in Sources */,
@@ -538,7 +552,6 @@
 				08C53254A80489879E8BE5C9 /* Components.swift in Sources */,
 				9E601B732444FC070AADBBF5 /* DemoViews.swift in Sources */,
 				3519E3A6F3941C4AD79CE49B /* Domain.swift in Sources */,
-				A11A00000000000000000001 /* AppLanguage.swift in Sources */,
 				2205332E8C1B59930E054DAF /* FamilyViewModel.swift in Sources */,
 				BF2621CD22F9217364787348 /* GuardianOnboarding.swift in Sources */,
 				AEA4C2444F3A9F021AC710C3 /* GuardianViews.swift in Sources */,
@@ -559,6 +572,7 @@
 				E934C20C3166E000727A4A3E /* ProfileViews.swift in Sources */,
 				FE82FF0316C631667D189263 /* ProtectionAPI.swift in Sources */,
 				A609E87338AA956CFD2AAFA6 /* ProtectionCallAnalysisSource.swift in Sources */,
+				C765797E416C8AF907E43BCF /* PuckNetworkProvisioning.swift in Sources */,
 				4F2CE3D39E879D0D3F80A419 /* PushBanner.swift in Sources */,
 				AB064A7B899635EFC2A78A56 /* RambuAppDelegate.swift in Sources */,
 				B3E832FFCAE34EF8F6054722 /* RambuPuckApp.swift in Sources */,
@@ -592,7 +606,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = X343JBU8CX;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -610,15 +623,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RambuPuckWidgets/RambuPuckWidgetsRelease.entitlements;
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = X343JBU8CX;
 				INFOPLIST_FILE = RambuPuckWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = id.rambu.puck.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -633,17 +643,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RambuPuck/RambuPuck.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = X343JBU8CX;
 				INFOPLIST_FILE = RambuPuck/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = id.rambu.puck;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -684,9 +689,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = X343JBU8CX;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -705,13 +710,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
@@ -725,14 +729,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RambuPuck/RambuPuck.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = X343JBU8CX;
 				INFOPLIST_FILE = RambuPuck/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = id.rambu.puck;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -742,15 +743,12 @@
 		C2650449F639975E68A4DC07 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_TEAM = X343JBU8CX;
 				INFOPLIST_FILE = RambuPuckWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = id.rambu.puck.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -810,9 +808,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = X343JBU8CX;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -825,12 +823,11 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;

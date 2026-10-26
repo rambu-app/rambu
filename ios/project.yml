@@ -11,7 +11,7 @@ settings:
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "6"
     CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: X343JBU8CX
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
   RambuPuck:
@@ -29,6 +29,8 @@ targets:
       properties:
         CFBundleDisplayName: Rambu
         CFBundleDevelopmentRegion: id
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIUserInterfaceStyle: Light
@@ -51,6 +53,11 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1"
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: iPhone Developer
+        Release:
+          CODE_SIGN_IDENTITY: Apple Development
     dependencies:
       - target: RambuPuckWidgets
   RambuPuckWidgets:
@@ -63,6 +70,8 @@ targets:
       path: RambuPuckWidgets/Info.plist
       properties:
         CFBundleDisplayName: Rambu
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -70,6 +79,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: id.rambu.puck.widgets
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_ENTITLEMENTS: RambuPuckWidgets/RambuPuckWidgetsRelease.entitlements
   RambuPuckTests:
     type: bundle.unit-test
     platform: iOS
