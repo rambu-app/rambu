@@ -396,9 +396,11 @@ class PilotStore:
         channel: str | None,
         title: str | None = None,
         caller_detail: str | None = None,
-        language: str = "id",
+        language: str | None = None,
     ) -> tuple[ProtectionSessionSnapshot, bool]:
         puck = self.authenticate_puck(token)
+        if language is None:
+            language = self._preferred_family_language(puck["family_id"])
         if channel not in {None, "cellular", "whatsapp"}:
             raise ValueError("Kanal panggilan tidak valid.")
         if language not in {"id", "en"}:
@@ -463,6 +465,22 @@ class PilotStore:
                 "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
             ).fetchone()
         return self._protection_snapshot(row), True
+
+    def _preferred_family_language(self, family_id: str) -> str:
+        row = self._connection.execute(
+            """
+            SELECT push_tokens.language
+            FROM push_tokens
+            JOIN members ON members.id = push_tokens.member_id
+            WHERE members.family_id = ?
+            ORDER BY
+                CASE WHEN push_tokens.environment = 'production' THEN 0 ELSE 1 END,
+                push_tokens.updated_at DESC
+            LIMIT 1
+            """,
+            (family_id,),
+        ).fetchone()
+        return row["language"] if row is not None else "id"
 
     def get_protection_session(
         self, token: str, session_id: str

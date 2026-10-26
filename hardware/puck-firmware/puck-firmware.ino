@@ -6,6 +6,7 @@
 #include <NimBLEDevice.h>
 #include <time.h>
 #include <esp_bt.h>
+#include "call_alert_subscription.h"
 
 const int MIC_SCK = 32;
 const int MIC_WS = 25;
@@ -69,7 +70,8 @@ unsigned long lastPoll = 0;
 
 NimBLEServer *bleServer;
 volatile uint16_t iphoneHandle = BLE_HS_CONN_HANDLE_NONE;
-volatile bool ancsPending = false;
+volatile uint16_t ancsSourceHandle = 0;
+CallAlertSubscription callAlertSubscription;
 volatile bool incomingCall = false;
 volatile bool callEnded = false;
 
@@ -110,17 +112,18 @@ class PhoneLink : public NimBLEServerCallbacks {
   void onAuthenticationComplete(NimBLEConnInfo &info) override {
     if (!info.isEncrypted()) return;
     iphoneHandle = info.getConnHandle();
-    ancsPending = true;
+    callAlertSubscription.authenticated();
   }
 
   void onDisconnect(NimBLEServer *, NimBLEConnInfo &, int) override {
     iphoneHandle = BLE_HS_CONN_HANDLE_NONE;
+    ancsSourceHandle = 0;
+    callAlertSubscription.disconnected();
     Serial.println("iPhone Bluetooth disconnected");
     NimBLEDevice::startAdvertising();
   }
 };
 
-volatile uint16_t ancsSourceHandle = 0;
 ble_gap_event_listener notificationListener;
 
 // NimBLEServer does not pass notifications to a client made with getClient(), so catch them here.
@@ -136,7 +139,6 @@ int onGapEvent(ble_gap_event *event, void *) {
 }
 
 void subscribeToCallAlerts() {
-  ancsPending = false;
   NimBLEClient *client = bleServer->getClient(iphoneHandle);
   NimBLERemoteService *ancs = client ? client->getService(ANCS_SERVICE) : nullptr;
   NimBLERemoteCharacteristic *source = ancs ? ancs->getCharacteristic(ANCS_NOTIFICATION_SOURCE) : nullptr;
@@ -558,7 +560,9 @@ void setup() {
 }
 
 void loop() {
-  if (ancsPending && iphoneHandle != BLE_HS_CONN_HANDLE_NONE) subscribeToCallAlerts();
+  if (iphoneHandle != BLE_HS_CONN_HANDLE_NONE && callAlertSubscription.takePendingAttempt()) {
+    subscribeToCallAlerts();
+  }
   if (wifiChanged) {
     wifiChanged = false;
     connectWifi();

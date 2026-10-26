@@ -760,6 +760,32 @@ def test_english_protection_session_persists_and_drives_detection_language() -> 
     assert analyzer.languages == ["en"]
 
 
+def test_puck_created_session_inherits_parent_push_language() -> None:
+    analyzer = LowRiskAnalyzer()
+    client, store, transcriber, _ = build_client(analyzer=analyzer)
+    parent = store.create_family("Mrs Taylor")
+    puck = store.pair_puck(parent.invite_code or "", "Living room puck")
+    store.register_push_token(
+        parent.access_token,
+        "aa" * 32,
+        "production",
+        language="en",
+    )
+
+    created = client.post(
+        "/api/pucks/sessions",
+        headers=auth(puck.access_token),
+        json={**session_payload(), "channel": "cellular"},
+    )
+
+    assert created.status_code == 201
+    assert created.json()["language"] == "en"
+    uploaded = upload_chunk(client, puck.access_token, created.json()["id"], sequence=0)
+    assert uploaded.status_code == 200
+    assert transcriber.languages == ["en"]
+    assert analyzer.languages == ["en"]
+
+
 def test_puck_created_session_pushes_parent_once_and_not_guardian() -> None:
     pushes = RecordingProtectionPushSender()
     client, store, _, _ = build_client(push_sender=pushes)

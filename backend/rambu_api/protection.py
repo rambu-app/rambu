@@ -65,6 +65,7 @@ class ProtectionService:
     def create_puck_session(
         self, puck_token: str, request: CreateProtectionSessionRequest
     ) -> tuple[ProtectionSessionSnapshot, bool]:
+        language = request.language if "language" in request.model_fields_set else None
         return self.store.create_puck_protection_session(
             puck_token,
             str(request.call_id),
@@ -72,7 +73,7 @@ class ProtectionService:
             request.channel,
             request.title,
             request.caller_detail,
-            request.language,
+            language,
         )
 
     def get_parent_session(
