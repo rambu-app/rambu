@@ -82,7 +82,7 @@ Puck mulai merekam lewat tiga jalan: notifikasi panggilan masuk dari iPhone (ANC
 ## Arsitektur sistem
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Rumah["Di tangan orang tua"]
         IP["iPhone orang tua<br/>App Rambu (SwiftUI)"]
         PK["Puck<br/>ESP32 + INMP441"]
@@ -122,8 +122,8 @@ flowchart LR
 ## Puck (IoT)
 
 <p align="center">
-  <img src="assets/readme/puck-isi.png" alt="Isi casing puck: ESP32 DevKit dan mikrofon INMP441" width="40%">
-  <img src="assets/readme/puck-ukuran-iphone17.png" alt="Ukuran puck di punggung iPhone 17" width="56%">
+  <img src="assets/readme/puck-isi.png" alt="Isi casing puck: ESP32 DevKit dan mikrofon INMP441" width="44%">
+  <img src="assets/readme/puck-ukuran-iphone17.png" alt="Ukuran puck di punggung iPhone 17" width="52%">
 </p>
 
 Puck versi 3 (24 Oktober 2026) memakai casing cetak 3D berdiameter 66 mm dan tebal 30 mm. Isinya papan ESP32 DevKit V1 30 pin dengan USB-C dan mikrofon INMP441 yang menghadap lubang grill di tutup. Daya diambil dari iPhone atau charger lewat kabel USB-C. File cetak dan sumber Blender casing ada di [`hardware/enclosure/`](hardware/enclosure).
