@@ -570,13 +570,13 @@ final class CallViewModel {
             title: L10n.text(
                 danger ? "alert.scam.title" : "alert.suspicious.title",
                 fallback: danger
-                    ? "Bahaya: terindikasi penipuan"
-                    : "Bahaya: telepon mencurigakan",
+                    ? "Awas, ini penipu!"
+                    : "Awas, bisa jadi penipu",
                 language: language
             ),
             body: danger
-                ? L10n.format("Hati-hati. Jangan transfer atau sebut kode. %@", language: language, delivery)
-                : L10n.format("%@ Jangan beri data dulu. %@", language: language,
+                ? L10n.format("Matikan teleponnya sekarang. Jangan sebut kode, jangan transfer. %@", language: language, delivery)
+                : L10n.format("%@ Jangan kasih kode atau uang dulu. %@", language: language,
                               L10n.text(session.headline, language: language), delivery),
             level: session.level,
             alertID: session.id

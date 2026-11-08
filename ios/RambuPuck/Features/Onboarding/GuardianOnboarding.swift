@@ -56,7 +56,7 @@ struct GuardianProfileStep: View {
 
     var body: some View {
         StepScaffold(
-            progress: (1, 2),
+            progress: (1, 3),
             title: "Siapa Anda?"
         ) {
             NameField(title: "Nama Anda", text: $name, prompt: "Contoh: Sinta")
@@ -82,7 +82,7 @@ struct GuardianProfileStep: View {
         } actions: {
             Button {
                 profile.renameGuardian(.sinta, name: name, relation: relation)
-                model.onboardingStep = model.allowsDemoControls ? .practiceAlert : .enterCode
+                model.onboardingStep = .guardianPrivacy
             } label: { WideLabel(title: "Lanjut") }
                 .primaryAction()
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)

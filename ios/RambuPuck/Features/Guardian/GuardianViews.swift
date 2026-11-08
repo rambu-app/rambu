@@ -15,7 +15,6 @@ struct GuardianRoot: View {
                 NavigationStack { HistoryList(forGuardian: true) }
             }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
 

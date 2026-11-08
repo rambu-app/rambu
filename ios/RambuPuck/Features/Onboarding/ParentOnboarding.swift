@@ -5,12 +5,11 @@ import SwiftUI
 struct ParentProfileStep: View {
     @Environment(AppState.self) private var model
     @Environment(ProfileViewModel.self) private var profile
-    @Environment(OnboardingViewModel.self) private var onboarding
     @State private var name = ""
 
     var body: some View {
         StepScaffold(
-            progress: (1, 3),
+            progress: model.allowsDemoControls ? (1, 5) : (1, 2),
             title: "Siapa nama Anda?"
         ) {
             NameField(title: nil, text: $name, prompt: "Contoh: Ibu Ratna")
@@ -18,11 +17,7 @@ struct ParentProfileStep: View {
         } actions: {
             Button {
                 profile.renameParent(name)
-                if model.allowsDemoControls {
-                    model.onboardingStep = .pairPuck
-                } else {
-                    onboarding.complete(as: .ratna)
-                }
+                model.onboardingStep = model.allowsDemoControls ? .pairPuck : .consent
             } label: { WideLabel(title: "Lanjut") }
                 .primaryAction()
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -119,55 +114,6 @@ struct SearchRings: View {
         .frame(width: 220, height: 220)
         .onAppear { expand = true }
         .accessibilityHidden(true)
-    }
-}
-
-struct ConsentStep: View {
-    @Environment(AppState.self) private var model
-    @Environment(ProfileViewModel.self) private var profile
-    @State private var asking = false
-
-    private let points: [(symbol: String, title: String, detail: String)] = [
-        ("speaker.wave.3.fill", "Gunakan speaker saat menelepon", "Percakapan perlu terdengar jelas agar dapat dianalisis."),
-        ("text.quote", "Keluarga melihat cuplikan", "Cuplikan percakapan membantu pendamping menilai peringatan."),
-        ("bell.badge.fill", "Peringatan lewat notifikasi", "Muncul di atas layar saat menelepon."),
-        ("hand.raised.fill", "Anda yang memutuskan", "Rambu tidak menutup telepon Anda."),
-    ]
-
-    var body: some View {
-        StepScaffold(progress: (2, 3), title: "Sebelum mulai") {
-            VStack(spacing: 12) {
-                ForEach(points, id: \.title) { point in
-                    HStack(spacing: 16) {
-                        Image(systemName: point.symbol)
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Brand.hero, in: .rect(cornerRadius: 18, style: .continuous))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(LocalizedStringKey(point.title)).font(.headline).foregroundStyle(Brand.ink)
-                            Text(LocalizedStringKey(point.detail)).font(.subheadline).foregroundStyle(Brand.ink2)
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
-                    }
-                    .card(padding: 14)
-                    .accessibilityElement(children: .combine)
-                }
-            }
-        } actions: {
-            Button {
-                // Peringatan datang lewat push, jadi izin notifikasi diminta di sini.
-                asking = true
-                Task {
-                    await profile.requestNotifications()
-                    asking = false
-                    model.onboardingStep = .invite
-                }
-            } label: { WideLabel(title: "Lanjut", systemImage: "checkmark") }
-                .primaryAction()
-                .disabled(asking)
-        }
     }
 }
 

@@ -48,7 +48,7 @@ struct CallViewModelTests {
 
         #expect(state.session?.level == .danger)
         #expect(try #require(state.alerts.first).level == .danger)
-        #expect(state.toast?.title.hasPrefix("Bahaya") == true)
+        #expect(state.toast?.title.hasPrefix("Awas") == true)
     }
 
     @Test("Mengakhiri telepon membatalkan pengingat dan eskalasi lama")

@@ -457,7 +457,7 @@ enum OnboardingStep: String, Hashable, Sendable {
     // Jalur orang tua
     case welcome, tutorial, parentProfile, pairPuck, consent, invite, practiceCall
     // Jalur pengawas
-    case enterCode, guardianProfile, practiceAlert, waiting
+    case enterCode, guardianProfile, guardianPrivacy, practiceAlert, waiting
 }
 
 // MARK: - Gangguan

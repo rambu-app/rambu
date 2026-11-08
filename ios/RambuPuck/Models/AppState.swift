@@ -74,6 +74,8 @@ final class AppState {
     var showProfile = false
     var showCallStatus = false
     var toast: Toast?
+    /// Layar merah "Matikan teleponnya" di HP orang tua setelah pendamping menekan Penipuan.
+    var hangUpAlarm: HangUpAlarm?
 
     var narrationEnabled = true
     var notificationsAuthorized = false

@@ -15,6 +15,7 @@
 		12E506EF49D478CB587B7012 /* PilotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DD64632E430D53BEB6E067 /* PilotViewModel.swift */; };
 		168791791AA0350AD7025A9A /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D73DC190DB3434F464EE9AFE /* Notifier.swift */; };
 		18554113239546B8687F347A /* ParentOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E49F75DDD008C191F3D55C /* ParentOnboarding.swift */; };
+		F781664FE9658A3BC386252B /* PrivacyConsent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA57947EFBB5C16CE65D2674 /* PrivacyConsent.swift */; };
 		1F6D72CB4D5E4D1EE3F8ACFA /* AlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D62C810E7F0730096E994073 /* AlertDetailView.swift */; };
 		2205332E8C1B59930E054DAF /* FamilyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACFB9A3C7BA8CA1AC410629D /* FamilyViewModel.swift */; };
 		26261C7131CA31A2A54BC477 /* RambuPuckWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF654B5013C8198BA3E1168 /* RambuPuckWidgets.swift */; };
@@ -31,6 +32,7 @@
 		4A6CAC85000D33B3040DCA1C /* ProtectionCallAnalysisSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81308CA0D02E32C5314DDCB6 /* ProtectionCallAnalysisSourceTests.swift */; };
 		4F2CE3D39E879D0D3F80A419 /* PushBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D833E86F0B75BF98C91CBD79 /* PushBanner.swift */; };
 		530E3EC772DB134178BF0434 /* CallStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */; };
+		2A6670AEBC791D00368D6999 /* HangUpTakeover.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8B05D8F646F5CB50EDABB7C /* HangUpTakeover.swift */; };
 		53A61864CD45F6EC363E3256 /* TestAnalysisSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC31B86E067B078F143C7FD3 /* TestAnalysisSource.swift */; };
 		54059A3D01E926E13A4F6EE7 /* BackendCallAnalysisSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2D615BE25C1586D42EDBAA /* BackendCallAnalysisSource.swift */; };
 		5F59D4EC7D7E5420CCAF45C7 /* UrgencyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23DF15C38B1752E23E9A027 /* UrgencyFeedback.swift */; };
@@ -128,6 +130,7 @@
 		A11A00000000000000000006 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A11A00000000000000000008 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallStatusView.swift; sourceTree = "<group>"; };
+		C8B05D8F646F5CB50EDABB7C /* HangUpTakeover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangUpTakeover.swift; sourceTree = "<group>"; };
 		6197E4EFD4B427356A6CE399 /* PilotViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotViewModelTests.swift; sourceTree = "<group>"; };
 		629638BD82BF294DA2FC4031 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		69DFED1BBE7FF071A75558A4 /* BrandTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandTokens.swift; sourceTree = "<group>"; };
@@ -135,6 +138,7 @@
 		70D9204B33F579FD3246A5D6 /* Support.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Support.swift; sourceTree = "<group>"; };
 		7426E7D445E89B52B25F83A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		74E49F75DDD008C191F3D55C /* ParentOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentOnboarding.swift; sourceTree = "<group>"; };
+		CA57947EFBB5C16CE65D2674 /* PrivacyConsent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsent.swift; sourceTree = "<group>"; };
 		7681D4A10BB857FF3E4ADBA5 /* RambuPuck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RambuPuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF654B5013C8198BA3E1168 /* RambuPuckWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RambuPuckWidgets.swift; sourceTree = "<group>"; };
 		81308CA0D02E32C5314DDCB6 /* ProtectionCallAnalysisSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectionCallAnalysisSourceTests.swift; sourceTree = "<group>"; };
@@ -316,6 +320,7 @@
 			isa = PBXGroup;
 			children = (
 				584D32FC4D1AFB6F3AECB476 /* CallStatusView.swift */,
+				C8B05D8F646F5CB50EDABB7C /* HangUpTakeover.swift */,
 				D858B5F3344B8F452868A857 /* CallViewModel.swift */,
 				B7CDCE6EF63A63200F0B2FB4 /* CallViews.swift */,
 				D39AD886929DFFEA490113F8 /* ParentViews.swift */,
@@ -352,6 +357,7 @@
 				32F4C5FA7C6526844B3B2720 /* OnboardingFlow.swift */,
 				DF0D0F2E26B21F780934FE07 /* OnboardingViewModel.swift */,
 				74E49F75DDD008C191F3D55C /* ParentOnboarding.swift */,
+				CA57947EFBB5C16CE65D2674 /* PrivacyConsent.swift */,
 				D1895E2E895061C7B2730C99 /* PracticeViews.swift */,
 				A14FC06D1DC47049CD2579C5 /* TutorialViews.swift */,
 			);
@@ -533,6 +539,7 @@
 				3BAEBDB7399E26DC1AE84FEE /* CallActivityAttributes.swift in Sources */,
 				F8CC84B9F1E1C41AA16EA333 /* CallActivityMonitor.swift in Sources */,
 				530E3EC772DB134178BF0434 /* CallStatusView.swift in Sources */,
+				2A6670AEBC791D00368D6999 /* HangUpTakeover.swift in Sources */,
 				262EF32CA4811E7E3131ACBA /* CallViewModel.swift in Sources */,
 				9DB85FF86E6CB4DCCCC67546 /* CallViews.swift in Sources */,
 				08C53254A80489879E8BE5C9 /* Components.swift in Sources */,
@@ -550,6 +557,7 @@
 				5F665C1C1DAD5A302D7732D6 /* OnboardingFlow.swift in Sources */,
 				3CFBAB7D6A0A3A3C1D64C2F0 /* OnboardingViewModel.swift in Sources */,
 				18554113239546B8687F347A /* ParentOnboarding.swift in Sources */,
+				F781664FE9658A3BC386252B /* PrivacyConsent.swift in Sources */,
 				DA909706F54B5272FFBB142B /* ParentViews.swift in Sources */,
 				0AE568CEA4B55098D3241777 /* PilotAPI.swift in Sources */,
 				C869ACA58E303F53C0F1C15F /* PilotSetupView.swift in Sources */,

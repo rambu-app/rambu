@@ -27,11 +27,11 @@ struct PracticeCallStep: View {
             id: "latihan",
             title: L10n.text(
                 "alert.scam.title",
-                fallback: "Bahaya: terindikasi penipuan",
+                fallback: "Awas, ini penipu!",
                 language: model.language
             ),
             body: L10n.text(
-                "Hati-hati. Jangan transfer atau sebut kode.",
+                "Matikan teleponnya sekarang. Jangan sebut kode, jangan transfer.",
                 language: model.language
             ),
             level: .danger,
@@ -134,11 +134,11 @@ struct PracticeCallView: View {
             id: "latihan-telepon",
             title: L10n.text(
                 "alert.scam.title",
-                fallback: "Bahaya: terindikasi penipuan",
+                fallback: "Awas, ini penipu!",
                 language: model.language
             ),
             body: L10n.text(
-                "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+                "Matikan teleponnya sekarang. Jangan sebut kode apa pun. Jangan transfer.",
                 language: model.language
             ),
             level: .danger,
