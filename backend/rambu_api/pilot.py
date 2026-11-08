@@ -1262,6 +1262,14 @@ class PilotStore:
                 raise
         return PilotDecision(by=self._person(member), verdict=verdict, at=decided_at)
 
+    def alert_call_active(self, alert_id: str) -> bool:
+        """True while the parent's call behind this alert has not ended."""
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT call_ended FROM alerts WHERE id = ?", (alert_id.lower(),)
+            ).fetchone()
+        return row is not None and not row["call_ended"]
+
     def end_alert(self, token: str, alert_id: str) -> PilotAlert:
         member = self.authenticate(token)
         if member["role"] != "parent":

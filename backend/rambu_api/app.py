@@ -53,6 +53,13 @@ from .transcription import FasterWhisperTranscriber
 
 PUSH_LOGGER = logging.getLogger("uvicorn.error.rambu.push")
 RISK_RANK = {"low": 0, "needs_review": 1, "high_risk": 2}
+SCAM_HANG_UP_BODY = {
+    "id": "Matikan teleponnya sekarang. Jangan transfer apa pun.",
+    "en": "Hang up now. Do not send any money.",
+}
+# After a scam verdict the parent's phone keeps ringing until the call ends.
+SCAM_ALARM_REPEATS = int(os.getenv("RAMBU_SCAM_ALARM_REPEATS", "4"))
+SCAM_ALARM_INTERVAL = float(os.getenv("RAMBU_SCAM_ALARM_INTERVAL", "6"))
 CODE_FAILURE_WINDOW_SECONDS = 600
 CODE_FAILURES_PER_CLIENT = 5
 CODE_FAILURES_TOTAL = 30
@@ -75,21 +82,21 @@ def _protection_warning(
     if snapshot.assessment.risk_level == "high_risk":
         if language == "en":
             return (
-                "Danger: possible scam",
-                "Do not share codes or transfer money. Hang up now.",
+                "Warning: this is a scam!",
+                "Hang up now. Do not share any code. Do not send money.",
             )
         return (
-            "Bahaya: terindikasi penipuan",
-            "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+            "Awas, ini penipu!",
+            "Matikan teleponnya sekarang. Jangan sebut kode apa pun. Jangan transfer.",
         )
     if language == "en":
         return (
-            "Danger: suspicious call",
-            "Do not share personal data or money. Verify the caller before continuing.",
+            "Warning: this could be a scam",
+            "Do not give any code or money. Hang up first, then call your family.",
         )
     return (
-        "Bahaya: telepon mencurigakan",
-        "Jangan berikan data atau uang. Verifikasi penelepon sebelum melanjutkan.",
+        "Awas, bisa jadi penipu",
+        "Jangan kasih kode atau uang. Tutup dulu, lalu telepon keluarga.",
     )
 
 
@@ -135,6 +142,9 @@ def create_app(
     push_sender: PushSender | None = None,
     settings: LangflowSettings | None = None,
     demo_api: bool | None = None,
+    scam_alarm_repeats: int | None = None,
+    scam_alarm_interval: float | None = None,
+    sleep=time.sleep,
 ) -> FastAPI:
     # The demo routes run Whisper and Langflow without a login, so they stay off on a public server.
     if demo_api is None:
@@ -144,6 +154,8 @@ def create_app(
     pilots = pilot_store or (PilotStore(":memory:") if service is not None else _default_pilot_store())
     pushes = push_sender or push_sender_from_environment()
     push_environment = os.getenv("APNS_ENVIRONMENT", "sandbox")
+    alarm_repeats = SCAM_ALARM_REPEATS if scam_alarm_repeats is None else scam_alarm_repeats
+    alarm_interval = SCAM_ALARM_INTERVAL if scam_alarm_interval is None else scam_alarm_interval
 
     def send_localized_push(
         targets: dict[str, list[str]],
@@ -262,6 +274,22 @@ def create_app(
         if protection is None:
             raise RuntimeError("Protection service is unavailable before application startup.")
         return protection
+
+    def repeat_scam_alarm(
+        targets: dict[str, list[str]],
+        copy: dict[str, tuple[str, str]],
+        alert_id: str,
+    ) -> None:
+        """Re-send the hang-up push until the parent's call ends or the repeats run out."""
+        for attempt in range(alarm_repeats):
+            sleep(alarm_interval)
+            try:
+                if not pilots.alert_call_active(alert_id):
+                    return
+            except Exception:
+                PUSH_LOGGER.exception("scam alarm stopped alert=%s", alert_id)
+                return
+            send_localized_push(targets, copy, f"{alert_id}-alarm-{attempt + 1}", alert_id, True)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -681,14 +709,14 @@ def create_app(
             targets = pilots.notification_targets(token, "parent", push_environment)
             copies = {
                 "id": (
-                    f"{decision.by.name}: {'ini penipuan' if decision.verdict == 'scam' else 'telepon aman'}",
-                    "Tutup telepon sekarang."
+                    f"{decision.by.name}: {'ini penipu!' if decision.verdict == 'scam' else 'telepon aman'}",
+                    SCAM_HANG_UP_BODY["id"]
                     if decision.verdict == "scam"
-                    else "Tetap jangan beri kode atau transfer.",
+                    else "Tetap jangan sebut kode atau transfer.",
                 ),
                 "en": (
-                    f"{decision.by.name}: {'this is a scam' if decision.verdict == 'scam' else 'call is safe'}",
-                    "Hang up now."
+                    f"{decision.by.name}: {'this is a scam!' if decision.verdict == 'scam' else 'call is safe'}",
+                    SCAM_HANG_UP_BODY["en"]
                     if decision.verdict == "scam"
                     else "Still do not share codes or transfer money.",
                 ),
@@ -701,6 +729,8 @@ def create_app(
                 alert_id,
                 decision.verdict == "scam",
             )
+            if decision.verdict == "scam" and alarm_repeats > 0:
+                background_tasks.add_task(repeat_scam_alarm, targets, copies, alert_id)
             return PilotDecisionResult(accepted=True, decision=decision)
         except DecisionConflict as error:
             body = PilotDecisionResult(accepted=False, decision=error.decision)

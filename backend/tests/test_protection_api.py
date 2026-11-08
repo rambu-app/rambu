@@ -256,8 +256,8 @@ def test_high_risk_chunk_pushes_parent_once_when_risk_increases() -> None:
     assert pushes.sent == [
         (
             ["aa" * 32],
-            "Bahaya: terindikasi penipuan",
-            "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+            "Awas, ini penipu!",
+            "Matikan teleponnya sekarang. Jangan sebut kode apa pun. Jangan transfer.",
             session_payload()["call_id"],
             True,
         )
@@ -1146,8 +1146,8 @@ def test_chunk_upload_responds_before_slow_analysis_and_analysis_completes_later
     assert pushes.sent == [
         (
             ["aa" * 32],
-            "Bahaya: terindikasi penipuan",
-            "Jangan berikan kode atau transfer. Tutup telepon sekarang.",
+            "Awas, ini penipu!",
+            "Matikan teleponnya sekarang. Jangan sebut kode apa pun. Jangan transfer.",
             session_payload()["call_id"],
             True,
         )

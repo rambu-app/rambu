@@ -199,7 +199,8 @@ def test_two_devices_share_alert_and_first_guardian_decision_wins() -> None:
         assert accepted.json()["accepted"] is True
         assert accepted.json()["decision"]["by"]["name"] == "Sinta"
         assert pushes.sent[1][0] == ["aa" * 32]
-        assert pushes.sent[1][2] == "Tutup telepon sekarang."
+        assert pushes.sent[1][1] == "Sinta: ini penipu!"
+        assert pushes.sent[1][2] == "Matikan teleponnya sekarang. Jangan transfer apa pun."
         assert pushes.sent[1][4] is True
 
         rejected = client.post(
@@ -248,7 +249,7 @@ def test_safe_decision_push_is_not_urgent() -> None:
         )
 
         assert accepted.status_code == 200
-        assert pushes.sent[-1][2] == "Tetap jangan beri kode atau transfer."
+        assert pushes.sent[-1][2] == "Tetap jangan sebut kode atau transfer."
         assert pushes.sent[-1][4] is False
 
 
@@ -303,7 +304,7 @@ def test_push_notifications_are_localized_for_each_registered_device() -> None:
         )
         assert decision.status_code == 200
         assert pushes.sent[-1][0] == ["aa" * 32]
-        assert pushes.sent[-1][2] == "Hang up now."
+        assert pushes.sent[-1][2] == "Hang up now. Do not send any money."
 
 
 def test_existing_push_tokens_migrate_to_indonesian(tmp_path) -> None:
@@ -466,3 +467,91 @@ def test_legacy_parent_publish_is_idempotent_with_backend_alert() -> None:
     assert legacy_should_notify is False
     assert published.level == "danger"
     assert len(published.evidence) == 2
+
+
+def test_scam_verdict_keeps_alarming_the_parent_until_the_call_ends() -> None:
+    store = PilotStore(":memory:")
+    pushes = RecordingPushSender()
+    sleeps: list[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+        # The parent hangs up after the second repeat.
+        if len(sleeps) == 3:
+            store.end_alert(parent_session["access_token"], alert_payload()["id"])
+
+    app = create_app(
+        service=StubDemoService(),
+        pilot_store=store,
+        push_sender=pushes,
+        scam_alarm_repeats=5,
+        scam_alarm_interval=6,
+        sleep=fake_sleep,
+    )
+
+    with TestClient(app) as client:
+        parent_session = client.post("/api/pilot/families", json={"parent_name": "Ibu Ratna"}).json()
+        guardian = client.post(
+            "/api/pilot/families/join",
+            json={"code": parent_session["invite_code"], "name": "Sinta", "relation": "Anak"},
+        ).json()
+        client.put(
+            "/api/pilot/push-token",
+            headers=authorization(parent_session["access_token"]),
+            json={"token": "aa" * 32, "environment": "sandbox"},
+        )
+        client.post(
+            "/api/pilot/alerts",
+            headers=authorization(parent_session["access_token"]),
+            json=alert_payload(),
+        )
+        decided = client.post(
+            f"/api/pilot/alerts/{alert_payload()['id']}/decision",
+            headers=authorization(guardian["access_token"]),
+            json={"verdict": "scam"},
+        )
+
+    assert decided.status_code == 200
+    hang_ups = [push for push in pushes.sent if push[0] == ["aa" * 32]]
+    # One verdict push, then two repeats before the call ended on the third wait.
+    assert len(hang_ups) == 3
+    assert all(push[2] == "Matikan teleponnya sekarang. Jangan transfer apa pun." for push in hang_ups)
+    assert all(push[4] is True for push in hang_ups)
+    assert len({push[3] for push in hang_ups}) == 3
+    assert sleeps == [6, 6, 6]
+
+
+def test_safe_verdict_does_not_repeat_the_alarm() -> None:
+    store = PilotStore(":memory:")
+    pushes = RecordingPushSender()
+    app = create_app(
+        service=StubDemoService(),
+        pilot_store=store,
+        push_sender=pushes,
+        scam_alarm_repeats=5,
+        sleep=lambda _: None,
+    )
+
+    with TestClient(app) as client:
+        parent_session = client.post("/api/pilot/families", json={"parent_name": "Ibu Ratna"}).json()
+        guardian = client.post(
+            "/api/pilot/families/join",
+            json={"code": parent_session["invite_code"], "name": "Sinta", "relation": "Anak"},
+        ).json()
+        client.put(
+            "/api/pilot/push-token",
+            headers=authorization(parent_session["access_token"]),
+            json={"token": "aa" * 32, "environment": "sandbox"},
+        )
+        client.post(
+            "/api/pilot/alerts",
+            headers=authorization(parent_session["access_token"]),
+            json=alert_payload(),
+        )
+        client.post(
+            f"/api/pilot/alerts/{alert_payload()['id']}/decision",
+            headers=authorization(guardian["access_token"]),
+            json={"verdict": "safe"},
+        )
+
+    assert [push[1] for push in pushes.sent if push[0] == ["aa" * 32]] == ["Sinta: telepon aman"]

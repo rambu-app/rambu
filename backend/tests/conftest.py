@@ -26,3 +26,12 @@ def wav_bytes(seconds: float = 1.0, sample_rate: int = 16_000) -> bytes:
 class ImmediateExecutor:
     def submit(self, function, *args):
         function(*args)
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _no_repeated_scam_alarm(monkeypatch):
+    """Repeated hang-up pushes sleep between sends; only the dedicated test turns them on."""
+    monkeypatch.setattr("rambu_api.app.SCAM_ALARM_REPEATS", 0)
