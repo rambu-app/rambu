@@ -202,8 +202,8 @@ private struct TutorialVisual: View {
             EmptyView()
         } overlay: {
             PushBanner(toast: Toast(
-                id: "tutorial", title: visual == .alertIn ? "Bahaya: Ibu mungkin ditipu" : "Bahaya: terindikasi penipuan",
-                body: visual == .alertIn ? "Ketuk untuk melihat dan memutuskan." : "Jangan transfer atau sebut kode.",
+                id: "tutorial", title: visual == .alertIn ? "Bahaya: Ibu mungkin ditipu" : "Awas, ini penipu!",
+                body: visual == .alertIn ? "Ketuk untuk melihat dan memutuskan." : "Jangan sebut kode, jangan transfer.",
                 level: .danger, alertID: nil))
                 .frame(width: 370)
                 .scaleEffect(0.68, anchor: .top)

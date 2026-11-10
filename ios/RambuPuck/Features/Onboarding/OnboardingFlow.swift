@@ -16,7 +16,7 @@ struct OnboardingFlow: View {
                 case .parentProfile: ParentProfileStep()
                 case .guardianProfile: GuardianProfileStep()
                 case .pairPuck: PairPuckStep()
-                case .consent: ConsentStep()
+                case .consent, .guardianPrivacy: PrivacyConsentStep()
                 case .invite:
                     if model.allowsDemoControls { InviteGuardiansStep() }
                     else {
@@ -27,7 +27,7 @@ struct OnboardingFlow: View {
                 case .enterCode:
                     if model.allowsDemoControls { EnterCodeStep() }
                     else {
-                        StepScaffold(progress: (2, 2), title: "Hubungkan dengan orang tua") {
+                        StepScaffold(progress: (3, 3), title: "Hubungkan dengan orang tua") {
                             FamilySetupContent {
                                 Task {
                                     await profile.requestNotifications()
@@ -57,14 +57,15 @@ struct OnboardingFlow: View {
     private func goBack() {
         switch model.onboardingStep {
         case .tutorial: model.onboardingStep = .welcome
-        case .enterCode: model.onboardingStep = model.allowsDemoControls ? .welcome : .guardianProfile
+        case .enterCode: model.onboardingStep = model.allowsDemoControls ? .welcome : .guardianPrivacy
         case .parentProfile: model.onboardingStep = model.allowsDemoControls ? .tutorial : .welcome
         case .pairPuck: model.onboardingStep = .parentProfile
         case .consent: model.onboardingStep = model.allowsDemoControls ? .pairPuck : .parentProfile
         case .invite: model.onboardingStep = .consent
         case .practiceCall: model.onboardingStep = .invite
         case .guardianProfile: model.onboardingStep = model.allowsDemoControls ? .enterCode : .welcome
-        case .practiceAlert: model.onboardingStep = .guardianProfile
+        case .guardianPrivacy: model.onboardingStep = .guardianProfile
+        case .practiceAlert: model.onboardingStep = .guardianPrivacy
         case .waiting: model.onboardingStep = .practiceAlert
         case .welcome: break
         }
@@ -156,7 +157,7 @@ struct WelcomeStep: View {
     private var sample: Toast {
         Toast(
             id: "sambutan",
-            title: L10n.text("Bahaya: terindikasi penipuan", language: model.language),
+            title: L10n.text("Awas, ini penipu!", language: model.language),
             body: L10n.format(
                 "family.sent_to_two",
                 fallback: "Sudah dikirim ke %@ dan %@.",

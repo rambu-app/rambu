@@ -27,8 +27,8 @@ struct AppViewModelBehaviorTests {
         await model.call.start(.bankOTP).value
 
         let warning = try #require(model.state.toast)
-        #expect(warning.title == "Danger: possible scam")
-        #expect(warning.body == "Be careful. Do not transfer money or share codes. Sent to Sinta and Richard.")
+        #expect(warning.title == "Warning: this is a scam!")
+        #expect(warning.body == "Hang up now. Do not share any code or send money. Sent to Sinta and Richard.")
         #expect(model.state.session?.metadata.title == "Caller claiming to be from Sentosa Bank")
         #expect(model.state.session?.heard.first?.text.contains("Mrs Taylor") == true)
     }
@@ -55,7 +55,7 @@ struct AppViewModelBehaviorTests {
 
         let push = try #require(model.state.toast)
         #expect(push.level == .danger)
-        #expect(push.title.hasPrefix("Bahaya"))
+        #expect(push.title.hasPrefix("Awas"))
         #expect(push.body.contains("Sinta") && push.body.contains("Richard"))
     }
 

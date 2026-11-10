@@ -12,13 +12,13 @@ struct ParentRoot: View {
             Tab(L10n.text("Riwayat", language: model.language), systemImage: "clock.fill", value: ParentTab.history) {
                 NavigationStack { HistoryList(forGuardian: false) }
             }
-            Tab("Puck", systemImage: "circle.circle.fill", value: ParentTab.puck) {
+            Tab("Puck", systemImage: "dot.radiowaves.left.and.right", value: ParentTab.puck) {
                 PuckScreen()
             }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
         .fullScreenCover(isPresented: $model.isCallScreenPresented) {
             CallScreen()
+                .hangUpTakeover()
                 .sheet(isPresented: $model.showCallStatus) {
                     CallStatusView()
                         .presentationDetents([.large])
@@ -59,7 +59,7 @@ struct PuckScreen: View {
                             .foregroundStyle(Brand.signalInk)
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Jika ada peringatan").font(.headline).foregroundStyle(Brand.signalInk)
-                            Text("Jangan berikan OTP, PIN, atau kata sandi. Hubungi keluarga jika ragu.")
+                            Text("Langsung matikan telepon. Jangan sebut OTP, PIN, atau kata sandi. Ragu? Telepon keluarga.")
                                 .font(.subheadline)
                                 .foregroundStyle(Brand.signalInk)
                                 .fixedSize(horizontal: false, vertical: true)

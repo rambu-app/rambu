@@ -31,6 +31,7 @@ struct RootView: View {
         ZStack(alignment: .top) {
             content
                 .id(model.onboardingComplete ? model.persona.rawValue : "onboarding")
+                .hangUpTakeover(isActive: !model.isCallScreenPresented)
             ToastOverlay()
         }
         .animation(.smooth(duration: 0.35), value: model.persona)
@@ -158,6 +159,8 @@ enum DemoLaunch {
             model.parentTab = .history
         case "puck":
             model.parentTab = .puck
+        case "hang-up":
+            model.hangUpAlarm = HangUpAlarm(id: UUID(), deciderName: "Sinta")
         case "profile":
             model.showProfile = true
         case "guardian-profile":

@@ -109,11 +109,11 @@ struct CallStatusView: View {
                 let scam = decision.verdict == .scam
                 level = scam ? .danger : .safe
                 title = scam
-                    ? text("Tutup telepon sekarang")
+                    ? text("Matikan teleponnya sekarang")
                     : L10n.format("Aman, kata %@", language: language, decision.by.name)
                 detail = scam
-                    ? L10n.format("%@ yakin ini penipuan.", language: language, decision.by.name)
-                    : text("Tetap jangan beri kode atau transfer.")
+                    ? L10n.format("%@ yakin ini penipu.", language: language, decision.by.name)
+                    : text("Tetap jangan sebut kode atau transfer.")
                 guardianNote = L10n.format("%@ sudah menjawab.", language: language, decision.by.name)
             } else if session.analysisFailure != nil {
                 level = .review

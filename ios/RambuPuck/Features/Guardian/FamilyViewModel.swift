@@ -127,17 +127,21 @@ final class FamilyViewModel {
             }
             if decision.by != state.currentPerson {
                 let scam = decision.verdict == .scam
+                let callEnded = state.alerts.first { $0.id == alertID }?.callEnded ?? false
+                if scam, state.persona.isParent, !callEnded {
+                    state.hangUpAlarm = HangUpAlarm(id: alertID, deciderName: decision.by.name)
+                }
                 present(Toast(
                     id: "decision-\(alertID)",
                     title: L10n.format(
                         scam ? "family.decision.scam" : "family.decision.safe",
-                        fallback: scam ? "%@: ini penipuan" : "%@: telepon aman",
+                        fallback: scam ? "%@: ini penipu!" : "%@: telepon aman",
                         language: state.language,
                         decision.by.name
                     ),
                     body: state.persona.isParent
                         ? L10n.text(
-                            scam ? "Tutup telepon sekarang." : "Tetap jangan beri kode atau transfer.",
+                            scam ? "Matikan teleponnya sekarang. Jangan transfer apa pun." : "Tetap jangan sebut kode atau transfer.",
                             language: state.language
                         )
                         : L10n.format(

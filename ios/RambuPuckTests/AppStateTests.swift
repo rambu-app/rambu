@@ -356,9 +356,9 @@ struct AppStateTests {
         #expect(
             L10n.text(
                 "alert.scam.title",
-                fallback: "Bahaya: terindikasi penipuan",
+                fallback: "Awas, ini penipu!",
                 language: .english
-            ) == "Danger: possible scam"
+            ) == "Warning: this is a scam!"
         )
         #expect(
             L10n.format(

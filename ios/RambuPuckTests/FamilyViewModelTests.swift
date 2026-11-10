@@ -95,4 +95,36 @@ struct FamilyViewModelTests {
 
         #expect(state.history.isEmpty)
     }
+
+    @Test("Keputusan Penipuan dari pendamping membuka layar Matikan telepon di HP orang tua")
+    func scamDecisionRaisesHangUpAlarmForParent() {
+        let (state, family) = makeFamily(persona: .ratna)
+        let alert = alert()
+        family.publish(alert)
+
+        family.receive(.decided(alertID: alert.id, GuardianDecision(by: .sinta, verdict: .scam, at: .now)))
+
+        #expect(state.hangUpAlarm == HangUpAlarm(id: alert.id, deciderName: "Sinta"))
+    }
+
+    @Test("Keputusan Aman, panggilan yang sudah selesai, dan HP pendamping tidak memicu alarm")
+    func hangUpAlarmOnlyForLiveScamOnParentPhone() {
+        let (parentState, parentFamily) = makeFamily(persona: .ratna)
+        let safe = alert()
+        parentFamily.publish(safe)
+        parentFamily.receive(.decided(alertID: safe.id, GuardianDecision(by: .sinta, verdict: .safe, at: .now)))
+        #expect(parentState.hangUpAlarm == nil)
+
+        var ended = alert()
+        ended.callEnded = true
+        parentFamily.publish(ended)
+        parentFamily.receive(.decided(alertID: ended.id, GuardianDecision(by: .sinta, verdict: .scam, at: .now)))
+        #expect(parentState.hangUpAlarm == nil)
+
+        let (guardianState, guardianFamily) = makeFamily(persona: .richard)
+        let other = alert()
+        guardianFamily.publish(other)
+        guardianFamily.receive(.decided(alertID: other.id, GuardianDecision(by: .sinta, verdict: .scam, at: .now)))
+        #expect(guardianState.hangUpAlarm == nil)
+    }
 }
