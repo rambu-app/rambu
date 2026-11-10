@@ -1,16 +1,11 @@
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+FROM python:3.12-slim-bookworm
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_PROJECT_ENVIRONMENT=/opt/rambu-venv \
     PATH=/opt/rambu-venv/bin:$PATH
 
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ca-certificates python3 python3-venv \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 10001 rambu
-
+RUN useradd --create-home --uid 10001 rambu
 COPY --from=ghcr.io/astral-sh/uv:0.8.22 /uv /uvx /bin/
 
 WORKDIR /app/backend
@@ -19,8 +14,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY backend/rambu_api ./rambu_api
 RUN uv sync --frozen --no-dev \
-    && mkdir -p /app/backend/data /var/cache/rambu-models \
-    && chown -R rambu:rambu /app/backend/data /var/cache/rambu-models
+    && mkdir -p /app/backend/data \
+    && chown -R rambu:rambu /app/backend/data
 
 USER rambu
 EXPOSE 8000

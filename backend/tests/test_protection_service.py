@@ -61,6 +61,19 @@ class SequenceAnalyzer:
         return value
 
 
+class DeferredExecutor:
+    def __init__(self) -> None:
+        self.pending: list[tuple[object, tuple[object, ...]]] = []
+
+    def submit(self, function, *args):
+        self.pending.append((function, args))
+
+    def run_all(self) -> None:
+        while self.pending:
+            function, args = self.pending.pop(0)
+            function(*args)
+
+
 def assessment(level: str) -> RiskAssessment:
     if level == "low":
         return RiskAssessment(
@@ -115,6 +128,68 @@ def process(service, puck_token, session_id, sequence, final, audio):
     return service.get_puck_session(puck_token, session_id)
 
 
+def test_stream_segments_are_masked_before_persistence_and_logging(caplog) -> None:
+    service, store, parent_token, puck_token, session_id = configured_service([])
+
+    with caplog.at_level(logging.INFO, logger="uvicorn.error.rambu.transcription"):
+        snapshot = service.process_stream_segment(
+            puck_token,
+            session_id,
+            sequence=0,
+            text="Nomor 081234567890 dan OTP 123456",
+            final=False,
+        )
+
+    assert snapshot.masked_transcript == "Nomor [NOMOR_TELEPON] dan OTP [KODE]"
+    assert "081234567890" not in caplog.text
+    assert "123456" not in caplog.text
+    assert "[KODE]" in caplog.text
+    persisted = store.get_protection_session(parent_token, session_id)
+    assert persisted.masked_transcript == snapshot.masked_transcript
+
+
+def test_stream_segment_final_completion_and_duplicate_retry() -> None:
+    service, _, _, puck_token, session_id = configured_service([])
+
+    completed = service.process_stream_segment(
+        puck_token,
+        session_id,
+        sequence=0,
+        text="Selesai",
+        final=True,
+    )
+    duplicate = service.process_stream_segment(
+        puck_token,
+        session_id,
+        sequence=0,
+        text="Selesai",
+        final=True,
+    )
+
+    assert completed.status == "completed"
+    assert duplicate == completed
+
+
+def test_empty_non_final_stream_segment_does_not_mutate_state() -> None:
+    service, store, _, puck_token, session_id = configured_service([])
+    before = service.get_puck_session(puck_token, session_id)
+
+    unchanged = service.process_stream_segment(
+        puck_token,
+        session_id,
+        sequence=0,
+        text="   ",
+        final=False,
+    )
+
+    assert unchanged == before
+    count = store._connection.execute(
+        "SELECT COUNT(*) FROM protection_stream_segments WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()[0]
+    assert count == 0
+
+
 def test_chunks_are_masked_persisted_and_analyzed_cumulatively() -> None:
     analyzer = RecordingAnalyzer()
     service, store, parent_token, puck_token, session_id = configured_service(
@@ -133,6 +208,100 @@ def test_chunks_are_masked_persisted_and_analyzed_cumulatively() -> None:
     persisted = store.get_protection_session(parent_token, session_id)
     assert "081234567890" not in persisted.masked_transcript
     assert "123456" not in persisted.masked_transcript
+
+
+def test_repeated_analysis_requests_share_one_queued_worker() -> None:
+    store = PilotStore(":memory:")
+    parent = store.create_family("Ibu Ratna")
+    puck = store.pair_puck(parent.invite_code or "", "Rambu Puck")
+    analyzer = RecordingAnalyzer()
+    executor = DeferredExecutor()
+    service = ProtectionService(
+        store,
+        QueueTranscriber(["Halo", "minta kode", "sekarang"]),
+        analyzer,
+        executor,
+    )
+    session = service.create_session(
+        parent.access_token,
+        CreateProtectionSessionRequest(
+            call_id="7F011753-8F09-4A45-8812-8A4591A96B3C",
+            started_at="2026-10-01T10:00:00Z",
+        ),
+    )
+    service.get_active_puck_session(puck.access_token)
+
+    for sequence in range(3):
+        service.process_chunk(
+            puck.access_token, session.id, sequence, False, wav_bytes()
+        )
+        service.analyze_latest(
+            puck.access_token, session.id, lambda previous, current: None
+        )
+
+    assert len(executor.pending) == 1
+    executor.run_all()
+    assert analyzer.calls == [("Halo minta kode sekarang", False)]
+
+
+def test_preview_analysis_masks_without_persisting_and_deduplicates() -> None:
+    analyzer = RecordingAnalyzer()
+    service, store, parent_token, puck_token, session_id = configured_service(
+        [], analyzer
+    )
+    assessed = []
+
+    for _ in range(2):
+        service.analyze_latest(
+            puck_token,
+            session_id,
+            lambda _previous, current: assessed.append(current),
+            preview_text="Kirim OTP 123456",
+        )
+
+    assert analyzer.calls == [("Kirim OTP [KODE]", False)]
+    assert len(assessed) == 1
+    assert assessed[0].assessment is not None
+    persisted = store.get_protection_session(parent_token, session_id)
+    assert persisted.masked_transcript == ""
+    assert "123456" not in persisted.model_dump_json()
+
+
+def test_preview_analysis_coalesces_to_the_latest_changed_text() -> None:
+    store = PilotStore(":memory:")
+    parent = store.create_family("Ibu Ratna")
+    puck = store.pair_puck(parent.invite_code or "", "Rambu Puck")
+    analyzer = RecordingAnalyzer()
+    executor = DeferredExecutor()
+    service = ProtectionService(store, QueueTranscriber([]), analyzer, executor)
+    session = service.create_session(
+        parent.access_token,
+        CreateProtectionSessionRequest(
+            call_id="7F011753-8F09-4A45-8812-8A4591A96B3C",
+            started_at="2026-10-01T10:00:00Z",
+        ),
+    )
+    service.get_active_puck_session(puck.access_token)
+
+    service.analyze_latest(
+        puck.access_token,
+        session.id,
+        lambda _previous, _current: None,
+        preview_text="Halo",
+    )
+    service.analyze_latest(
+        puck.access_token,
+        session.id,
+        lambda _previous, _current: None,
+        preview_text="Halo minta OTP 123456",
+    )
+
+    assert len(executor.pending) == 1
+    executor.run_all()
+    assert analyzer.calls == [("Halo minta OTP [KODE]", False)]
+    assert store.get_puck_protection_session(
+        puck.access_token, session.id
+    ).masked_transcript == ""
 
 
 def test_successful_transcription_logs_masked_chunk(caplog: pytest.LogCaptureFixture) -> None:

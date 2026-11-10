@@ -5,8 +5,8 @@ set -Eeuo pipefail
 SCRIPT_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "${SCRIPT_DIRECTORY}/.." && pwd)"
 COMPOSE_FILE="${REPOSITORY_ROOT}/deploy/pilot/compose.yaml"
-PILOT_ROOT="${RAMBU_PILOT_ROOT:-/srv/rambu}"
-MINIMUM_FREE_KB="${RAMBU_MIN_FREE_KB:-20971520}"
+PILOT_ROOT="${RAMBU_PILOT_ROOT:-${HOME}/rambu-pilot}"
+MINIMUM_FREE_KB="${RAMBU_MIN_FREE_KB:-10485760}"
 HEALTH_ATTEMPTS="${RAMBU_HEALTH_ATTEMPTS:-30}"
 HEALTH_INTERVAL="${RAMBU_HEALTH_INTERVAL:-2}"
 ENVIRONMENT_FILE=""
@@ -16,14 +16,13 @@ usage() {
 Usage: tools/deploy_pilot_server.sh COMMAND --env-file PATH
 
 Commands:
-  check    Validate secrets, disk, Docker Compose, GPU 0, and network isolation.
+  check    Validate secrets, disk, Docker Compose, and network isolation.
   deploy   Back up data, build and start the stack, bootstrap the flow, and verify health.
-  status   Show the three Compose services and local backend health.
+  status   Show the four Compose services and local backend health.
   logs     Follow service logs with configured secret values redacted.
   backup   Create a consistent timestamped SQLite backup.
 
-The production pilot stores data under /srv/rambu. Run deploy with sufficient
-permission to create and set ownership on that directory.
+The production pilot stores data under $HOME/rambu-pilot by default.
 EOF
 }
 
@@ -57,6 +56,7 @@ load_environment() {
     LANGFLOW_SUPERUSER_PASSWORD
     LANGFLOW_SECRET_KEY
     OPENROUTER_API_KEY
+    AI_GATEWAY_API_KEY
     APNS_TEAM_ID
     APNS_KEY_ID
     APNS_BUNDLE_ID
@@ -74,8 +74,23 @@ load_environment() {
 
   RAMBU_BIND_ADDRESS="$(environment_value RAMBU_BIND_ADDRESS)"
   RAMBU_BIND_ADDRESS="${RAMBU_BIND_ADDRESS:-127.0.0.1}"
-  export RAMBU_BIND_ADDRESS
-  export RAMBU_ENV_FILE="${ENVIRONMENT_FILE}"
+  RAMBU_BIND_PORT="$(environment_value RAMBU_BIND_PORT)"
+  RAMBU_BIND_PORT="${RAMBU_BIND_PORT:-8000}"
+  [[ "${RAMBU_BIND_PORT}" =~ ^[0-9]+$ ]] && \
+    (( RAMBU_BIND_PORT >= 1 && RAMBU_BIND_PORT <= 65535 )) || \
+    fail "RAMBU_BIND_PORT must be an integer from 1 to 65535."
+  export RAMBU_BIND_ADDRESS RAMBU_BIND_PORT
+  RAMBU_DATA_ROOT="$(environment_value RAMBU_DATA_ROOT)"
+  RAMBU_DATA_ROOT="${RAMBU_DATA_ROOT:-${PILOT_ROOT}}"
+  PILOT_ROOT="${RAMBU_DATA_ROOT}"
+  RAMBU_UID="$(environment_value RAMBU_UID)"
+  RAMBU_UID="${RAMBU_UID:-$(id -u)}"
+  RAMBU_GID="$(environment_value RAMBU_GID)"
+  RAMBU_GID="${RAMBU_GID:-$(id -g)}"
+  export RAMBU_DATA_ROOT RAMBU_UID RAMBU_GID
+  RAMBU_LANGFLOW_ENV_FILE="$(environment_value RAMBU_LANGFLOW_ENV_FILE)"
+  RAMBU_LANGFLOW_ENV_FILE="${RAMBU_LANGFLOW_ENV_FILE:-${PILOT_ROOT}/secrets/langflow.env}"
+  export RAMBU_LANGFLOW_ENV_FILE
 
   [[ "${RAMBU_PUBLIC_URL}" == "https://rambu-api.sfatimah.com" ]] || \
     fail "RAMBU_PUBLIC_URL must be https://rambu-api.sfatimah.com."
@@ -85,6 +100,78 @@ load_environment() {
     fail "APNS_ENVIRONMENT must be production for TestFlight."
   [[ "${APNS_BUNDLE_ID}" == "id.rambu.puck" ]] || \
     fail "APNS_BUNDLE_ID must be id.rambu.puck."
+}
+
+write_scoped_langflow_environment() {
+  python3 - "${RAMBU_LANGFLOW_ENV_FILE}" <<'PY'
+import os
+from pathlib import Path
+import sys
+import tempfile
+
+destination = Path(sys.argv[1])
+destination.parent.mkdir(parents=True, exist_ok=True)
+names = ("LANGFLOW_FLOW_ID", "LANGFLOW_API_KEY", "OPENROUTER_API_KEY")
+values = {name: os.environ[name] for name in names}
+if any("\n" in value or "\r" in value for value in values.values()):
+    raise SystemExit("Langflow environment values must be single-line")
+lines = ["LANGFLOW_URL=http://langflow:7860"]
+lines.extend(f"{name}={values[name]}" for name in names)
+handle, temporary = tempfile.mkstemp(prefix=".langflow-", dir=destination.parent)
+try:
+    os.fchmod(handle, 0o600)
+    with os.fdopen(handle, "w") as output:
+        output.write("\n".join(lines) + "\n")
+    os.replace(temporary, destination)
+except BaseException:
+    try:
+        os.close(handle)
+    except OSError:
+        pass
+    Path(temporary).unlink(missing_ok=True)
+    raise
+PY
+}
+
+permission_mode() {
+  if stat -c '%a' "$1" >/dev/null 2>&1; then
+    stat -c '%a' "$1"
+  else
+    stat -f '%Lp' "$1"
+  fi
+}
+
+require_private_file() {
+  local mode
+  local path="$1"
+  mode="$(permission_mode "${path}")" || fail "Unable to inspect permissions for ${path}."
+  [[ "${mode}" == "600" || "${mode}" == "400" ]] || \
+    fail "${path} must use mode 600 or 400."
+}
+
+port_is_available() {
+  python3 - "${RAMBU_BIND_ADDRESS}" "${RAMBU_BIND_PORT}" <<'PY'
+import socket
+import sys
+
+address, raw_port = sys.argv[1:]
+family = socket.AF_INET6 if ":" in address else socket.AF_INET
+try:
+    with socket.socket(family, socket.SOCK_STREAM) as candidate:
+        candidate.bind((address, int(raw_port)))
+except OSError:
+    raise SystemExit(1)
+PY
+}
+
+check_bind_port() {
+  local existing_backend
+  if port_is_available; then
+    return 0
+  fi
+  existing_backend="$(compose ps --status running --quiet backend 2>/dev/null || true)"
+  [[ -n "${existing_backend}" ]] || \
+    fail "${RAMBU_BIND_ADDRESS}:${RAMBU_BIND_PORT} is already in use by another process."
 }
 
 compose() {
@@ -106,18 +193,21 @@ import sys
 
 model = json.load(sys.stdin)
 services = model.get("services", {})
-if set(services) != {"backend", "langflow", "cloudflared"}:
+if set(services) != {"backend", "transcription-bridge", "langflow", "cloudflared"}:
     raise SystemExit(1)
 backend = services["backend"]
 langflow = services["langflow"]
 cloudflared = services["cloudflared"]
-if langflow.get("ports") or cloudflared.get("ports"):
+bridge = services["transcription-bridge"]
+if langflow.get("ports") or bridge.get("ports") or cloudflared.get("ports"):
     raise SystemExit(1)
 if any(port.get("host_ip") != "127.0.0.1" for port in backend.get("ports", [])):
     raise SystemExit(1)
 if set(backend.get("networks", {})) != {"private", "edge"}:
     raise SystemExit(1)
 if set(langflow.get("networks", {})) != {"private"}:
+    raise SystemExit(1)
+if set(bridge.get("networks", {})) != {"private"}:
     raise SystemExit(1)
 if set(cloudflared.get("networks", {})) != {"edge"}:
     raise SystemExit(1)
@@ -145,18 +235,17 @@ check_requirements() {
     fail "APNs key is missing or unreadable at ${secret_directory}/AuthKey.p8."
   [[ -r "${secret_directory}/cloudflare-tunnel-token" ]] || \
     fail "Cloudflare tunnel token is missing or unreadable."
+  require_private_file "${ENVIRONMENT_FILE}"
+  require_private_file "${secret_directory}/AuthKey.p8"
+  require_private_file "${secret_directory}/cloudflare-tunnel-token"
+
+  check_bind_port
+  write_scoped_langflow_environment
 
   available_kb="$(df -Pk "${PILOT_ROOT}" | awk 'NR == 2 { print $4 }')"
   [[ "${available_kb}" =~ ^[0-9]+$ ]] || fail "Unable to determine free space for ${PILOT_ROOT}."
   (( available_kb >= MINIMUM_FREE_KB )) || \
     fail "Insufficient free space under ${PILOT_ROOT}; at least $((MINIMUM_FREE_KB / 1024 / 1024)) GiB is required."
-
-  if ! docker run --rm --gpus 'device=0' \
-    nvidia/cuda:12.8.1-base-ubuntu24.04 \
-    nvidia-smi --id=0 --query-gpu=index --format=csv,noheader \
-    >/dev/null 2>&1; then
-    fail "GPU 0 is unavailable through the NVIDIA Container Runtime."
-  fi
 
   validate_compose_networks
   printf '✓ Pilot server checks passed.\n'
@@ -165,15 +254,7 @@ check_requirements() {
 prepare_directories() {
   mkdir -p \
     "${PILOT_ROOT}/data/langflow" \
-    "${PILOT_ROOT}/model-cache" \
     "${PILOT_ROOT}/backups"
-
-  if [[ "${PILOT_ROOT}" == "/srv/rambu" ]]; then
-    chown 10001:10001 "${PILOT_ROOT}/data" "${PILOT_ROOT}/model-cache" || \
-      fail "Unable to prepare backend directories; run deploy with sufficient permission."
-    chown 1000:0 "${PILOT_ROOT}/data/langflow" || \
-      fail "Unable to prepare Langflow data; run deploy with sufficient permission."
-  fi
 }
 
 backup_database() {
@@ -255,7 +336,7 @@ deploy_stack() {
   backup_database
 
   printf 'Building pinned Rambu images...\n'
-  compose build backend langflow
+  compose build backend transcription-bridge langflow
   compose pull cloudflared
 
   printf 'Starting private Langflow...\n'
@@ -266,6 +347,10 @@ deploy_stack() {
   compose exec -T langflow python /opt/rambu/scripts/bootstrap_flow.py \
     --env-file /run/secrets/rambu.env \
     --flow-file /opt/rambu/flows/Rambu.json
+
+  printf 'Starting the private transcription bridge...\n'
+  compose up -d transcription-bridge
+  wait_for_health transcription-bridge
 
   printf 'Starting the Rambu backend...\n'
   compose up -d backend
@@ -295,6 +380,7 @@ for name in (
     "LANGFLOW_SUPERUSER_PASSWORD",
     "LANGFLOW_SECRET_KEY",
     "OPENROUTER_API_KEY",
+    "AI_GATEWAY_API_KEY",
     "APNS_TEAM_ID",
     "APNS_KEY_ID",
     "RAMBU_TUNNEL_TOKEN",

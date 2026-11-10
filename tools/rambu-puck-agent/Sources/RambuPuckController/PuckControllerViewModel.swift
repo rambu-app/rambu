@@ -218,6 +218,8 @@ public final class PuckControllerViewModel: ObservableObject {
             _ = PuckControllerReducer.reduce(state: &state, event: .engineState(engineState))
         case .transcript(let line):
             transcriptLines.append(line)
+        case .partialTranscript:
+            break
         case .warning(let severity, let warning):
             latestWarning = warning
             _ = PuckControllerReducer.reduce(

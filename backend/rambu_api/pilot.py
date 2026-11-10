@@ -68,6 +68,9 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+PUCK_SESSION_LEASE = timedelta(seconds=60)
+
+
 def _iso(value: datetime) -> str:
     return value.astimezone(UTC).isoformat()
 
@@ -171,12 +174,23 @@ class PilotStore:
                     last_digest TEXT,
                     puck_id TEXT REFERENCES pucks(id),
                     revision INTEGER NOT NULL DEFAULT 0,
+                    last_activity_at TEXT,
                     UNIQUE(family_id, call_id)
                 );
 
                 CREATE UNIQUE INDEX IF NOT EXISTS protection_one_active_per_family
                 ON protection_sessions(family_id)
                 WHERE status IN ('waiting_for_puck', 'listening');
+
+                CREATE TABLE IF NOT EXISTS protection_stream_segments (
+                    session_id TEXT NOT NULL REFERENCES protection_sessions(id) ON DELETE CASCADE,
+                    sequence INTEGER NOT NULL,
+                    digest TEXT NOT NULL,
+                    masked_segment TEXT NOT NULL,
+                    final INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY(session_id, sequence)
+                );
                 """
             )
             self._ensure_protection_session_metadata_columns()
@@ -414,6 +428,8 @@ class PilotStore:
             ).fetchone()
             if existing is not None:
                 return self._protection_snapshot(existing), False
+            with self._connection:
+                self._expire_abandoned_puck_sessions(puck["family_id"])
             active = self._connection.execute(
                 """
                 SELECT 1 FROM protection_sessions
@@ -441,8 +457,8 @@ class PilotStore:
                     """
                     INSERT INTO protection_sessions (
                         id, family_id, parent_id, call_id, title, caller_detail,
-                        channel, language, status, started_at, puck_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'listening', ?, ?)
+                        channel, language, status, started_at, puck_id, last_activity_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'listening', ?, ?, ?)
                     """,
                     (
                         session_id,
@@ -455,6 +471,7 @@ class PilotStore:
                         language,
                         _iso(started_at),
                         puck["id"],
+                        now,
                     ),
                 )
                 self._connection.execute(
@@ -466,13 +483,44 @@ class PilotStore:
             ).fetchone()
         return self._protection_snapshot(row), True
 
+    def _expire_abandoned_puck_sessions(self, family_id: str) -> None:
+        now = _now()
+        failure = ProtectionFailure(
+            code="puck_disconnected",
+            message="Puck terputus sebelum panggilan selesai.",
+        )
+        self._connection.execute(
+            """
+            UPDATE protection_sessions
+            SET status = 'error', failure_json = ?, ended_at = ?, revision = revision + 1
+            WHERE family_id = ? AND status = 'listening' AND puck_id IS NOT NULL
+              AND COALESCE(last_activity_at, started_at) < ?
+            """,
+            (
+                json.dumps(failure.model_dump(mode="json"), ensure_ascii=False),
+                _iso(now),
+                family_id,
+                _iso(now - PUCK_SESSION_LEASE),
+            ),
+        )
+        self._connection.execute(
+            """
+            UPDATE alerts SET call_ended = 1, updated_at = ?
+            WHERE family_id = ? AND call_ended = 0 AND id IN (
+                SELECT call_id FROM protection_sessions
+                WHERE family_id = ? AND failure_json IS NOT NULL AND ended_at = ?
+            )
+            """,
+            (_iso(now), family_id, family_id, _iso(now)),
+        )
+
     def _preferred_family_language(self, family_id: str) -> str:
         row = self._connection.execute(
             """
             SELECT push_tokens.language
             FROM push_tokens
             JOIN members ON members.id = push_tokens.member_id
-            WHERE members.family_id = ?
+            WHERE members.family_id = ? AND members.role = 'parent'
             ORDER BY
                 CASE WHEN push_tokens.environment = 'production' THEN 0 ELSE 1 END,
                 push_tokens.updated_at DESC
@@ -508,6 +556,8 @@ class PilotStore:
         puck = self.authenticate_puck(token)
         now = _iso(_now())
         with self._lock, self._connection:
+            self._expire_abandoned_puck_sessions(puck["family_id"])
+        with self._lock, self._connection:
             row = self._connection.execute(
                 """
                 SELECT * FROM protection_sessions
@@ -533,6 +583,10 @@ class PilotStore:
                     """,
                     (puck["id"], row["id"]),
                 )
+            self._connection.execute(
+                "UPDATE protection_sessions SET last_activity_at = ? WHERE id = ?",
+                (now, row["id"]),
+            )
             row = self._connection.execute(
                 "SELECT * FROM protection_sessions WHERE id = ?", (row["id"],)
             ).fetchone()
@@ -551,6 +605,31 @@ class PilotStore:
         if row["family_id"] != puck["family_id"] or row["puck_id"] != puck["id"]:
             raise AuthorizationError("Sesi perlindungan berasal dari keluarga lain.")
         return self._protection_snapshot(row)
+
+    def touch_puck_protection_session(self, token: str, session_id: str) -> None:
+        puck = self.authenticate_puck(token)
+        now = _iso(_now())
+        with self._lock, self._connection:
+            row = self._connection.execute(
+                "SELECT family_id, puck_id, status FROM protection_sessions WHERE id = ?",
+                (session_id,),
+            ).fetchone()
+            if row is None:
+                raise MissingProtectionSessionError("Sesi perlindungan tidak ditemukan.")
+            if row["family_id"] != puck["family_id"] or row["puck_id"] != puck["id"]:
+                raise AuthorizationError("Sesi perlindungan berasal dari keluarga lain.")
+            if row["status"] != "listening":
+                raise ActiveProtectionSessionConflict(
+                    "Sesi perlindungan tidak sedang mendengar."
+                )
+            self._connection.execute(
+                "UPDATE protection_sessions SET last_activity_at = ? WHERE id = ?",
+                (now, session_id),
+            )
+            self._connection.execute(
+                "UPDATE pucks SET last_seen_at = ? WHERE id = ?",
+                (now, puck["id"]),
+            )
 
     def record_protection_chunk(
         self,
@@ -601,7 +680,8 @@ class PilotStore:
                     UPDATE protection_sessions
                     SET masked_transcript = ?, assessment_json = ?, status = ?, outcome = ?,
                         ended_at = ?, next_sequence = next_sequence + 1,
-                        last_sequence = ?, last_digest = ?, revision = revision + 1
+                        last_sequence = ?, last_digest = ?, revision = revision + 1,
+                        last_activity_at = ?
                     WHERE id = ?
                     """,
                     (
@@ -612,6 +692,7 @@ class PilotStore:
                         ended_at,
                         sequence,
                         digest,
+                        _iso(_now()),
                         session_id,
                     ),
                 )
@@ -664,6 +745,113 @@ class PilotStore:
                 "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
             ).fetchone()
         return self._protection_snapshot(row)
+
+    def record_protection_stream_segment(
+        self,
+        token: str,
+        session_id: str,
+        *,
+        sequence: int,
+        digest: str,
+        masked_segment: str,
+        final: bool,
+    ) -> ProtectionSessionSnapshot:
+        puck = self.authenticate_puck(token)
+        if sequence < 0:
+            raise ChunkSequenceConflict("Nomor urutan segmen tidak sesuai.")
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._connection.execute(
+                    "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+                ).fetchone()
+                if row is None:
+                    raise MissingProtectionSessionError(
+                        "Sesi perlindungan tidak ditemukan."
+                    )
+                if (
+                    row["family_id"] != puck["family_id"]
+                    or row["puck_id"] != puck["id"]
+                ):
+                    raise AuthorizationError(
+                        "Sesi perlindungan berasal dari keluarga lain."
+                    )
+
+                existing = self._connection.execute(
+                    """
+                    SELECT digest FROM protection_stream_segments
+                    WHERE session_id = ? AND sequence = ?
+                    """,
+                    (session_id, sequence),
+                ).fetchone()
+                if existing is not None:
+                    if existing["digest"] != digest:
+                        raise ChunkSequenceConflict(
+                            "Unggahan ulang memiliki teks berbeda."
+                        )
+                    self._connection.rollback()
+                    return self._protection_snapshot(row)
+
+                expected = self._connection.execute(
+                    """
+                    SELECT COALESCE(MAX(sequence) + 1, 0)
+                    FROM protection_stream_segments WHERE session_id = ?
+                    """,
+                    (session_id,),
+                ).fetchone()[0]
+                if sequence != expected:
+                    raise ChunkSequenceConflict("Nomor urutan segmen tidak sesuai.")
+                if row["status"] != "listening":
+                    raise ActiveProtectionSessionConflict(
+                        "Sesi perlindungan tidak sedang mendengar."
+                    )
+
+                now = _iso(_now())
+                self._connection.execute(
+                    """
+                    INSERT INTO protection_stream_segments (
+                        session_id, sequence, digest, masked_segment, final, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (session_id, sequence, digest, masked_segment, int(final), now),
+                )
+                combined = " ".join(
+                    part
+                    for part in (row["masked_transcript"].strip(), masked_segment.strip())
+                    if part
+                )
+                status = "completed" if final else "listening"
+                outcome = None
+                ended_at = None
+                if final:
+                    outcome = "analyzed" if row["assessment_json"] or combined else "no_speech"
+                    ended_at = now
+                self._connection.execute(
+                    """
+                    UPDATE protection_sessions
+                    SET masked_transcript = ?, status = ?, outcome = ?, ended_at = ?,
+                        revision = revision + 1, last_activity_at = ?
+                    WHERE id = ?
+                    """,
+                    (combined, status, outcome, ended_at, now, session_id),
+                )
+                if final:
+                    self._connection.execute(
+                        """
+                        UPDATE alerts SET call_ended = 1, updated_at = ?
+                        WHERE id = ? AND family_id = ?
+                        """,
+                        (now, row["call_id"], row["family_id"]),
+                    )
+                self._connection.commit()
+            except Exception:
+                if self._connection.in_transaction:
+                    self._connection.rollback()
+                raise
+            updated = self._connection.execute(
+                "SELECT * FROM protection_sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+        return self._protection_snapshot(updated)
 
     def inspect_protection_chunk(
         self,
@@ -846,6 +1034,10 @@ class PilotStore:
                 ALTER TABLE protection_sessions
                 ADD COLUMN language TEXT NOT NULL DEFAULT 'id'
                 """
+            )
+        if "last_activity_at" not in columns:
+            self._connection.execute(
+                "ALTER TABLE protection_sessions ADD COLUMN last_activity_at TEXT"
             )
 
     def _ensure_push_token_language_column(self) -> None:

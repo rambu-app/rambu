@@ -179,6 +179,7 @@ def test_default_startup_probes_and_propagates_failure(monkeypatch) -> None:
         "_default_service",
         lambda _settings, _whisper_settings: service,
     )
+    monkeypatch.setenv("RAMBU_TRANSCRIPTION_BRIDGE_URL", "http://bridge.internal:8788")
     application = create_app(settings=object())
 
     with pytest.raises(LangflowFailure, match="Langflow tidak dapat dihubungi"):

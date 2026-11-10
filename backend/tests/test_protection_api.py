@@ -1185,3 +1185,31 @@ def test_final_chunk_during_pending_analysis_ends_with_analyzed_assessment() -> 
     )
     assert snapshot["outcome"] == "analyzed"
     assert snapshot["assessment"]["risk_level"] == "high_risk"
+
+
+def test_puck_chunk_accepts_compressed_adpcm_audio() -> None:
+    client, store, transcriber, _ = build_client()
+    parent = store.create_family("Ibu Ratna")
+    puck = store.pair_puck(parent.invite_code or "", "Puck")
+    session = store.create_protection_session(
+        parent.access_token,
+        session_payload()["call_id"],
+        datetime.fromisoformat("2026-10-01T10:00:00+00:00"),
+        "cellular",
+    )
+    store.active_protection_session(puck.access_token)
+    one_second = (8_000).to_bytes(2, "little") + bytes(4_000)
+
+    response = client.post(
+        f"/api/pucks/sessions/{session.id}/chunks",
+        headers={
+            **auth(puck.access_token),
+            "content-type": "audio/x-rambu-adpcm",
+            "x-rambu-sequence": "0",
+            "x-rambu-final": "false",
+        },
+        content=one_second,
+    )
+
+    assert response.status_code == 200
+    assert transcriber.calls == 1

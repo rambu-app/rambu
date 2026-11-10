@@ -30,6 +30,16 @@ def test_prompt_defines_risk_contract_and_safety_rules() -> None:
     assert "indicators" not in prompt
 
 
+def test_prompt_uses_selected_language_for_analysis_and_user_facing_text() -> None:
+    prompt = PROMPT_PATH.read_text()
+
+    assert "`language`: `id` atau `en`" in prompt
+    assert "gunakan aturan dan contoh Bahasa Inggris" in prompt
+    assert "`explanation` dan `recommended_action`" in prompt
+    assert "bahasa yang ditentukan oleh `language`" in prompt
+    assert "seluruh teks harus dalam Bahasa Indonesia" not in prompt
+
+
 def test_exported_flow_is_minimal_and_secret_free() -> None:
     flow = json.loads(FLOW_PATH.read_text())
     nodes = flow["data"]["nodes"]

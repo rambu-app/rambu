@@ -250,6 +250,25 @@ final class PuckAPITests: XCTestCase {
             command: .pair
         )
         XCTAssertNil(pair.puckToken)
+
+        let listen = try AgentConfiguration(
+            environment: [
+                "RAMBU_SERVER_URL": "http://127.0.0.1:8000",
+                "RAMBU_PUCK_TOKEN": "secret",
+            ],
+            command: .listen
+        )
+        XCTAssertEqual(listen.transcriptionMode, .stream)
+
+        let chunk = try AgentConfiguration(
+            environment: [
+                "RAMBU_SERVER_URL": "http://127.0.0.1:8000",
+                "RAMBU_PUCK_TOKEN": "secret",
+                "RAMBU_TRANSCRIPTION_MODE": "chunk",
+            ],
+            command: .listen
+        )
+        XCTAssertEqual(chunk.transcriptionMode, .chunk)
     }
 
     private func sessionJSON(id: String, status: String) -> Data {

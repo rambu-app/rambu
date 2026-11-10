@@ -1,3 +1,5 @@
+import asyncio
+import json
 import logging
 import os
 import threading
@@ -5,12 +7,14 @@ import time
 from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Awaitable, Callable, Protocol
 
-from fastapi import BackgroundTasks, Body, FastAPI, Header, HTTPException, Request, Response
+from fastapi import BackgroundTasks, Body, FastAPI, Header, HTTPException, Request, Response, WebSocket
 from fastapi.responses import JSONResponse
+from starlette.websockets import WebSocketDisconnect
 
-from .config import LangflowSettings, WhisperSettings
+from .audio import adpcm_to_wav
+from .config import LangflowSettings, TranscriptionSettings
 from .demo import DemoService, default_scenarios, delay_from_environment
 from .langflow_client import LangflowClient, LangflowFailure
 from .apns import PushSender, push_sender_from_environment
@@ -48,7 +52,9 @@ from .pilot import (
     PilotStore,
 )
 from .protection import MAXIMUM_CHUNK_BYTES, ProtectionService
-from .transcription import FasterWhisperTranscriber
+from .redaction import mask_sensitive_text
+from .streaming import BridgeStreamClient, MAX_STREAM_FRAME_BYTES, StreamCapacity
+from .transcription import BridgeTranscriber, FasterWhisperTranscriber
 
 
 PUSH_LOGGER = logging.getLogger("uvicorn.error.rambu.push")
@@ -111,16 +117,25 @@ class DemoServiceContract(Protocol):
 
 def _default_service(
     settings: LangflowSettings,
-    whisper_settings: WhisperSettings,
+    transcription_settings: TranscriptionSettings,
 ) -> DemoService:
-    return DemoService(
-        scenarios=default_scenarios(),
-        transcriber=FasterWhisperTranscriber(
+    if transcription_settings.provider == "bridge":
+        assert transcription_settings.bridge_url is not None
+        transcriber = BridgeTranscriber(
+            transcription_settings.bridge_url,
+            timeout_seconds=transcription_settings.timeout_seconds,
+        )
+    else:
+        whisper_settings = transcription_settings.whisper
+        transcriber = FasterWhisperTranscriber(
             whisper_settings.model_name,
             device=whisper_settings.device,
             compute_type=whisper_settings.compute_type,
             device_index=whisper_settings.device_index,
-        ),
+        )
+    return DemoService(
+        scenarios=default_scenarios(),
+        transcriber=transcriber,
         analyzer=LangflowClient(
             settings.url,
             settings.flow_id,
@@ -145,6 +160,11 @@ def create_app(
     scam_alarm_repeats: int | None = None,
     scam_alarm_interval: float | None = None,
     sleep=time.sleep,
+    stream_factory: Callable[[str], Awaitable[Any]] | None = None,
+    stream_capacity: StreamCapacity | None = None,
+    stream_idle_seconds: float | None = None,
+    stream_max_seconds: float | None = None,
+    stream_analysis_seconds: float | None = None,
 ) -> FastAPI:
     # The demo routes run Whisper and Langflow without a login, so they stay off on a public server.
     if demo_api is None:
@@ -156,6 +176,36 @@ def create_app(
     push_environment = os.getenv("APNS_ENVIRONMENT", "sandbox")
     alarm_repeats = SCAM_ALARM_REPEATS if scam_alarm_repeats is None else scam_alarm_repeats
     alarm_interval = SCAM_ALARM_INTERVAL if scam_alarm_interval is None else scam_alarm_interval
+    capacity = stream_capacity or StreamCapacity(int(os.getenv("RAMBU_MAX_STREAMS", "4")))
+    idle_seconds = (
+        stream_idle_seconds
+        if stream_idle_seconds is not None
+        else float(os.getenv("RAMBU_STREAM_IDLE_SECONDS", "45"))
+    )
+    if idle_seconds <= 0:
+        raise ValueError("stream idle timeout must be positive")
+    max_stream_seconds = (
+        stream_max_seconds
+        if stream_max_seconds is not None
+        else float(os.getenv("RAMBU_MAX_STREAM_SECONDS", "900"))
+    )
+    if max_stream_seconds <= 0:
+        raise ValueError("stream maximum duration must be positive")
+    analysis_seconds = (
+        stream_analysis_seconds
+        if stream_analysis_seconds is not None
+        else float(os.getenv("RAMBU_STREAM_ANALYSIS_SECONDS", "4"))
+    )
+    if analysis_seconds <= 0:
+        raise ValueError("stream analysis interval must be positive")
+
+    async def open_stream(language: str) -> Any:
+        if stream_factory is not None:
+            return await stream_factory(language)
+        bridge_url = os.getenv("RAMBU_TRANSCRIPTION_BRIDGE_URL", "").strip()
+        if not bridge_url:
+            raise RuntimeError("transcription bridge is not configured")
+        return await BridgeStreamClient(bridge_url).start(language)
 
     def send_localized_push(
         targets: dict[str, list[str]],
@@ -241,8 +291,10 @@ def create_app(
         try:
             if demo_service is None:
                 configuration = settings or LangflowSettings.from_environment(os.environ)
-                whisper_configuration = WhisperSettings.from_environment(os.environ)
-                demo_service = _default_service(configuration, whisper_configuration)
+                transcription_configuration = TranscriptionSettings.from_environment(
+                    os.environ
+                )
+                demo_service = _default_service(configuration, transcription_configuration)
                 demo_service.probe()
                 protection = ProtectionService(
                     pilots,
@@ -552,8 +604,9 @@ def create_app(
         x_rambu_sequence: str | None = Header(default=None),
         x_rambu_final: str | None = Header(default=None),
     ) -> ProtectionSessionSnapshot:
-        if content_type is None or content_type.split(";", 1)[0].strip().lower() != "audio/wav":
-            raise HTTPException(status_code=422, detail="Content-Type harus audio/wav.")
+        media_type = (content_type or "").split(";", 1)[0].strip().lower()
+        if media_type not in {"audio/wav", "audio/x-rambu-adpcm"}:
+            raise HTTPException(status_code=422, detail="Content-Type harus audio/wav atau audio/x-rambu-adpcm.")
         if x_rambu_sequence is None or not x_rambu_sequence.isdigit():
             raise HTTPException(status_code=422, detail="X-Rambu-Sequence harus bilangan bulat.")
         if x_rambu_final not in {"true", "false"}:
@@ -567,7 +620,7 @@ def create_app(
                 session_id,
                 int(x_rambu_sequence),
                 x_rambu_final == "true",
-                audio,
+                adpcm_to_wav(audio) if media_type == "audio/x-rambu-adpcm" else audio,
             )
             protections().analyze_latest(
                 token,
@@ -599,6 +652,334 @@ def create_app(
                 message="Pemrosesan audio gagal.",
             )
             raise HTTPException(status_code=502, detail=failure.model_dump()) from error
+
+    @app.websocket("/api/pucks/sessions/{session_id}/stream")
+    async def stream_puck_audio(websocket: WebSocket, session_id: str) -> None:
+        authorization = websocket.headers.get("authorization")
+        if not authorization or not authorization.startswith("Bearer "):
+            await websocket.close(code=4401)
+            return
+        token = authorization.removeprefix("Bearer ").strip()
+        if not token:
+            await websocket.close(code=4401)
+            return
+        try:
+            session = protections().get_puck_session(token, session_id)
+            if session.status != "listening":
+                raise ActiveProtectionSessionConflict(
+                    "Sesi perlindungan tidak sedang mendengar."
+                )
+        except AuthenticationError:
+            await websocket.close(code=4401)
+            return
+        except AuthorizationError:
+            await websocket.close(code=4403)
+            return
+        except MissingProtectionSessionError:
+            await websocket.close(code=4404)
+            return
+        except ActiveProtectionSessionConflict:
+            await websocket.close(code=4409)
+            return
+
+        if not await capacity.acquire(session_id):
+            await websocket.close(code=4429)
+            return
+
+        bridge = None
+        public_task: asyncio.Task | None = None
+        provider_task: asyncio.Task | None = None
+        checkpoint_task: asyncio.Task | None = None
+        assessment_task: asyncio.Task | None = None
+        ready = False
+        finishing = False
+        completed = False
+        next_sequence = 0
+        loop = asyncio.get_running_loop()
+        started_at = loop.time()
+        last_stream_activity = started_at
+        last_lease_touch = started_at - 15
+        latest_partial = ""
+        checkpointed_partial = ""
+        assessment_events: asyncio.Queue[ProtectionSessionSnapshot] = asyncio.Queue()
+        accept_assessments = True
+
+        def on_assessed(
+            previous: ProtectionSessionSnapshot,
+            current: ProtectionSessionSnapshot,
+        ) -> None:
+            if accept_assessments and _risk_increased(previous, current):
+                try:
+                    loop.call_soon_threadsafe(assessment_events.put_nowait, current)
+                except RuntimeError:
+                    pass
+            notify_assessment(token, session_id, previous, current)
+
+        try:
+            await websocket.accept()
+            try:
+                bridge = await open_stream(session.language)
+            except Exception:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "code": "transcription_unavailable",
+                        "retryable": True,
+                    }
+                )
+                await websocket.close(code=1011)
+                return
+
+            public_task = asyncio.create_task(websocket.receive())
+            provider_task = asyncio.create_task(bridge.receive())
+            assessment_task = asyncio.create_task(assessment_events.get())
+            while True:
+                pending = {
+                    task
+                    for task in (
+                        public_task,
+                        provider_task,
+                        checkpoint_task,
+                        assessment_task,
+                    )
+                    if task is not None
+                }
+                remaining = max_stream_seconds - (loop.time() - started_at)
+                idle_remaining = idle_seconds - (loop.time() - last_stream_activity)
+                if remaining <= 0 or idle_remaining <= 0:
+                    duration_exceeded = remaining <= 0
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "code": (
+                                "stream_duration_exceeded"
+                                if duration_exceeded
+                                else "idle_timeout"
+                            ),
+                            "retryable": False,
+                        }
+                    )
+                    await websocket.close(code=1001)
+                    return
+                done, _ = await asyncio.wait(
+                    pending,
+                    timeout=min(idle_remaining, remaining),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not done:
+                    duration_exceeded = loop.time() - started_at >= max_stream_seconds
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "code": (
+                                "stream_duration_exceeded"
+                                if duration_exceeded
+                                else "idle_timeout"
+                            ),
+                            "retryable": False,
+                        }
+                    )
+                    await websocket.close(code=1001)
+                    return
+
+                if provider_task in done:
+                    last_stream_activity = loop.time()
+                    try:
+                        event = provider_task.result()
+                    except Exception:
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "code": "transcription_unavailable",
+                                "retryable": not ready,
+                            }
+                        )
+                        await websocket.close(code=1011)
+                        return
+                    event_type = event.get("type")
+                    if event_type == "ready":
+                        ready = True
+                        await websocket.send_json({"type": "ready"})
+                        checkpoint_task = asyncio.create_task(
+                            asyncio.sleep(analysis_seconds)
+                        )
+                    elif event_type == "partial":
+                        text = mask_sensitive_text(str(event.get("text", "")))
+                        latest_partial = text.strip()
+                        await websocket.send_json({"type": "partial", "text": text})
+                    elif event_type == "final":
+                        sequence = event.get("sequence")
+                        if not isinstance(sequence, int) or sequence != next_sequence:
+                            raise ChunkSequenceConflict("Nomor urutan segmen tidak sesuai.")
+                        snapshot = protections().process_stream_segment(
+                            token,
+                            session_id,
+                            sequence=sequence,
+                            text=str(event.get("text", "")),
+                            final=False,
+                        )
+                        next_sequence += 1
+                        latest_partial = ""
+                        checkpointed_partial = ""
+                        await websocket.send_json(
+                            {
+                                "type": "snapshot",
+                                "snapshot": snapshot.model_dump(mode="json"),
+                            }
+                        )
+                        protections().analyze_latest(
+                            token,
+                            session_id,
+                            on_assessed,
+                        )
+                    elif event_type == "complete":
+                        snapshot = protections().process_stream_segment(
+                            token,
+                            session_id,
+                            sequence=next_sequence,
+                            text="",
+                            final=True,
+                        )
+                        completed = True
+                        await websocket.send_json(
+                            {
+                                "type": "snapshot",
+                                "snapshot": snapshot.model_dump(mode="json"),
+                            }
+                        )
+                        protections().analyze_latest(
+                            token,
+                            session_id,
+                            on_assessed,
+                        )
+                        await websocket.send_json({"type": "complete"})
+                        await websocket.close(code=1000)
+                        return
+                    elif event_type == "error":
+                        await websocket.send_json(
+                            {
+                                "type": "error",
+                                "code": "transcription_unavailable",
+                                "retryable": not ready,
+                            }
+                        )
+                        await websocket.close(code=1011)
+                        return
+                    else:
+                        raise ValueError("invalid bridge event")
+                    provider_task = asyncio.create_task(bridge.receive())
+
+                if checkpoint_task in done:
+                    if latest_partial and latest_partial != checkpointed_partial:
+                        checkpointed_partial = latest_partial
+                        protections().analyze_latest(
+                            token,
+                            session_id,
+                            on_assessed,
+                            preview_text=latest_partial,
+                        )
+                    checkpoint_task = asyncio.create_task(
+                        asyncio.sleep(analysis_seconds)
+                    )
+
+                if assessment_task in done:
+                    assessed = assessment_task.result()
+                    await websocket.send_json(
+                        {
+                            "type": "snapshot",
+                            "snapshot": assessed.model_dump(mode="json"),
+                        }
+                    )
+                    assessment_task = asyncio.create_task(assessment_events.get())
+
+                if public_task in done:
+                    last_stream_activity = loop.time()
+                    message = public_task.result()
+                    if message["type"] == "websocket.disconnect":
+                        return
+                    audio = message.get("bytes")
+                    text = message.get("text")
+                    if audio is not None:
+                        if (
+                            not ready
+                            or finishing
+                            or len(audio) == 0
+                            or len(audio) > MAX_STREAM_FRAME_BYTES
+                            or len(audio) % 2 != 0
+                        ):
+                            await websocket.send_json(
+                                {
+                                    "type": "error",
+                                    "code": "invalid_audio",
+                                    "retryable": False,
+                                }
+                            )
+                            await websocket.close(code=1009)
+                            return
+                        if loop.time() - last_lease_touch >= 15:
+                            protections().touch_stream_session(token, session_id)
+                            last_lease_touch = loop.time()
+                        await bridge.send_audio(audio)
+                    elif text is not None:
+                        try:
+                            control = json.loads(text)
+                        except json.JSONDecodeError:
+                            control = None
+                        if not ready or finishing or control != {"type": "finish"}:
+                            await websocket.send_json(
+                                {
+                                    "type": "error",
+                                    "code": "invalid_message",
+                                    "retryable": False,
+                                }
+                            )
+                            await websocket.close(code=1008)
+                            return
+                        finishing = True
+                        await bridge.finish()
+                    if finishing:
+                        public_task = None
+                    else:
+                        public_task = asyncio.create_task(websocket.receive())
+        except WebSocketDisconnect:
+            return
+        except (ChunkSequenceConflict, ActiveProtectionSessionConflict, ValueError):
+            try:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "code": "stream_conflict",
+                        "retryable": False,
+                    }
+                )
+                await websocket.close(code=1008)
+            except Exception:
+                pass
+        finally:
+            accept_assessments = False
+            cancelled_tasks = []
+            for task in (
+                public_task,
+                provider_task,
+                checkpoint_task,
+                assessment_task,
+            ):
+                if task is not None and not task.done():
+                    task.cancel()
+                    cancelled_tasks.append(task)
+            if cancelled_tasks:
+                await asyncio.gather(*cancelled_tasks, return_exceptions=True)
+            if bridge is not None:
+                try:
+                    await bridge.close()
+                except Exception:
+                    pass
+            if ready and not completed:
+                try:
+                    protections().fail_stream_session(token, session_id)
+                except Exception:
+                    pass
+            await capacity.release(session_id)
 
     @app.post("/api/pilot/families", response_model=PilotSession, status_code=201)
     def create_family(value: CreateFamilyRequest) -> PilotSession:

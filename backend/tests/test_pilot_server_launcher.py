@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import socket
 import sqlite3
 import subprocess
 from pathlib import Path
@@ -30,6 +31,7 @@ def valid_compose_model(*, langflow_ports: bool = False) -> str:
                     "ports": [{"host_ip": "127.0.0.1", "published": "8000", "target": 8000}],
                     "networks": {"private": None, "edge": None},
                 },
+                "transcription-bridge": {"networks": {"private": None}},
                 "langflow": langflow,
                 "cloudflared": {
                     "labels": {"com.rambu.tunnel-origin": "http://backend:8000"},
@@ -44,22 +46,21 @@ def write_fake_docker(
     bin_directory: Path,
     compose_model: str,
     *,
-    gpu_ok: bool = True,
     health: str = "healthy",
 ) -> None:
     add_command(
         bin_directory,
         "docker",
         'printf "%s\\n" "$*" >> "$RAMBU_TEST_DOCKER_LOG"\n'
-        'if [[ "${1:-}" == "run" ]]; then\n'
-        f"  exit {0 if gpu_ok else 9}\n"
-        "fi\n"
         'if [[ " $* " == *" compose "* && " $* " == *" version "* ]]; then exit 0; fi\n'
         'if [[ " $* " == *" config --format json "* ]]; then\n'
         f"  printf '%s\\n' '{compose_model}'\n"
         "  exit 0\n"
         "fi\n"
-        'if [[ " $* " == *" ps --status running --quiet "* ]]; then printf "%s\\n" "fake-container"; exit 0; fi\n'
+        'if [[ " $* " == *" ps --status running --quiet "* ]]; then\n'
+        '  if [[ "${RAMBU_TEST_BACKEND_RUNNING:-1}" == "1" ]]; then printf "%s\\n" "fake-container"; fi\n'
+        '  exit 0\n'
+        'fi\n'
         'if [[ "${1:-}" == "inspect" ]]; then printf "%s\\n" "'
         + health
         + '"; exit 0; fi\n'
@@ -75,7 +76,6 @@ def prepare_pilot(
     tmp_path: Path,
     *,
     compose_model: str | None = None,
-    gpu_ok: bool = True,
     health: str = "healthy",
 ) -> tuple[Path, Path, dict[str, str], Path]:
     repository = tmp_path / "repository"
@@ -93,6 +93,8 @@ def prepare_pilot(
     secrets.mkdir(parents=True)
     (secrets / "AuthKey.p8").write_text("test-apns-private-key")
     (secrets / "cloudflare-tunnel-token").write_text("tunnel-SENTINEL")
+    (secrets / "AuthKey.p8").chmod(0o600)
+    (secrets / "cloudflare-tunnel-token").chmod(0o600)
 
     environment_file = tmp_path / "pilot secrets.env"
     environment_file.write_text(
@@ -103,11 +105,13 @@ def prepare_pilot(
         "LANGFLOW_SUPERUSER_PASSWORD=password-SENTINEL\n"
         "LANGFLOW_SECRET_KEY=secret-SENTINEL\n"
         "OPENROUTER_API_KEY=openrouter-SENTINEL\n"
+        "AI_GATEWAY_API_KEY=vercel-SENTINEL\n"
         "APNS_TEAM_ID=TEAM-SENTINEL\n"
         "APNS_KEY_ID=KEY-SENTINEL\n"
         "APNS_BUNDLE_ID=id.rambu.puck\n"
         "APNS_ENVIRONMENT=production\n"
     )
+    environment_file.chmod(0o600)
 
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -115,7 +119,6 @@ def prepare_pilot(
     write_fake_docker(
         fake_bin,
         compose_model or valid_compose_model(),
-        gpu_ok=gpu_ok,
         health=health,
     )
     add_command(fake_bin, "curl", "exit 0")
@@ -192,13 +195,60 @@ def test_check_rejects_insufficient_root_disk_space(tmp_path: Path) -> None:
     assert "Insufficient free space" in result.stderr
 
 
-def test_check_rejects_failed_gpu_probe(tmp_path: Path) -> None:
-    launcher, environment_file, environment, _ = prepare_pilot(tmp_path, gpu_ok=False)
+def test_check_does_not_probe_or_require_a_gpu(tmp_path: Path) -> None:
+    launcher, environment_file, environment, docker_log = prepare_pilot(tmp_path)
+
+    result = run_launcher(launcher, "check", environment_file, environment)
+
+    assert result.returncode == 0
+    assert "--gpus" not in docker_log.read_text()
+    assert "nvidia" not in docker_log.read_text().lower()
+
+
+def test_check_creates_a_scoped_langflow_environment_without_vercel_key(
+    tmp_path: Path,
+) -> None:
+    launcher, environment_file, environment, _ = prepare_pilot(tmp_path)
+
+    result = run_launcher(launcher, "check", environment_file, environment)
+
+    assert result.returncode == 0
+    scoped = Path(environment["RAMBU_PILOT_ROOT"]) / "secrets" / "langflow.env"
+    assert scoped.stat().st_mode & 0o777 == 0o600
+    text = scoped.read_text()
+    assert "LANGFLOW_URL=http://langflow:7860" in text
+    assert "LANGFLOW_API_KEY=langflow-SENTINEL" in text
+    assert "OPENROUTER_API_KEY=openrouter-SENTINEL" in text
+    assert "AI_GATEWAY_API_KEY" not in text
+    assert "vercel-SENTINEL" not in text
+
+
+def test_check_rejects_group_or_world_readable_secret_files(tmp_path: Path) -> None:
+    launcher, environment_file, environment, _ = prepare_pilot(tmp_path)
+    secret = Path(environment["RAMBU_PILOT_ROOT"]) / "secrets" / "AuthKey.p8"
+    secret.chmod(0o644)
 
     result = run_launcher(launcher, "check", environment_file, environment)
 
     assert result.returncode != 0
-    assert "GPU 0 is unavailable" in result.stderr
+    assert "must use mode 600 or 400" in result.stderr
+
+
+def test_check_rejects_an_occupied_port_not_owned_by_rambu(tmp_path: Path) -> None:
+    launcher, environment_file, environment, _ = prepare_pilot(tmp_path)
+    environment["RAMBU_TEST_BACKEND_RUNNING"] = "0"
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        port = listener.getsockname()[1]
+        environment_file.write_text(
+            environment_file.read_text()
+            + f"RAMBU_BIND_PORT={port}\n"
+        )
+        result = run_launcher(launcher, "check", environment_file, environment)
+
+    assert result.returncode != 0
+    assert "already in use by another process" in result.stderr
 
 
 def test_check_rejects_a_public_langflow_binding(tmp_path: Path) -> None:
@@ -253,12 +303,14 @@ def test_deploy_checks_backs_up_bootstraps_then_starts_public_services(tmp_path:
     assert result.returncode == 0
     commands = docker_log.read_text()
     assert "compose" in commands
-    assert "build backend langflow" in commands
+    assert "build backend transcription-bridge langflow" in commands
     assert "up -d langflow" in commands
     assert "exec -T langflow python /opt/rambu/scripts/bootstrap_flow.py" in commands
     assert "up -d backend" in commands
+    assert "up -d transcription-bridge" in commands
     assert "up -d cloudflared" in commands
-    assert commands.index("up -d langflow") < commands.index("bootstrap_flow.py") < commands.index("up -d backend")
+    assert commands.index("up -d langflow") < commands.index("bootstrap_flow.py")
+    assert commands.index("up -d transcription-bridge") < commands.index("up -d backend")
     assert len(list((Path(environment["RAMBU_PILOT_ROOT"]) / "backups").glob("rambu-*.sqlite3"))) == 1
 
 
