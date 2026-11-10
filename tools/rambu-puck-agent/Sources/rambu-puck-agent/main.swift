@@ -64,6 +64,9 @@ struct RambuPuckAgentMain {
             command: .listen
         )
         let api = PuckAPI(serverURL: configuration.serverURL, token: configuration.puckToken)
+        let streamAPI: (any PuckStreamConnecting)? = configuration.transcriptionMode == .stream
+            ? PuckStreamAPI(serverURL: configuration.serverURL, token: configuration.puckToken!)
+            : nil
         if detectAudio {
             print("Rambu puck agent is listening for WhatsApp call audio near the Mac.")
         } else {
@@ -79,7 +82,11 @@ struct RambuPuckAgentMain {
                         endsAfterSilence: true
                     )
                 } else {
-                    _ = try await protectWithEngine(api: api, stopsOnEnter: false)
+                    _ = try await protectWithEngine(
+                        api: api,
+                        streamAPI: streamAPI,
+                        stopsOnEnter: false
+                    )
                 }
                 print("Protection session \(session.id) completed.")
             } else if detectAudio {
@@ -108,24 +115,34 @@ struct RambuPuckAgentMain {
             command: .listen
         )
         let api = PuckAPI(serverURL: configuration.serverURL, token: configuration.puckToken)
+        let streamAPI: (any PuckStreamConnecting)? = configuration.transcriptionMode == .stream
+            ? PuckStreamAPI(serverURL: configuration.serverURL, token: configuration.puckToken!)
+            : nil
         print("Rambu demo control is ready.")
         while !Task.isCancelled {
             print("Press Enter after the call is answered to start protection.")
             guard readLine() != nil else { return }
-            let sessionID = try await protectWithEngine(api: api, stopsOnEnter: true)
+            let sessionID = try await protectWithEngine(
+                api: api,
+                streamAPI: streamAPI,
+                stopsOnEnter: true
+            )
             print("Protection session \(sessionID) completed.")
         }
     }
 
     private static func protectWithEngine(
         api: PuckAPI,
+        streamAPI: (any PuckStreamConnecting)?,
         stopsOnEnter: Bool
     ) async throws -> String {
-        let engine = PuckProtectionEngine(api: api)
+        let engine = PuckProtectionEngine(api: api, streamAPI: streamAPI)
         let events = Task {
             for await event in engine.events {
                 switch event {
                 case .transcript(let line):
+                    emitTranscript(line)
+                case .partialTranscript(let line):
                     emitTranscript(line)
                 case .warning(_, let warning):
                     emit(warning)
@@ -307,6 +324,7 @@ struct RambuPuckAgentMain {
             Required environment:
               RAMBU_SERVER_URL   Backend base URL
               RAMBU_PUCK_TOKEN   Token printed by pair (listen only)
+              RAMBU_TRANSCRIPTION_MODE   stream (default) or chunk
             """
         )
     }

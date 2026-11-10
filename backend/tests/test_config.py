@@ -61,6 +61,72 @@ def test_whisper_configuration_uses_safe_cpu_defaults() -> None:
     assert result.device_index == 0
 
 
+def test_transcription_configuration_defaults_to_private_bridge() -> None:
+    module = config_module()
+
+    result = module.TranscriptionSettings.from_environment(
+        {"RAMBU_TRANSCRIPTION_BRIDGE_URL": " http://transcription-bridge:8788/ "}
+    )
+
+    assert result.provider == "bridge"
+    assert result.bridge_url == "http://transcription-bridge:8788"
+    assert result.timeout_seconds == 30.0
+
+
+def test_transcription_configuration_requires_bridge_url_by_default() -> None:
+    module = config_module()
+
+    with pytest.raises(
+        module.ConfigurationError,
+        match="^RAMBU_TRANSCRIPTION_BRIDGE_URL is required for bridge provider$",
+    ):
+        module.TranscriptionSettings.from_environment({})
+
+
+def test_transcription_configuration_allows_explicit_local_whisper() -> None:
+    module = config_module()
+
+    result = module.TranscriptionSettings.from_environment(
+        {"RAMBU_TRANSCRIPTION_PROVIDER": " whisper "}
+    )
+
+    assert result.provider == "whisper"
+    assert result.bridge_url is None
+    assert result.whisper.model_name == "small"
+
+
+@pytest.mark.parametrize(
+    ("environment", "message"),
+    [
+        (
+            {
+                "RAMBU_TRANSCRIPTION_BRIDGE_URL": "file:///tmp/socket",
+            },
+            "RAMBU_TRANSCRIPTION_BRIDGE_URL must be an http or https URL",
+        ),
+        (
+            {
+                "RAMBU_TRANSCRIPTION_PROVIDER": "gpu",
+                "RAMBU_TRANSCRIPTION_BRIDGE_URL": "http://bridge:8788",
+            },
+            "RAMBU_TRANSCRIPTION_PROVIDER must be bridge or whisper",
+        ),
+        (
+            {
+                "RAMBU_TRANSCRIPTION_BRIDGE_URL": "http://bridge:8788",
+                "RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS": "zero",
+            },
+            "RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS must be a positive number",
+        ),
+    ],
+)
+def test_transcription_configuration_rejects_invalid_values(environment, message) -> None:
+    module = config_module()
+
+    with pytest.raises(module.ConfigurationError, match=f"^{message}$"):
+        module.TranscriptionSettings.from_environment(environment)
+
+
 def test_whisper_configuration_trims_explicit_cuda_values() -> None:
     module = config_module()
 

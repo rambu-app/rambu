@@ -26,13 +26,18 @@ _NEGATED_REQUEST = re.compile(
     r"don't|never|must\s+not|shouldn't|refuse|refused|won't)\b",
     flags=re.IGNORECASE,
 )
+_SELF_OFFER = re.compile(
+    r"\b(?:saya|aku|I)(?:\s+(?:perlu|harus|mau|akan|boleh|bisa|should|shall|can|"
+    r"will|need\s+to|have\s+to))?\s+$",
+    flags=re.IGNORECASE,
+)
 _ACTIVE_SECRET_PATTERNS = (
     re.compile(
-        rf"\b{_SECRET_REQUEST}\b.{{0,100}}?\b(?:{_SECRET_TERM})\b",
+        rf"\b(?P<verb>{_SECRET_REQUEST})\b.{{0,100}}?\b(?:{_SECRET_TERM})\b",
         flags=re.IGNORECASE | re.DOTALL,
     ),
     re.compile(
-        rf"\b(?:{_SECRET_TERM})\b.{{0,100}}?\b{_SECRET_REQUEST}\b",
+        rf"\b(?:{_SECRET_TERM})\b.{{0,100}}?\b(?P<verb>{_SECRET_REQUEST})\b",
         flags=re.IGNORECASE | re.DOTALL,
     ),
 )
@@ -236,7 +241,11 @@ def _enforce_explicit_secret_request(
                 if boundary_index >= 0:
                     context_start = max(context_start, boundary_index + 1)
             context = transcript[context_start : match.end()]
-            if not _NEGATED_REQUEST.search(context):
+            verb = match.group("verb")
+            offered = not verb.lower().startswith("minta") and _SELF_OFFER.search(
+                transcript[context_start : match.start("verb")]
+            )
+            if not _NEGATED_REQUEST.search(context) and not offered:
                 quote = candidate
                 break
         if quote is not None:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Mapping
+from urllib.parse import urlsplit
 
 
 class ConfigurationError(RuntimeError):
@@ -58,4 +59,52 @@ class WhisperSettings:
             device=device,
             compute_type=compute_type,
             device_index=device_index,
+        )
+
+
+@dataclass(frozen=True)
+class TranscriptionSettings:
+    provider: str
+    bridge_url: str | None
+    timeout_seconds: float
+    whisper: WhisperSettings
+
+    @classmethod
+    def from_environment(cls, environment: Mapping[str, str]) -> "TranscriptionSettings":
+        provider = environment.get("RAMBU_TRANSCRIPTION_PROVIDER", "bridge").strip().lower()
+        if provider not in {"bridge", "whisper"}:
+            raise ConfigurationError(
+                "RAMBU_TRANSCRIPTION_PROVIDER must be bridge or whisper"
+            )
+
+        raw_timeout = environment.get("RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS", "30").strip()
+        try:
+            timeout_seconds = float(raw_timeout)
+        except ValueError as error:
+            raise ConfigurationError(
+                "RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS must be a positive number"
+            ) from error
+        if timeout_seconds <= 0:
+            raise ConfigurationError(
+                "RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS must be a positive number"
+            )
+
+        bridge_url = environment.get("RAMBU_TRANSCRIPTION_BRIDGE_URL", "").strip()
+        if provider == "bridge" and not bridge_url:
+            raise ConfigurationError(
+                "RAMBU_TRANSCRIPTION_BRIDGE_URL is required for bridge provider"
+            )
+        if bridge_url:
+            parsed = urlsplit(bridge_url)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ConfigurationError(
+                    "RAMBU_TRANSCRIPTION_BRIDGE_URL must be an http or https URL"
+                )
+            bridge_url = bridge_url.rstrip("/")
+
+        return cls(
+            provider=provider,
+            bridge_url=bridge_url or None,
+            timeout_seconds=timeout_seconds,
+            whisper=WhisperSettings.from_environment(environment),
         )

@@ -2,12 +2,64 @@ import wave
 from pathlib import Path
 from typing import Any, Callable, Literal, Protocol
 
+import httpx
+
 AppLanguage = Literal["id", "en"]
 
 
 class Transcriber(Protocol):
     def probe(self) -> None: ...
     def transcribe(self, path: Path, language: AppLanguage = "id") -> str: ...
+
+
+class TranscriptionFailure(RuntimeError):
+    pass
+
+
+class BridgeTranscriber:
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        timeout_seconds: float = 30,
+        client: httpx.Client | None = None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self._client = client or httpx.Client(timeout=timeout_seconds)
+
+    def probe(self) -> None:
+        try:
+            response = self._client.get(f"{self.base_url}/health")
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("status") != "ok":
+                raise ValueError("unexpected health response")
+        except httpx.TimeoutException as error:
+            raise TranscriptionFailure("transcription bridge timed out") from error
+        except Exception as error:
+            raise TranscriptionFailure("transcription bridge unavailable") from error
+
+    def transcribe(self, path: Path, language: AppLanguage = "id") -> str:
+        try:
+            response = self._client.post(
+                f"{self.base_url}/v1/transcriptions",
+                headers={
+                    "content-type": "audio/wav",
+                    "x-rambu-language": language,
+                },
+                content=path.read_bytes(),
+            )
+            response.raise_for_status()
+            text = response.json().get("text")
+            if not isinstance(text, str):
+                raise ValueError("missing transcript")
+            return text.strip()
+        except httpx.TimeoutException as error:
+            raise TranscriptionFailure("transcription bridge timed out") from error
+        except TranscriptionFailure:
+            raise
+        except Exception as error:
+            raise TranscriptionFailure("transcription bridge unavailable") from error
 
 
 class FasterWhisperTranscriber:

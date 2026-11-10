@@ -4,6 +4,7 @@ import logging
 import tempfile
 from concurrent.futures import Executor, ThreadPoolExecutor
 from pathlib import Path
+from threading import Lock
 from typing import Callable, Protocol
 
 from .audio import validate_wav_bytes
@@ -44,6 +45,16 @@ class ProtectionService:
         self._analysis = analysis_executor or ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="rambu-analysis"
         )
+        self._analysis_lock = Lock()
+        self._analysis_pending: dict[
+            str,
+            tuple[
+                str,
+                Callable[[ProtectionSessionSnapshot, ProtectionSessionSnapshot], None],
+                str,
+            ],
+        ] = {}
+        self._analysis_running: set[str] = set()
         self._analyzed: dict[str, tuple[str, bool]] = {}
 
     def pair_puck(self, invitation_code: str, display_name: str) -> PairPuckResponse:
@@ -153,24 +164,108 @@ class ProtectionService:
             final=final,
         )
 
+    def process_stream_segment(
+        self,
+        puck_token: str,
+        session_id: str,
+        *,
+        sequence: int,
+        text: str,
+        final: bool,
+    ) -> ProtectionSessionSnapshot:
+        masked_segment = mask_sensitive_text(text.strip())
+        if not final and not masked_segment:
+            return self.store.get_puck_protection_session(puck_token, session_id)
+        digest = hashlib.sha256(masked_segment.encode("utf-8")).hexdigest()
+        logged_text = (
+            json.dumps(masked_segment, ensure_ascii=False)
+            if masked_segment
+            else "<empty>"
+        )
+        TRANSCRIPTION_LOGGER.info(
+            "stream transcription session=%s sequence=%d final=%s text=%s",
+            session_id,
+            sequence,
+            final,
+            logged_text,
+        )
+        return self.store.record_protection_stream_segment(
+            puck_token,
+            session_id,
+            sequence=sequence,
+            digest=digest,
+            masked_segment=masked_segment,
+            final=final,
+        )
+
+    def fail_stream_session(
+        self,
+        puck_token: str,
+        session_id: str,
+    ) -> ProtectionSessionSnapshot:
+        return self.store.fail_protection_session(
+            puck_token,
+            session_id,
+            ProtectionFailure(
+                code="stream_interrupted",
+                message="Streaming audio terputus sebelum selesai.",
+            ),
+        )
+
+    def touch_stream_session(self, puck_token: str, session_id: str) -> None:
+        self.store.touch_puck_protection_session(puck_token, session_id)
+
     def analyze_latest(
         self,
         puck_token: str,
         session_id: str,
         on_assessed: Callable[[ProtectionSessionSnapshot, ProtectionSessionSnapshot], None],
+        *,
+        preview_text: str = "",
     ) -> None:
-        self._analysis.submit(self._analyze, puck_token, session_id, on_assessed)
+        masked_preview = mask_sensitive_text(preview_text.strip())
+        with self._analysis_lock:
+            self._analysis_pending[session_id] = (
+                puck_token,
+                on_assessed,
+                masked_preview,
+            )
+            if session_id in self._analysis_running:
+                return
+            self._analysis_running.add(session_id)
+        try:
+            self._analysis.submit(self._drain_analysis, session_id)
+        except Exception:
+            with self._analysis_lock:
+                self._analysis_pending.pop(session_id, None)
+                self._analysis_running.discard(session_id)
+            raise
+
+    def _drain_analysis(self, session_id: str) -> None:
+        while True:
+            with self._analysis_lock:
+                request = self._analysis_pending.pop(session_id, None)
+                if request is None:
+                    self._analysis_running.discard(session_id)
+                    return
+            puck_token, on_assessed, preview_text = request
+            self._analyze(puck_token, session_id, on_assessed, preview_text)
 
     def _analyze(
         self,
         puck_token: str,
         session_id: str,
         on_assessed: Callable[[ProtectionSessionSnapshot, ProtectionSessionSnapshot], None],
+        preview_text: str,
     ) -> None:
         try:
             current = self.store.get_puck_protection_session(puck_token, session_id)
-            transcript = current.masked_transcript
             final = current.status == "completed"
+            transcript = current.masked_transcript
+            if not final and preview_text:
+                transcript = " ".join(
+                    part for part in (transcript.strip(), preview_text) if part
+                )
             if current.status == "error" or not transcript:
                 return
             if self._analyzed.get(session_id) == (transcript, final):

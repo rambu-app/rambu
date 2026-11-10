@@ -1,5 +1,11 @@
 name: rambu-pilot
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   backend:
     platform: linux/amd64
@@ -7,39 +13,37 @@ services:
       context: ../..
       dockerfile: deploy/pilot/backend.Dockerfile
     image: rambu/backend:pilot
+    user: "${RAMBU_UID:-1000}:${RAMBU_GID:-1000}"
     restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 1g
+    logging: *default-logging
     environment:
       LANGFLOW_URL: http://langflow:7860
       LANGFLOW_FLOW_ID: ${LANGFLOW_FLOW_ID}
       LANGFLOW_API_KEY: ${LANGFLOW_API_KEY}
-      RAMBU_WHISPER_MODEL: ${RAMBU_WHISPER_MODEL:-small}
-      RAMBU_WHISPER_DEVICE: cuda
-      RAMBU_WHISPER_COMPUTE_TYPE: float16
-      RAMBU_WHISPER_DEVICE_INDEX: "0"
+      RAMBU_TRANSCRIPTION_PROVIDER: bridge
+      RAMBU_TRANSCRIPTION_BRIDGE_URL: http://transcription-bridge:8788
+      RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS: ${RAMBU_TRANSCRIPTION_TIMEOUT_SECONDS:-30}
+      RAMBU_MAX_STREAMS: ${RAMBU_MAX_STREAMS:-4}
+      RAMBU_STREAM_IDLE_SECONDS: ${RAMBU_STREAM_IDLE_SECONDS:-45}
+      RAMBU_MAX_STREAM_SECONDS: ${RAMBU_MAX_STREAM_SECONDS:-900}
+      RAMBU_STREAM_ANALYSIS_SECONDS: ${RAMBU_STREAM_ANALYSIS_SECONDS:-4}
       RAMBU_DATABASE_PATH: /app/backend/data/rambu.sqlite3
-      HF_HOME: /var/cache/rambu-models
       APNS_TEAM_ID: ${APNS_TEAM_ID}
       APNS_KEY_ID: ${APNS_KEY_ID}
       APNS_PRIVATE_KEY_PATH: /run/secrets/AuthKey.p8
       APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-id.rambu.puck}
       APNS_ENVIRONMENT: production
-      NVIDIA_VISIBLE_DEVICES: "0"
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
     volumes:
-      - /srv/rambu/data:/app/backend/data
-      - /srv/rambu/model-cache:/var/cache/rambu-models
-      - /srv/rambu/secrets/AuthKey.p8:/run/secrets/AuthKey.p8:ro
+      - ${RAMBU_DATA_ROOT:?set RAMBU_DATA_ROOT}/data:/app/backend/data
+      - ${RAMBU_DATA_ROOT:?set RAMBU_DATA_ROOT}/secrets/AuthKey.p8:/run/secrets/AuthKey.p8:ro
     ports:
       - "${RAMBU_BIND_ADDRESS:-127.0.0.1}:${RAMBU_BIND_PORT:-8000}:8000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ["0"]
-              capabilities: [gpu]
     depends_on:
       langflow:
+        condition: service_healthy
+      transcription-bridge:
         condition: service_healthy
     healthcheck:
       test:
@@ -50,10 +54,39 @@ services:
       interval: 15s
       timeout: 10s
       retries: 12
-      start_period: 120s
+      start_period: 30s
     networks:
       - private
       - edge
+
+  transcription-bridge:
+    platform: linux/amd64
+    build:
+      context: ../../services/transcription-bridge
+      dockerfile: Dockerfile
+    image: rambu/transcription-bridge:pilot
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 512m
+    logging: *default-logging
+    environment:
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
+      RAMBU_TRANSCRIPTION_BATCH_MODEL: microsoft/mai-transcribe-2
+      RAMBU_TRANSCRIPTION_STREAM_MODEL: microsoft/mai-transcribe-2-streaming
+      HOST: 0.0.0.0
+      PORT: "8788"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8788/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - private
 
   langflow:
     platform: linux/amd64
@@ -61,7 +94,11 @@ services:
       context: ../..
       dockerfile: deploy/pilot/langflow.Dockerfile
     image: rambu/langflow:1.12.3
+    user: "${RAMBU_UID:-1000}:${RAMBU_GID:-1000}"
     restart: unless-stopped
+    cpus: 2.0
+    mem_limit: 4g
+    logging: *default-logging
     environment:
       LANGFLOW_HOST: 0.0.0.0
       LANGFLOW_PORT: "7860"
@@ -75,8 +112,8 @@ services:
       LANGFLOW_SUPERUSER_PASSWORD: ${LANGFLOW_SUPERUSER_PASSWORD}
       LANGFLOW_SECRET_KEY: ${LANGFLOW_SECRET_KEY}
     volumes:
-      - /srv/rambu/data/langflow:/app/langflow
-      - ${RAMBU_ENV_FILE:-./.env}:/run/secrets/rambu.env:ro
+      - ${RAMBU_DATA_ROOT:?set RAMBU_DATA_ROOT}/data/langflow:/app/langflow
+      - ${RAMBU_LANGFLOW_ENV_FILE:?set RAMBU_LANGFLOW_ENV_FILE}:/run/secrets/rambu.env:ro
     healthcheck:
       test:
         - CMD
@@ -93,7 +130,11 @@ services:
   cloudflared:
     platform: linux/amd64
     image: cloudflare/cloudflared:2025.11.1
+    user: "${RAMBU_UID:-1000}:${RAMBU_GID:-1000}"
     restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
+    logging: *default-logging
     command:
       - tunnel
       - --no-autoupdate
@@ -101,7 +142,7 @@ services:
       - --token-file
       - /run/secrets/cloudflare-tunnel-token
     volumes:
-      - /srv/rambu/secrets/cloudflare-tunnel-token:/run/secrets/cloudflare-tunnel-token:ro
+      - ${RAMBU_DATA_ROOT:?set RAMBU_DATA_ROOT}/secrets/cloudflare-tunnel-token:/run/secrets/cloudflare-tunnel-token:ro
     depends_on:
       backend:
         condition: service_healthy

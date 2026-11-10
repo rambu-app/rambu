@@ -11,7 +11,7 @@
   <img alt="Bahasa" src="https://img.shields.io/badge/bahasa-ID%20%7C%20EN-006F63">
 </p>
 
-Rambu memperingatkan orang tua ketika telepon yang sedang mereka terima mengarah ke penipuan. Sebuah puck berbasis ESP32 yang ditempel di punggung iPhone mendengar suara loudspeaker, backend mentranskripsi audio per lima detik, agen AI di Langflow menilai risikonya, lalu orang tua dan anak menerima peringatan di HP masing-masing. Anak bisa langsung menjawab **Aman** atau **Penipuan**, dan jawaban itu sampai ke HP orang tua sebelum telepon ditutup.
+Rambu memperingatkan orang tua ketika telepon yang sedang mereka terima mengarah ke penipuan. Sebuah puck berbasis ESP32 yang ditempel di punggung iPhone mendengar suara loudspeaker, backend mengirim audio ke Microsoft MAI melalui Vercel AI Gateway, agen AI di Langflow menilai risikonya, lalu orang tua dan anak menerima peringatan di HP masing-masing. Anak bisa langsung menjawab **Aman** atau **Penipuan**, dan jawaban itu sampai ke HP orang tua sebelum telepon ditutup.
 
 Proyek ini dibuat untuk IBM SkillsBuild University Education National Hackathon 2026.
 
@@ -55,6 +55,7 @@ sequenceDiagram
     participant O as iPhone orang tua
     participant K as Puck ESP32
     participant B as Backend FastAPI
+    participant T as Bridge MAI
     participant L as Langflow
     participant A as iPhone anak
 
@@ -63,8 +64,10 @@ sequenceDiagram
     K->>B: POST /api/pucks/sessions
     Note over K: LED biru menyala, mulai merekam
     loop Setiap ±5 detik
-        K->>B: Potongan WAV 16 kHz
-        B->>B: faster-whisper + samarkan data sensitif
+        K->>B: Potongan audio ADPCM
+        B->>T: Audio + bahasa sesi
+        T-->>B: Transkrip Microsoft MAI
+        B->>B: Samarkan data sensitif
         B-->>K: 200 OK
         B->>L: Transkrip tersamar
         L-->>B: JSON risiko + kutipan bukti
@@ -79,6 +82,8 @@ sequenceDiagram
 
 Puck mulai merekam lewat tiga jalan: notifikasi panggilan masuk dari iPhone (ANCS), sesi yang dibuat aplikasi saat CallKit melihat panggilan aktif (puck mengecek server tiap satu detik), atau tombol BOOT di papan ESP32. Rekaman berhenti saat iPhone melaporkan panggilan selesai, saat aplikasi meminta berhenti, atau setelah 30 detik tanpa suara.
 
+Backend juga menyediakan jalur WebSocket untuk agen puck di Mac. Pada jalur ini audio dikirim terus-menerus, transkrip parsial diperiksa setiap empat detik, dan peringatan dapat muncul tanpa menunggu penelepon berhenti bicara. Jika streaming belum sempat siap, agen kembali ke unggahan potongan secara otomatis.
+
 ## Arsitektur sistem
 
 ```mermaid
@@ -90,21 +95,24 @@ flowchart TB
 
     subgraph Server["Server Rambu"]
         API["FastAPI<br/>rambu_api"]
-        WH["faster-whisper<br/>model small"]
+        TR["Bridge transkripsi privat"]
         RD["Penyamaran<br/>nomor, rekening, kode"]
         DB[("SQLite<br/>keluarga, sesi, peringatan")]
         LF["IBM Langflow<br/>flow Rambu"]
     end
 
+    MAI["Microsoft MAI<br/>via Vercel AI Gateway"]
     LLM["OpenRouter<br/>openai/gpt-4o-mini"]
     APNS["Apple Push<br/>Notification service"]
     AN["iPhone anak<br/>App Rambu"]
 
     IP -- "BLE: ANCS + setup Wi-Fi" --> PK
-    PK -- "HTTPS: potongan WAV" --> API
+    PK -- "HTTPS: potongan ADPCM" --> API
     IP -- "HTTPS: keluarga, sesi" --> API
     AN -- "HTTPS: keputusan" --> API
-    API --> WH --> RD --> DB
+    API -- "audio batch / stream" --> TR --> MAI
+    MAI -- "transkrip" --> TR --> API
+    API --> RD --> DB
     API -- "transkrip tersamar" --> LF --> LLM
     API --> APNS
     APNS --> IP
@@ -115,9 +123,10 @@ flowchart TB
 |---|---|---|
 | Perangkat keras | ESP32 DevKit V1, mikrofon I²S INMP441, NimBLE, Arduino | [`hardware/`](hardware) |
 | Aplikasi | SwiftUI, Swift 6, CallKit, ActivityKit, CoreBluetooth, String Catalog | [`ios/`](ios) |
-| Backend | Python 3.12, FastAPI, faster-whisper, SQLite, APNs (HTTP/2 + JWT) | [`backend/`](backend) |
+| Backend | Python 3.12, FastAPI, WebSocket, SQLite, APNs (HTTP/2 + JWT) | [`backend/`](backend) |
+| Transkripsi | Bridge Node.js privat, Microsoft MAI melalui Vercel AI Gateway | [`services/transcription-bridge/`](services/transcription-bridge) |
 | Agen AI | IBM Langflow 1.12, GPT-4o-mini via OpenRouter, suhu 0 | [`langflow/`](langflow) |
-| Deployment | Docker Compose dengan GPU NVIDIA, Cloudflare Tunnel | [`deploy/pilot/`](deploy/pilot), [`tools/`](tools) |
+| Deployment | Docker Compose CPU-only, empat service terisolasi, Cloudflare Tunnel | [`deploy/pilot/`](deploy/pilot), [`tools/`](tools) |
 
 ## Puck (IoT)
 
@@ -198,11 +207,11 @@ Arah kami: opsi B untuk pilot berikutnya karena kabelnya hilang, lalu opsi D unt
 
 Backend ada di [`backend/rambu_api`](backend/rambu_api). Setiap potongan audio melewati langkah berikut:
 
-1. **Validasi.** Content-Type harus `audio/wav`, ukuran maksimal 1 MB, dan nomor urut harus berlanjut. Potongan yang terkirim dua kali dikenali dari hash SHA-256 dan tidak diproses ulang.
-2. **Transkripsi.** faster-whisper (model `small`, CPU int8 di Mac atau CUDA float16 di server GPU) memakai bahasa sesi, `id` atau `en`. Audio ditulis ke file sementara yang langsung dihapus setelah ditranskripsi.
+1. **Validasi.** Jalur potongan menerima `audio/wav` atau `audio/x-rambu-adpcm`, membatasi ukuran, dan mewajibkan nomor urut berlanjut. Potongan yang terkirim dua kali dikenali dari hash SHA-256 dan tidak diproses ulang.
+2. **Transkripsi.** Backend meneruskan audio ke bridge privat yang memakai Microsoft MAI melalui Vercel AI Gateway dengan bahasa sesi `id` atau `en`. `faster-whisper` tetap tersedia sebagai fallback pengembangan lokal opsional.
 3. **Penyamaran.** [`redaction.py`](backend/rambu_api/redaction.py) mengganti nomor telepon, nomor rekening (angka maupun yang diucapkan), dan kode OTP dengan `[NOMOR_TELEPON]`, `[NOMOR_REKENING]`, dan `[KODE]`. Hanya teks tersamar yang disimpan dan masuk log.
 4. **Balasan cepat ke puck.** Puck langsung menerima `200 OK`, jadi bisa mengirim potongan berikutnya tanpa menunggu AI.
-5. **Analisis di latar belakang.** Transkrip tersamar seluruh panggilan dikirim ke Langflow. Hasilnya divalidasi (lihat bagian berikutnya) lalu disimpan.
+5. **Analisis di latar belakang.** Transkrip tersamar dikirim ke Langflow. Pada WebSocket streaming, transkrip parsial terbaru diperiksa setiap empat detik sehingga peringatan tidak menunggu akhir ucapan; permintaan analisis yang bertumpuk digabungkan ke versi terbaru.
 6. **Notifikasi.** Jika risiko naik, backend mengirim push APNs berbunyi mendesak ke orang tua dan peringatan ke setiap pengawas di keluarga itu, masing-masing dalam bahasa perangkatnya.
 
 Keputusan anak memakai aturan jawaban pertama yang berlaku. SQLite menjalankan transaksi `IMMEDIATE`, sehingga kalau dua pengawas menekan tombol hampir bersamaan, hanya satu yang tersimpan. Yang kalah cepat menerima `409` beserta keputusan yang sudah ada.
@@ -217,7 +226,8 @@ Keputusan anak memakai aturan jawaban pertama yang berlaku. SQLite menjalankan t
 | `PUT /api/pilot/push-token` | App | Menyimpan token APNs dan bahasa perangkat |
 | `POST /api/pucks/sessions` | Puck | Membuka sesi saat telepon berdering |
 | `GET /api/pucks/sessions/active` | Puck | Mengambil sesi yang dibuka app |
-| `POST /api/pucks/sessions/{id}/chunks` | Puck | Mengunggah potongan WAV |
+| `POST /api/pucks/sessions/{id}/chunks` | Puck | Mengunggah potongan WAV atau ADPCM |
+| `WS /api/pucks/sessions/{id}/stream` | Agen puck | Streaming PCM16 dan menerima transkrip serta peringatan selama panggilan |
 | `POST /api/protection/sessions` | App orang tua | Membuka sesi dari CallKit |
 | `GET /api/pilot/alerts`, `GET /api/pilot/history` | App | Peringatan aktif dan riwayat bersama keluarga |
 | `POST /api/pilot/alerts/{id}/decision` | App anak | Mengirim keputusan Aman atau Penipuan |
@@ -288,7 +298,7 @@ Kode aplikasi dipisah dari backend lewat tiga protokol di [`Services.swift`](ios
 ## Privasi dan Responsible AI
 
 - **Persetujuan di awal.** Onboarding meminta persetujuan orang tua sebelum keluarga dihubungkan.
-- **Audio mentah tidak disimpan.** Potongan WAV hanya ada selama transkripsi, lalu file sementaranya dihapus.
+- **Audio mentah tidak disimpan.** Audio hanya diteruskan untuk transkripsi; file sementara pada jalur potongan langsung dihapus setelah diproses.
 - **Data sensitif disamarkan sebelum ke AI.** Nomor telepon, rekening, dan kode tidak pernah dikirim ke Langflow atau model.
 - **AI menunjukkan alasannya.** Setiap peringatan membawa kutipan persis dari transkrip, jadi anak bisa mengecek sendiri.
 - **Manusia yang memutuskan.** Rambu tidak pernah menyatakan seseorang pasti penipu. Keputusan akhir ada pada anak dan orang tua.
@@ -307,7 +317,7 @@ Per 31 Oktober 2026, alur dari puck sampai keputusan anak sudah berjalan di iPho
 | Jawaban sampai di HP orang tua | Kurang dari 12 detik sejak peringatan muncul |
 | Kode OTP | Tidak pernah disebutkan |
 
-**Tes otomatis.** Backend dan Langflow: 200 tes lulus, 4 dilewati (commit `2778bcb`). Aplikasi iOS memakai Swift Testing di [`ios/RambuPuckTests`](ios/RambuPuckTests), dan firmware punya tes unit untuk logika langganan ANCS.
+**Tes otomatis.** Backend: 253 lulus dan 4 dilewati; prompt/flow Langflow: 8 lulus; bridge transkripsi: 10 lulus; paket Swift agen dan controller: 51 lulus. Aplikasi iOS memakai Swift Testing di [`ios/RambuPuckTests`](ios/RambuPuckTests), dan firmware punya tes unit untuk logika langganan ANCS.
 
 **Dataset suara.** [`samples/datasets/rambu-voice-v0.1`](samples/datasets/rambu-voice-v0.1) berisi 38 percakapan sintetis berbahasa Indonesia (8 aman, 30 penipuan). Evaluasi akurasi pada 14 rekaman held-out belum dijalankan. Perintahnya ada di [`TESTING.md`](TESTING.md).
 
@@ -315,20 +325,22 @@ Per 31 Oktober 2026, alur dari puck sampai keputusan anak sudah berjalan di iPho
 
 ### Coba aplikasinya
 
-Aplikasi tersedia di [TestFlight](https://testflight.apple.com/join/rmzeZYaE). Deteksi telepon butuh puck dan server Rambu yang menyala, sedangkan server pilot saat ini belum aktif 24 jam. Tanpa puck, yang bisa dicoba adalah onboarding, latihan telepon, dan pembuatan keluarga.
+Aplikasi tersedia di [TestFlight](https://testflight.apple.com/join/rmzeZYaE). Deteksi telepon membutuhkan puck dan deployment always-on yang dijelaskan di bawah. Tanpa puck, yang bisa dicoba adalah onboarding, latihan telepon, dan pembuatan keluarga.
 
 ### Menjalankan seluruh sistem
 
 ```
-iPhone call ──BLE──▶ ESP32 puck ──Wi-Fi──▶ alamat HTTPS publik ──tunnel──▶ backend di Mac ──▶ Langflow
+iPhone call ──BLE──▶ ESP32 puck ──Wi-Fi──▶ Cloudflare ──▶ backend ──▶ bridge MAI
+                                                               └──▶ Langflow
 ```
 
 Yang dibutuhkan:
 
-- Mac dengan Xcode 26, XcodeGen, Python 3.12, `uv`, `cloudflared`, `arduino-cli`
+- Mac dengan Xcode 26, XcodeGen, Python 3.12, `uv`, `arduino-cli` untuk pengembangan
+- Host Linux x86-64 dengan Docker Engine dan Docker Compose v2 untuk pilot always-on
 - iPhone dengan iOS 26 (iPhone kedua untuk pengawas)
 - Puck: ESP32 DevKit V1, mikrofon INMP441, 6 kabel jumper female-female
-- API key OpenRouter, Apple push key (`.p8`), token Cloudflare Tunnel
+- Key Vercel AI Gateway, API key OpenRouter, Apple push key (`.p8`), token Cloudflare Tunnel
 
 **1. Langflow**
 
@@ -359,7 +371,51 @@ Aplikasi dan puck berkomunikasi dengan satu alamat HTTPS publik yang diatur di `
 cloudflared tunnel run --token-file ~/.config/rambu/cloudflare-tunnel-token
 ```
 
-Untuk server GPU, [`deploy/pilot/compose.yaml`](deploy/pilot/compose.yaml) menjalankan backend dan Langflow di Docker dengan faster-whisper di CUDA.
+### Deployment always-on untuk TestFlight
+
+Stack pilot menjalankan empat service dengan batas CPU dan memori: backend FastAPI, bridge transkripsi MAI privat, Langflow privat, dan Cloudflare Tunnel. Hanya backend yang terikat ke host pada `127.0.0.1:8000`; bridge dan Langflow tidak dibuka ke internet. Jalur transkripsi ini tidak membutuhkan GPU karena model MAI diakses melalui Vercel AI Gateway. Atur batas pengeluaran Vercel sebelum mengaktifkan tester eksternal.
+
+Pisahkan source code, konfigurasi, secret, dan data persisten di server:
+
+```text
+$HOME/rambu-pilot/source/       # repositori ini
+$HOME/rambu-pilot/.env          # konfigurasi deployment (mode 600)
+$HOME/rambu-pilot/secrets/AuthKey.p8
+$HOME/rambu-pilot/secrets/cloudflare-tunnel-token
+$HOME/rambu-pilot/secrets/langflow.env      # dibuat otomatis; tanpa key Vercel
+$HOME/rambu-pilot/data/
+$HOME/rambu-pilot/backups/
+```
+
+Salin `deploy/pilot/.env.example`, isi semua placeholder, lalu set `RAMBU_UID` dan `RAMBU_GID` dari hasil `id -u` dan `id -g`. Masukkan key langsung di server; jangan tempelkan ke chat atau commit ke Git. Pemeriksaan deployment membuat environment khusus Langflow, sehingga key Vercel hanya terlihat oleh bridge transkripsi.
+
+```bash
+cd "$HOME/rambu-pilot/source"
+chmod 600 "$HOME/rambu-pilot/.env" "$HOME/rambu-pilot/secrets/"*
+tools/deploy_pilot_server.sh check --env-file "$HOME/rambu-pilot/.env"
+tools/deploy_pilot_server.sh deploy --env-file "$HOME/rambu-pilot/.env"
+```
+
+Perintah `status`, `logs`, dan `backup` memakai script yang sama. Untuk menghentikan hanya project Rambu tanpa mengganggu pengguna Docker lain:
+
+```bash
+docker compose --project-name rambu-pilot \
+  --env-file "$HOME/rambu-pilot/.env" \
+  --file deploy/pilot/compose.yaml down
+```
+
+Agen puck memakai streaming secara default. Untuk rollback sementara di sisi klien, set `RAMBU_TRANSCRIPTION_MODE=chunk`; mode `--detect-audio` tetap menjadi jalur diagnostik lokal dan sengaja memakai unggahan potongan.
+
+Setelah membuat sesi puck nyata, operator dapat menguji WebSocket publik secara eksplisit memakai fixture PCM16 mono 16 kHz yang singkat dan sudah mendapat persetujuan. Probe hanya melaporkan waktu, tidak pernah mencetak token atau transkrip:
+
+```bash
+RAMBU_ALLOW_LIVE_STREAM=1 \
+RAMBU_SERVER_URL=https://rambu-api.sfatimah.com \
+RAMBU_SESSION_ID='<session-id>' \
+RAMBU_PUCK_TOKEN='<token>' \
+RAMBU_PCM_FILE='/path/to/consented-speech.pcm' \
+uv run --project backend python tools/test_streaming_pipeline.py
+```
 
 **4. Aplikasi iPhone**
 
@@ -408,7 +464,8 @@ rambu/
 │   └── enclosure/      casing cetak 3D: STL badan dan tutup, sumber Blender (puck.py)
 ├── ios/                aplikasi SwiftUI, widget Live Activity, tes
 ├── langflow/           flow Rambu, prompt sistem, skrip build dan bootstrap
-├── deploy/pilot/       Docker Compose untuk server GPU
+├── services/           bridge transkripsi privat untuk Microsoft MAI
+├── deploy/pilot/       Docker Compose CPU-only untuk deployment always-on
 ├── samples/            skrip uji dan dataset suara rambu-voice-v0.1
 ├── tools/              evaluasi dataset, perekam uji telepon, skrip server
 ├── assets/readme/        gambar untuk README
@@ -419,7 +476,7 @@ rambu/
 
 | Keterbatasan sekarang | Rencana |
 |---|---|
-| Backend berjalan di Mac tim lewat Cloudflare Tunnel dan belum aktif 24 jam. | Pindah ke server cloud memakai konfigurasi Docker Compose yang sudah ada. |
+| Pilot always-on masih bergantung pada satu komputer dan koneksi pemiliknya. | Pindah ke VPS terkelola setelah kebutuhan kapasitas dan biaya terukur. |
 | Puck Ø66 × 30 mm, berkabel, dan hanya punya LED yang tidak terlihat orang tua. | Puck baterai (opsi B) lalu PCB custom (opsi D), keduanya dengan motor getar. |
 | iOS tidak mengizinkan aplikasi memutus telepon. | Kalimat peringatan dibuat lebih tegas dan langsung menyuruh menutup telepon. |
 | Akurasi pada dataset belum diukur. | Menjalankan evaluasi 14 rekaman held-out dan mempublikasikan hasilnya. |

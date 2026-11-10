@@ -129,6 +129,7 @@ def test_prunes_top_level_signals_that_have_no_supporting_evidence() -> None:
         "Bacakan PIN itu sekarang.",
         "Kode OTP-nya berikan kepada saya.",
         "Jangan khawatir. Berikan kode OTP kepada saya.",
+        "Saya minta PIN Anda sekarang.",
     ],
 )
 def test_explicit_secret_code_requests_are_always_high_risk(transcript: str) -> None:
@@ -150,6 +151,47 @@ def test_explicit_secret_code_requests_are_always_high_risk(transcript: str) -> 
     assert result.signals == ["secret_code"]
     assert result.evidence[0].quote in transcript
     assert "akhiri" in result.recommended_action.lower()
+
+
+BANK_EDUCATION_CALL = (
+    "Selamat pagi ibu seri saya dari kantor cabang bank tempat ibu membuka rekening. "
+    "Kami menindak juti kedatangan ibu kemarin soal kartu ATM yang tertelan. "
+    "Oh iya pak kartunya sudah bisa diambil. "
+    "Sudah, bu kartu barunya bisa diambil di kantor cabang mulai besok. "
+    "Pukul 8 sampai pukul 3 mohon membawa KTP dan buku tabungan. "
+    "Baik, perlu saya sebutkan pin yang lama. "
+    "Jangan, bu PN dan kode OTP itu rahasia. "
+    "Jangan disebutkan kesiapapun, termasuk ke kami PN baru nanti ibu buat sendiri di mesin, "
+    "di kantor cabang. "
+    "Oh begitu soalnya kemarin ada yang telepon minta kode, mengaku dari bank. "
+    "Itu penipuan, bu kalau ada yang meminta kode atau menyuruh transfer tutup saja "
+    "teleponnya dan ceritakan ke keluarga. "
+    "Baik pak, terima kasih sudah diingatkan. "
+    "Sama-sama bu sampai bertemu di kantor cabang. Terima kasih."
+)
+
+
+@pytest.mark.parametrize(
+    ("transcript", "language"),
+    [
+        (BANK_EDUCATION_CALL, "id"),
+        ("Apa saya harus berikan PIN saya?", "id"),
+        ("Can I give you my PIN now?", "en"),
+    ],
+)
+def test_speaker_offering_own_secret_is_not_upgraded(transcript: str, language: str) -> None:
+    response = assessment(risk_level="low", signals=[], evidence=[])
+    client = LangflowClient(
+        "http://localhost:7861",
+        "rambu",
+        "secret",
+        transport=lambda *_: envelope(response),
+    )
+
+    result = client.analyze(transcript, final=True, language=language)
+
+    assert result.risk_level == "low"
+    assert result.signals == []
 
 
 @pytest.mark.parametrize(

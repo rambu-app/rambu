@@ -5,9 +5,15 @@ public enum AgentCommand: Sendable {
     case listen
 }
 
+public enum TranscriptionMode: String, Equatable, Sendable {
+    case stream
+    case chunk
+}
+
 public enum ConfigurationError: Error, CustomStringConvertible, Equatable {
     case missing(String)
     case invalidServerURL
+    case invalidTranscriptionMode
 
     public var description: String {
         switch self {
@@ -15,6 +21,8 @@ public enum ConfigurationError: Error, CustomStringConvertible, Equatable {
             return "Environment variable \(name) is required."
         case .invalidServerURL:
             return "RAMBU_SERVER_URL must be an absolute http or https URL."
+        case .invalidTranscriptionMode:
+            return "RAMBU_TRANSCRIPTION_MODE must be stream or chunk."
         }
     }
 }
@@ -22,6 +30,7 @@ public enum ConfigurationError: Error, CustomStringConvertible, Equatable {
 public struct AgentConfiguration: Sendable {
     public let serverURL: URL
     public let puckToken: String?
+    public let transcriptionMode: TranscriptionMode
 
     public init(environment: [String: String], command: AgentCommand) throws {
         guard let rawURL = environment["RAMBU_SERVER_URL"]?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -38,7 +47,14 @@ public struct AgentConfiguration: Sendable {
         if command == .listen && (token?.isEmpty != false) {
             throw ConfigurationError.missing("RAMBU_PUCK_TOKEN")
         }
+        let rawMode = environment["RAMBU_TRANSCRIPTION_MODE"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? "stream"
+        guard let transcriptionMode = TranscriptionMode(rawValue: rawMode) else {
+            throw ConfigurationError.invalidTranscriptionMode
+        }
         self.serverURL = serverURL
         self.puckToken = token?.isEmpty == false ? token : nil
+        self.transcriptionMode = transcriptionMode
     }
 }
