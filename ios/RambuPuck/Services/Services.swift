@@ -143,18 +143,31 @@ final class BluetoothPuckPairing: NSObject {
         case failed(String)
     }
 
+    enum BackupWifiStatus: Equatable {
+        case idle
+        case sending
+        case saved
+        case connected
+        case failed(String)
+    }
+
     private enum PendingTask: Equatable {
         case pair
         case wifi(Data)
+        case scanNetworks
+        case backupWifi(name: String, password: String)
     }
 
     private static let service = CBUUID(string: "5B4F74AF-95E4-4449-8129-C97AD2293807")
     private static let pairing = CBUUID(string: "29308BE3-4FCA-47FB-AF2D-3539D416BAA1")
     private static let wifi = CBUUID(string: "8E1F2A6C-3B7D-4C59-9A0E-5D2F7B4C1E93")
+    private static let networkProvisioning = CBUUID(string: "6B5A3C8D-6E28-4DAA-82B5-2AE6C52C9174")
     private static let pairedKey = "puckPaired"
 
     private(set) var status: Status
     private(set) var wifiStatus = WifiStatus.idle
+    private(set) var backupWifiStatus = BackupWifiStatus.idle
+    private(set) var networkScan = PuckNetworkScanState()
     @ObservationIgnored private var central: CBCentralManager?
     @ObservationIgnored private var peripheral: CBPeripheral?
     @ObservationIgnored private var pending: PendingTask?
@@ -176,6 +189,39 @@ final class BluetoothPuckPairing: NSObject {
         let config = [name, password, server?.host() ?? "", String(port), https ? "1" : "0", puckToken].joined(separator: "\n")
         wifiStatus = .sending
         start(.wifi(Data(config.utf8)))
+    }
+
+    func scanNetworks() {
+        networkScan = PuckNetworkScanState()
+        start(.scanNetworks)
+    }
+
+    func sendBackupWifi(name: String, password: String) {
+        do {
+            // The actual peripheral limit is checked again immediately before writing.
+            _ = try PuckNetworkPacket.saveBackup(
+                name: name,
+                password: password,
+                maximumWriteLength: 512
+            )
+            backupWifiStatus = .sending
+            start(.backupWifi(name: name, password: password))
+        } catch {
+            backupWifiStatus = .failed(message(for: error))
+        }
+    }
+
+    private func message(for error: Error) -> String {
+        switch error as? PuckNetworkProvisioningError {
+        case .invalidSSID:
+            return String(localized: "Nama hotspot tidak valid.")
+        case .invalidPassword:
+            return String(localized: "Kata sandi hotspot harus 8–63 karakter.")
+        case .packetTooLarge:
+            return String(localized: "Nama atau kata sandi hotspot terlalu panjang.")
+        case nil:
+            return String(localized: "Hotspot belum tersimpan. Coba lagi.")
+        }
     }
 
     private func start(_ task: PendingTask) {
@@ -221,6 +267,10 @@ final class BluetoothPuckPairing: NSObject {
         switch pending {
         case .pair: status = .failed(message)
         case .wifi: wifiStatus = .failed(message)
+        case .scanNetworks:
+            networkScan.receive(.failure(message))
+        case .backupWifi:
+            backupWifiStatus = .failed(message)
         case nil: break
         }
         finish()
@@ -267,7 +317,10 @@ extension BluetoothPuckPairing: @preconcurrency CBPeripheralDelegate {
             fail("Perangkat ini bukan Rambu Puck.")
             return
         }
-        peripheral.discoverCharacteristics([Self.pairing, Self.wifi], for: service)
+        peripheral.discoverCharacteristics(
+            [Self.pairing, Self.wifi, Self.networkProvisioning],
+            for: service
+        )
     }
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
@@ -287,13 +340,44 @@ extension BluetoothPuckPairing: @preconcurrency CBPeripheralDelegate {
             }
             peripheral.setNotifyValue(true, for: wifi)
             peripheral.writeValue(config, for: wifi, type: .withResponse)
+        case .scanNetworks:
+            guard let provisioning = characteristics.first(where: { $0.uuid == Self.networkProvisioning }) else {
+                fail(String(localized: "Perbarui firmware puck terlebih dahulu."))
+                return
+            }
+            peripheral.setNotifyValue(true, for: provisioning)
+            peripheral.writeValue(PuckNetworkPacket.scanRequest, for: provisioning, type: .withResponse)
+        case .backupWifi(let name, let password):
+            guard let provisioning = characteristics.first(where: { $0.uuid == Self.networkProvisioning }) else {
+                fail(String(localized: "Perbarui firmware puck terlebih dahulu."))
+                return
+            }
+            do {
+                let packet = try PuckNetworkPacket.saveBackup(
+                    name: name,
+                    password: password,
+                    maximumWriteLength: peripheral.maximumWriteValueLength(for: .withResponse)
+                )
+                peripheral.setNotifyValue(true, for: provisioning)
+                peripheral.writeValue(packet, for: provisioning, type: .withResponse)
+            } catch {
+                fail(message(for: error))
+            }
         case nil:
             break
         }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
-        if error != nil { fail("Wi-Fi belum terkirim. Coba lagi.") }
+        guard error != nil else { return }
+        switch pending {
+        case .scanNetworks:
+            fail(String(localized: "Puck belum bisa mencari jaringan. Coba lagi."))
+        case .backupWifi:
+            fail(String(localized: "Hotspot belum tersimpan. Coba lagi."))
+        default:
+            fail(String(localized: "Wi-Fi belum terkirim. Coba lagi."))
+        }
     }
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -306,15 +390,42 @@ extension BluetoothPuckPairing: @preconcurrency CBPeripheralDelegate {
             UserDefaults.standard.set(true, forKey: Self.pairedKey)
             status = .paired
             finish()
-        } else if characteristic.uuid == Self.wifi, case .wifi = pending {
+        } else if characteristic.uuid == Self.wifi {
             switch characteristic.value.map({ String(decoding: $0, as: UTF8.self) }) {
             case "connected":
-                wifiStatus = .connected
-                finish()
+                if case .wifi = pending {
+                    wifiStatus = .connected
+                    finish()
+                }
+            case "backup_connected":
+                backupWifiStatus = .connected
             case "failed":
-                fail("Puck tidak bisa masuk Wi-Fi. Periksa nama dan kata sandi.")
+                if case .wifi = pending {
+                    fail(String(localized: "Puck tidak bisa masuk Wi-Fi. Periksa nama dan kata sandi."))
+                }
             default:
                 break
+            }
+        } else if characteristic.uuid == Self.networkProvisioning {
+            guard error == nil,
+                  let data = characteristic.value,
+                  let packet = PuckNetworkPacket(data: data) else {
+                fail(String(localized: "Jawaban puck tidak dikenali. Coba lagi."))
+                return
+            }
+
+            switch packet {
+            case .scanStarted, .network:
+                networkScan.receive(packet)
+            case .scanFinished:
+                networkScan.receive(packet)
+                if case .scanNetworks = pending { finish() }
+            case .backupSaved:
+                networkScan.receive(packet)
+                backupWifiStatus = .saved
+                if case .backupWifi = pending { finish() }
+            case .failure(let message):
+                fail(message)
             }
         }
     }

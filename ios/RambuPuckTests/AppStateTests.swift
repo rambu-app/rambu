@@ -109,6 +109,47 @@ struct AppStateTests {
         }
     }
 
+    @Test("English resources cover every visible mobile-data backup step")
+    func englishHotspotBackupCopy() {
+        let visibleCopy = [
+            "Cadangan data seluler": "Mobile data backup",
+            "Gunakan hotspot iPhone saat Wi-Fi rumah tidak tersedia.": "Use your iPhone hotspot when home Wi-Fi is unavailable.",
+            "Puck akan berpindah sendiri saat Wi-Fi utama terputus.": "Puck switches automatically when the main Wi-Fi disconnects.",
+            "Atur hotspot cadangan": "Set up backup hotspot",
+            "Hotspot cadangan tersimpan": "Backup hotspot saved",
+            "Puck memakai hotspot ini jika Wi-Fi utama tidak tersedia.": "Puck uses this hotspot when the main Wi-Fi is unavailable.",
+            "Sedang dipakai": "In use",
+            "Hotspot cadangan sedang dipakai": "Backup hotspot is in use",
+            "Hotspot iPhone": "iPhone hotspot",
+            "Nyalakan hotspot": "Turn on your hotspot",
+            "Buka Pengaturan > Hotspot Pribadi, lalu nyalakan Izinkan Akses.": "Open Settings > Personal Hotspot, then turn on Allow Others to Join.",
+            "Jika ada, nyalakan juga Maksimalkan Kompatibilitas.": "If available, also turn on Maximize Compatibility.",
+            "Hotspot sudah menyala": "Hotspot is on",
+            "Pilih hotspot Anda": "Choose your hotspot",
+            "Pilih nama iPhone dari daftar di bawah.": "Choose your iPhone name from the list below.",
+            "Puck sedang mencari jaringan…": "Puck is looking for networks…",
+            "Belum ada jaringan ditemukan.": "No networks found yet.",
+            "Cari lagi": "Search again",
+            "Kata sandi hotspot": "Hotspot password",
+            "Simpan hotspot": "Save hotspot",
+            "Menyimpan…": "Saving…",
+            "Hotspot tersimpan. Puck akan menggunakannya saat Wi-Fi utama tidak tersedia.": "Hotspot saved. Puck will use it when the main Wi-Fi is unavailable.",
+            "Dipilih": "Selected",
+            "Nama hotspot tidak valid.": "The hotspot name is not valid.",
+            "Kata sandi hotspot harus 8–63 karakter.": "The hotspot password must be 8–63 characters.",
+            "Nama atau kata sandi hotspot terlalu panjang.": "The hotspot name or password is too long.",
+            "Hotspot belum tersimpan. Coba lagi.": "The hotspot was not saved. Try again.",
+            "Puck belum bisa mencari jaringan. Coba lagi.": "Puck could not search for networks. Try again.",
+            "Jawaban puck tidak dikenali. Coba lagi.": "Puck returned an unknown response. Try again.",
+            "Perbarui firmware puck terlebih dahulu.": "Update the puck firmware first.",
+            "Tutup": "Close",
+        ]
+
+        for (key, translation) in visibleCopy {
+            #expect(L10n.text(key, language: .english) == translation)
+        }
+    }
+
     @Test("History decisions use natural personalized copy in both languages")
     func historyDecisionCopyIsNatural() {
         let key = "history.decision.by_verdict"

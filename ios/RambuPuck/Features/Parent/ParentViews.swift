@@ -39,6 +39,7 @@ struct PuckScreen: View {
 
                     if pairing.status == .paired {
                         PuckWifiCard(pairing: pairing)
+                        PuckHotspotBackupCard(pairing: pairing)
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -80,6 +81,286 @@ struct PuckScreen: View {
                 ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
             }
         }
+    }
+}
+
+private struct PuckHotspotBackupCard: View {
+    let pairing: BluetoothPuckPairing
+    @AppStorage("puckBackupWifiName") private var savedName = ""
+    @State private var showingSetup = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Cadangan data seluler")
+
+            VStack(alignment: .leading, spacing: 16) {
+                if savedName.isEmpty {
+                    HStack(alignment: .top, spacing: 14) {
+                        hotspotIcon
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Gunakan hotspot iPhone saat Wi-Fi rumah tidak tersedia.")
+                                .font(.headline)
+                                .foregroundStyle(Brand.ink)
+                            Text("Puck akan berpindah sendiri saat Wi-Fi utama terputus.")
+                                .font(.subheadline)
+                                .foregroundStyle(Brand.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    Button { showingSetup = true } label: {
+                        WideLabel(title: "Atur hotspot cadangan", systemImage: "personalhotspot")
+                    }
+                    .secondaryAction()
+                } else {
+                    HStack(alignment: .top, spacing: 14) {
+                        hotspotIcon
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Hotspot cadangan tersimpan")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Brand.safeInk)
+                            Text(savedName)
+                                .font(.headline)
+                                .foregroundStyle(Brand.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Puck memakai hotspot ini jika Wi-Fi utama tidak tersedia.")
+                                .font(.subheadline)
+                                .foregroundStyle(Brand.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                    }
+
+                    if pairing.backupWifiStatus == .connected {
+                        Label("Sedang dipakai", systemImage: "checkmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Brand.safeInk)
+                            .accessibilityLabel("Hotspot cadangan sedang dipakai")
+                    }
+
+                    Button("Ganti", systemImage: "arrow.clockwise") { showingSetup = true }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Brand.teal)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+            }
+            .card(padding: 18)
+        }
+        .sheet(isPresented: $showingSetup) {
+            PuckHotspotSetupSheet(pairing: pairing, savedName: $savedName)
+                .presentationDetents([.large])
+        }
+    }
+
+    private var hotspotIcon: some View {
+        Image(systemName: "personalhotspot")
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(Brand.teal)
+            .frame(width: 48, height: 48)
+            .background(Brand.tealSoft, in: .rect(cornerRadius: 14, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+private struct PuckHotspotSetupSheet: View {
+    let pairing: BluetoothPuckPairing
+    @Binding var savedName: String
+    @Environment(AppState.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var hotspotIsOn = false
+    @State private var selectedName = ""
+    @State private var password = ""
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    if didSave {
+                        savedConfirmation
+                    } else if !hotspotIsOn {
+                        turnOnStep
+                    } else {
+                        chooseNetworkStep
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 32)
+            }
+            .background(Brand.canvas)
+            .navigationTitle("Hotspot iPhone")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(didSave ? "Tutup" : "Batal") { dismiss() }
+                }
+            }
+        }
+        .onAppear { selectedName = savedName }
+        .onChange(of: pairing.backupWifiStatus) { _, status in
+            guard status == .saved || status == .connected else { return }
+            savedName = selectedName
+            password = ""
+        }
+    }
+
+    private var turnOnStep: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            PuckStep(number: 1, title: "Nyalakan hotspot", detail: "Buka Pengaturan > Hotspot Pribadi, lalu nyalakan Izinkan Akses.")
+
+            Label("Jika ada, nyalakan juga Maksimalkan Kompatibilitas.", systemImage: "wifi")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Brand.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Image(systemName: "iphone.radiowaves.left.and.right")
+                .font(.system(size: 48, weight: .medium))
+                .foregroundStyle(Brand.teal)
+                .frame(maxWidth: .infinity, minHeight: 128)
+                .background(Brand.tealSoft, in: .rect(cornerRadius: 24, style: .continuous))
+                .accessibilityHidden(true)
+
+            Button {
+                hotspotIsOn = true
+                pairing.scanNetworks()
+            } label: {
+                WideLabel(title: "Hotspot sudah menyala", systemImage: "checkmark")
+            }
+            .primaryAction()
+        }
+    }
+
+    private var chooseNetworkStep: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            PuckStep(number: 2, title: "Pilih hotspot Anda", detail: "Pilih nama iPhone dari daftar di bawah.")
+
+            if pairing.networkScan.isScanning {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Puck sedang mencari jaringan…")
+                        .font(.headline)
+                        .foregroundStyle(Brand.ink)
+                }
+                .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                .accessibilityElement(children: .combine)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(pairing.networkScan.networks, id: \.self) { network in
+                    PuckNetworkChoice(name: network, isSelected: selectedName == network) {
+                        if selectedName != network { password = "" }
+                        selectedName = network
+                    }
+                }
+            }
+
+            if !pairing.networkScan.isScanning && pairing.networkScan.networks.isEmpty {
+                Text("Belum ada jaringan ditemukan.")
+                    .font(.body)
+                    .foregroundStyle(Brand.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button("Cari lagi", systemImage: "arrow.clockwise") { pairing.scanNetworks() }
+                .font(.headline)
+                .foregroundStyle(Brand.teal)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .disabled(pairing.networkScan.isScanning)
+
+            if !selectedName.isEmpty {
+                VStack(alignment: .leading, spacing: 14) {
+                    SecureField("Kata sandi hotspot", text: $password)
+                        .textContentType(.password)
+                        .padding(16)
+                        .frame(minHeight: 56)
+                        .background(.white, in: .rect(cornerRadius: 16, style: .continuous))
+
+                    backupStatus
+
+                    Button {
+                        pairing.sendBackupWifi(name: selectedName, password: password)
+                    } label: {
+                        WideLabel(
+                            title: pairing.backupWifiStatus == .sending ? "Menyimpan…" : "Simpan hotspot",
+                            systemImage: "personalhotspot"
+                        )
+                    }
+                    .primaryAction()
+                    .disabled(password.count < 8 || pairing.backupWifiStatus == .sending)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var backupStatus: some View {
+        switch pairing.backupWifiStatus {
+        case .failed(let message):
+            Label(L10n.text(message, language: model.language), systemImage: "exclamationmark.triangle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Brand.dangerInk)
+                .fixedSize(horizontal: false, vertical: true)
+        case .idle, .sending, .saved, .connected:
+            EmptyView()
+        }
+    }
+
+    private var savedConfirmation: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(Brand.safeInk)
+                .accessibilityHidden(true)
+            Text("Hotspot cadangan tersimpan")
+                .font(Brand.display(.title2))
+                .foregroundStyle(Brand.ink)
+                .multilineTextAlignment(.center)
+            Text("Hotspot tersimpan. Puck akan menggunakannya saat Wi-Fi utama tidak tersedia.")
+                .font(.body)
+                .foregroundStyle(Brand.ink2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Tutup") { dismiss() }
+                .primaryAction()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 44)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var didSave: Bool {
+        pairing.backupWifiStatus == .saved || pairing.backupWifiStatus == .connected
+    }
+}
+
+private struct PuckNetworkChoice: View {
+    let name: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: "wifi")
+                    .font(.title3)
+                Text(name)
+                    .font(.headline)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+            }
+            .foregroundStyle(isSelected ? Brand.teal : Brand.ink)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+            .background(
+                isSelected ? Brand.tealSoft : .white,
+                in: .rect(cornerRadius: 16, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityValue(isSelected ? "Dipilih" : "")
     }
 }
 

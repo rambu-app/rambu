@@ -7,6 +7,12 @@
 #include <time.h>
 #include <esp_bt.h>
 #include "call_alert_subscription.h"
+#include "http_retry_policy.h"
+#include "puck_network_protocol.h"
+#include "puck_runtime_state.h"
+#include "static_audio_slots.h"
+#include "wifi_failover_policy.h"
+#include "wifi_retry_policy.h"
 
 const int MIC_SCK = 32;
 const int MIC_WS = 25;
@@ -17,9 +23,15 @@ const int LED_PIN = 2;
 
 const int STORED_RATE = 8000;
 const int SLOT_SAMPLES = STORED_RATE;
-const int MAX_SLOTS = 16;
+const int MAX_SLOTS = 8;
 const int SLOTS_PER_CHUNK = 5;
-const uint32_t MEMORY_FOR_HTTPS = 80000;
+const uint32_t HTTP_CONNECT_TIMEOUT_MS = 5000;
+const uint32_t HTTP_RESPONSE_TIMEOUT_MS = 8000;
+const uint32_t HTTPS_HANDSHAKE_TIMEOUT_SECONDS = 15;
+const uint32_t WIFI_CONNECT_TIMEOUT_MS = 20000;
+const uint32_t PRIMARY_RETRY_INTERVAL_MS = 300000;
+const uint32_t RECORDER_TASK_STACK_BYTES = 8192;
+const uint32_t BUTTON_TASK_STACK_BYTES = 2048;
 const int SILENCE_LEVEL = 300;
 const int SILENT_SECONDS_TO_END = 30;
 
@@ -28,6 +40,7 @@ const char *ANCS_NOTIFICATION_SOURCE = "9FBF120D-6301-42D9-8C58-25E699A21DBD";
 const char *PUCK_SERVICE = "5B4F74AF-95E4-4449-8129-C97AD2293807";
 const char *PUCK_PAIRING = "29308BE3-4FCA-47FB-AF2D-3539D416BAA1";
 const char *PUCK_WIFI = "8E1F2A6C-3B7D-4C59-9A0E-5D2F7B4C1E93";
+const char *PUCK_NETWORK_PROVISIONING = "6B5A3C8D-6E28-4DAA-82B5-2AE6C52C9174";
 const uint8_t ANCS_EVENT_ADDED = 0;
 const uint8_t ANCS_EVENT_REMOVED = 2;
 const uint8_t ANCS_FLAG_PRE_EXISTING = 4;
@@ -40,13 +53,21 @@ struct Adpcm {
   int index = 0;
 };
 
-uint8_t *slots[MAX_SLOTS];
-int slotCount = 0;
+StaticAudioSlots<MAX_SLOTS, SLOT_SAMPLES> slots;
+const int slotCount = MAX_SLOTS;
 int slotsPerChunk;
 volatile int slotFill[MAX_SLOTS];
 volatile bool slotFinal[MAX_SLOTS];
 QueueHandle_t freeSlots;
 QueueHandle_t filledSlots;
+StaticQueue_t freeSlotsQueueBuffer;
+StaticQueue_t filledSlotsQueueBuffer;
+uint8_t freeSlotsQueueStorage[MAX_SLOTS * sizeof(int)];
+uint8_t filledSlotsQueueStorage[MAX_SLOTS * sizeof(int)];
+StaticTask_t recorderTaskBuffer;
+StaticTask_t buttonTaskBuffer;
+StackType_t recorderTaskStack[RECORDER_TASK_STACK_BYTES];
+StackType_t buttonTaskStack[BUTTON_TASK_STACK_BYTES];
 
 I2SClass i2s;
 volatile bool recording = false;
@@ -59,6 +80,20 @@ bool useHttps;
 volatile bool wifiChanged = false;
 unsigned long wifiStartedAt = 0;
 NimBLECharacteristic *wifiStatus;
+NimBLECharacteristic *networkProvisioning;
+String primarySsid;
+String primaryPassword;
+String backupSsid;
+String backupPassword;
+WifiNetwork connectingNetwork = WifiNetwork::Primary;
+WifiNetwork connectedNetwork = WifiNetwork::Primary;
+unsigned long networkConnectedAt = 0;
+bool wifiOnline = false;
+volatile bool scanRequested = false;
+bool scanRunning = false;
+volatile bool backupConfigPending = false;
+char pendingBackupSsid[33] = {};
+char pendingBackupPassword[64] = {};
 String sessionId;
 int nextSequence = 0;
 bool listening = false;
@@ -74,6 +109,7 @@ volatile uint16_t ancsSourceHandle = 0;
 CallAlertSubscription callAlertSubscription;
 volatile bool incomingCall = false;
 volatile bool callEnded = false;
+PuckRuntimeState runtimeState;
 
 void saveWifi(String config) {
   String parts[6];
@@ -101,6 +137,34 @@ void saveWifi(String config) {
 class WifiSetup : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &) override {
     saveWifi(characteristic->getValue().c_str());
+  }
+};
+
+class NetworkProvisioning : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic *characteristic, NimBLEConnInfo &) override {
+    const std::string value = characteristic->getValue();
+    if (value.size() == 1 &&
+        static_cast<uint8_t>(value[0]) == static_cast<uint8_t>(puck_network::Message::ScanRequest)) {
+      scanRequested = true;
+      return;
+    }
+
+    const auto credentials = puck_network::parseBackupCredentials(
+        reinterpret_cast<const uint8_t *>(value.data()), value.size());
+    if (!credentials.valid) {
+      const uint8_t response[] = {
+          static_cast<uint8_t>(puck_network::Message::Error),
+          'I', 'n', 'v', 'a', 'l', 'i', 'd'};
+      characteristic->setValue(response, sizeof(response));
+      characteristic->notify();
+      return;
+    }
+
+    memcpy(pendingBackupSsid, credentials.ssid, credentials.ssidLength);
+    pendingBackupSsid[credentials.ssidLength] = '\0';
+    memcpy(pendingBackupPassword, credentials.password, credentials.passwordLength);
+    pendingBackupPassword[credentials.passwordLength] = '\0';
+    backupConfigPending = true;
   }
 };
 
@@ -164,6 +228,13 @@ void startBluetooth() {
       PUCK_WIFI, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC);
   wifiStatus->setValue("offline");
   wifiStatus->setCallbacks(new WifiSetup());
+  networkProvisioning = service->createCharacteristic(
+      PUCK_NETWORK_PROVISIONING,
+      NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::NOTIFY |
+          NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC);
+  networkProvisioning->setCallbacks(new NetworkProvisioning());
+  const uint8_t idle = static_cast<uint8_t>(puck_network::Message::ScanFinished);
+  networkProvisioning->setValue(&idle, 1);
   service->start();
   bleServer->start();
 
@@ -321,14 +392,50 @@ void writeWav(Client &client, int *chunkSlots, int count) {
 WiFiClientSecure secureClient;
 WiFiClient plainClient;
 
+void prepareSecureClient() {
+  secureClient.stop();
+  secureClient.setInsecure();
+  secureClient.setHandshakeTimeout(HTTPS_HANDSHAKE_TIMEOUT_SECONDS);
+  secureClient.setTimeout(HTTP_RESPONSE_TIMEOUT_MS);
+}
+
+void discardHttpClient() {
+  if (useHttps) secureClient.stop();
+  else plainClient.stop();
+}
+
+bool readHttpLine(Client &client, String &line, unsigned long startedAt) {
+  line = "";
+  while (millis() - startedAt < HTTP_RESPONSE_TIMEOUT_MS) {
+    if (client.available()) {
+      char value = (char)client.read();
+      if (value == '\n') return true;
+      if (value != '\r') line += value;
+    } else if (!client.connected()) {
+      return false;
+    } else {
+      delay(1);
+    }
+  }
+  return false;
+}
+
 int httpRequest(const char *method, String path, String extraHeaders, uint32_t bodyLength,
                 std::function<void(Client &)> writeBody, JsonDocument &reply) {
   for (int attempt = 0; attempt < 3; attempt++) {
     Client &client = useHttps ? (Client &)secureClient : (Client &)plainClient;
-    if (!client.connected() && !client.connect(serverHost.c_str(), serverPort)) {
+    client.setTimeout(HTTP_RESPONSE_TIMEOUT_MS);
+    bool connected = client.connected();
+    if (!connected) {
+      connected = useHttps
+                      ? secureClient.connect(serverHost.c_str(), serverPort, HTTP_CONNECT_TIMEOUT_MS)
+                      : plainClient.connect(serverHost.c_str(), serverPort, HTTP_CONNECT_TIMEOUT_MS);
+    }
+    if (!connected) {
       char reason[100] = "";
       if (useHttps) secureClient.lastError(reason, sizeof(reason));
       Serial.printf("Cannot reach server (%s), free memory %u / largest %u, retrying\n", reason, ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+      discardHttpClient();
       delay(attempt == 0 ? 250 : 750);
       continue;
     }
@@ -340,32 +447,38 @@ int httpRequest(const char *method, String path, String extraHeaders, uint32_t b
                  extraHeaders + "\r\n");
     if (writeBody) writeBody(client);
 
-    unsigned long deadline = millis() + 60000;
-    while (!client.available() && client.connected() && millis() < deadline) delay(10);
-    String statusLine = client.readStringUntil('\n');
-    int status = statusLine.substring(9, 12).toInt();
+    unsigned long responseStartedAt = millis();
+    String statusLine;
+    bool statusLineComplete = readHttpLine(client, statusLine, responseStartedAt);
+    int status = statusLineComplete ? statusLine.substring(9, 12).toInt() : 0;
     int contentLength = -1;
-    for (;;) {
-      String line = client.readStringUntil('\n');
+    bool headersComplete = false;
+    while (statusLineComplete && millis() - responseStartedAt < HTTP_RESPONSE_TIMEOUT_MS) {
+      String line;
+      if (!readHttpLine(client, line, responseStartedAt)) break;
       line.trim();
-      if (line.isEmpty()) break;
+      if (line.isEmpty()) {
+        headersComplete = true;
+        break;
+      }
       line.toLowerCase();
       if (line.startsWith("content-length:")) contentLength = line.substring(15).toInt();
     }
     String body;
-    while ((contentLength < 0 || (int)body.length() < contentLength) && millis() < deadline) {
+    if (contentLength > 0) body.reserve(contentLength);
+    while (contentLength >= 0 && (int)body.length() < contentLength &&
+           millis() - responseStartedAt < HTTP_RESPONSE_TIMEOUT_MS) {
       if (client.available()) body += (char)client.read();
       else if (!client.connected()) break;
       else delay(1);
     }
-    if (contentLength < 0 || (int)body.length() < contentLength) client.stop();
-
-    if (status == 0) {
-      client.stop();
-      continue;
-    }
-    if (status >= 500) {
-      Serial.printf("Server error %d, retrying\n", status);
+    bool responseComplete = statusLineComplete && headersComplete && contentLength >= 0 &&
+                            (int)body.length() == contentLength;
+    HttpAttemptDecision decision = decideHttpAttempt(status, responseComplete);
+    if (decision.resetClient) discardHttpClient();
+    if (decision.retry) {
+      if (status >= 500) Serial.printf("Server error %d, retrying\n", status);
+      else Serial.println("Incomplete server response, retrying");
       delay(attempt == 0 ? 250 : 750);
       continue;
     }
@@ -384,6 +497,7 @@ void beginListening(JsonDocument &session) {
   listening = true;
   stopping = false;
   recording = true;
+  runtimeState.setListening(true);
   digitalWrite(LED_PIN, HIGH);
   Serial.printf("RECORDING session %s\n", sessionId.c_str());
 }
@@ -393,6 +507,7 @@ void requestStop() {
   stopping = true;
   recording = false;
   stopRequested = true;
+  digitalWrite(LED_PIN, LOW);
   Serial.println("Ending session...");
 }
 
@@ -436,6 +551,7 @@ void startSession(const char *channel, const char *title, const char *callerDeta
 
 void finishSession() {
   listening = false;
+  runtimeState.setListening(false);
   digitalWrite(LED_PIN, LOW);
   Serial.println("Session completed. Waiting for the next call.");
 }
@@ -476,55 +592,141 @@ bool isSilent(int slot) {
   return slotFill[slot] == 0 || sqrt(sum / slotFill[slot]) < SILENCE_LEVEL;
 }
 
-void connectWifi() {
+void loadNetworkSettings() {
   Preferences settings;
   settings.begin("puck", true);
-  String ssid = settings.getString("ssid", "");
-  String password = settings.getString("password", "");
+  primarySsid = settings.getString("ssid", "");
+  primaryPassword = settings.getString("password", "");
+  backupSsid = settings.getString("bssid", "");
+  backupPassword = settings.getString("bpass", "");
   serverHost = settings.getString("host", "");
   serverPort = settings.getInt("port", 443);
   useHttps = settings.getBool("https", true);
   puckToken = settings.getString("token", "");
   settings.end();
+}
 
-  secureClient.stop();
+void connectWifi(WifiNetwork network = WifiNetwork::Primary) {
+  prepareSecureClient();
   plainClient.stop();
-  WiFi.disconnect();
+  WiFi.disconnect(false, false, 1000);
+  delay(100);
+  const String &ssid = network == WifiNetwork::Primary ? primarySsid : backupSsid;
+  const String &password = network == WifiNetwork::Primary ? primaryPassword : backupPassword;
   if (ssid.isEmpty() || serverHost.isEmpty() || puckToken.isEmpty()) {
     Serial.println("Not set up yet. Pair it from the Rambu app, Puck tab.");
     wifiStartedAt = 0;
+    wifiOnline = false;
     return;
   }
+  connectingNetwork = network;
+  wifiOnline = false;
   Serial.printf("Connecting to Wi-Fi %s\n", ssid.c_str());
   wifiStatus->setValue("connecting");
   wifiStatus->notify();
   WiFi.begin(ssid.c_str(), password.c_str());
-  wifiStartedAt = millis();
+  wifiStartedAt = max(1UL, millis());
 }
 
 void reportWifi() {
-  if (!wifiStartedAt) return;
   if (WiFi.status() == WL_CONNECTED) {
+    if (wifiOnline) {
+      if (shouldProbePrimary(
+              connectedNetwork, listening, networkConnectedAt, millis(),
+              PRIMARY_RETRY_INTERVAL_MS)) {
+        Serial.println("Checking whether primary Wi-Fi is available again...");
+        connectWifi(WifiNetwork::Primary);
+      }
+      return;
+    }
     wifiStartedAt = 0;
+    wifiOnline = true;
+    connectedNetwork = connectingNetwork;
+    networkConnectedAt = millis();
     Serial.printf("Wi-Fi connected: %s, server %s:%d\n", WiFi.localIP().toString().c_str(), serverHost.c_str(), serverPort);
     configTime(0, 0, "pool.ntp.org");
-    wifiStatus->setValue("connected");
+    wifiStatus->setValue(
+        connectedNetwork == WifiNetwork::Backup ? "backup_connected" : "connected");
     wifiStatus->notify();
-  } else if (millis() - wifiStartedAt > 20000) {
-    wifiStartedAt = 0;
-    Serial.println("Wi-Fi failed. Check the name and password in the Rambu app.");
-    wifiStatus->setValue("failed");
+  } else if (wifiOnline) {
+    wifiOnline = false;
+    connectWifi(nextNetworkAfterTimeout(connectedNetwork, !backupSsid.isEmpty()));
+  } else if (shouldRetryWifi(wifiStartedAt, millis(), WIFI_CONNECT_TIMEOUT_MS)) {
+    Serial.println("Wi-Fi connection timed out. Retrying...");
+    wifiStatus->setValue("offline");
     wifiStatus->notify();
+    connectWifi(nextNetworkAfterTimeout(connectingNetwork, !backupSsid.isEmpty()));
   }
 }
 
-bool buttonPressed() {
-  static int last = HIGH;
-  int now = digitalRead(BUTTON_PIN);
-  bool pressed = last == HIGH && now == LOW;
-  last = now;
-  if (pressed) delay(50);
-  return pressed;
+void notifyProvisioning(puck_network::Message message, const String &payload = "") {
+  std::string response;
+  response.reserve(payload.length() + 1);
+  response.push_back(static_cast<char>(message));
+  response.append(payload.c_str(), payload.length());
+  networkProvisioning->setValue(
+      reinterpret_cast<const uint8_t *>(response.data()), response.size());
+  networkProvisioning->notify();
+}
+
+void handleNetworkProvisioning() {
+  if (backupConfigPending) {
+    backupConfigPending = false;
+    Preferences settings;
+    settings.begin("puck");
+    settings.putString("bssid", pendingBackupSsid);
+    settings.putString("bpass", pendingBackupPassword);
+    settings.end();
+    backupSsid = pendingBackupSsid;
+    backupPassword = pendingBackupPassword;
+    memset(pendingBackupPassword, 0, sizeof(pendingBackupPassword));
+    notifyProvisioning(puck_network::Message::BackupSaved);
+    if (WiFi.status() != WL_CONNECTED) connectWifi(WifiNetwork::Backup);
+  }
+
+  if (scanRequested && !scanRunning) {
+    scanRequested = false;
+    WiFi.scanDelete();
+    notifyProvisioning(puck_network::Message::ScanStarted);
+    scanRunning = WiFi.scanNetworks(true, false, false, 120) == WIFI_SCAN_RUNNING;
+    if (!scanRunning) notifyProvisioning(puck_network::Message::Error, "Scan failed");
+  }
+
+  if (!scanRunning) return;
+  int count = WiFi.scanComplete();
+  if (count == WIFI_SCAN_RUNNING) return;
+  if (count < 0) {
+    notifyProvisioning(puck_network::Message::Error, "Scan failed");
+  } else {
+    for (int i = 0; i < count; i++) {
+      String ssid = WiFi.SSID(i);
+      if (!ssid.isEmpty()) notifyProvisioning(puck_network::Message::Network, ssid);
+    }
+    notifyProvisioning(puck_network::Message::ScanFinished);
+  }
+  WiFi.scanDelete();
+  scanRunning = false;
+}
+
+void buttonTask(void *) {
+  int last = digitalRead(BUTTON_PIN);
+  for (;;) {
+    int now = digitalRead(BUTTON_PIN);
+    if (last == HIGH && now == LOW) {
+      ManualAction action = runtimeState.pressButton();
+      if (action == ManualAction::Stop) {
+        recording = false;
+        stopRequested = true;
+        digitalWrite(LED_PIN, LOW);
+        Serial.println("BOOT stop requested");
+      } else {
+        Serial.println("BOOT start requested");
+      }
+      vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    last = now;
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
 }
 
 void setup() {
@@ -533,19 +735,17 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   WiFi.setMinSecurity(WIFI_AUTH_WPA_PSK);
-  secureClient.setInsecure();
+  WiFi.setAutoReconnect(false);
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
   startBluetooth();
+  loadNetworkSettings();
   connectWifi();
 
-  freeSlots = xQueueCreate(MAX_SLOTS, sizeof(int));
-  filledSlots = xQueueCreate(MAX_SLOTS, sizeof(int));
-  for (int i = 0; i < MAX_SLOTS && ESP.getFreeHeap() > MEMORY_FOR_HTTPS + SLOT_SAMPLES / 2; i++) {
-    slots[i] = (uint8_t *)malloc(SLOT_SAMPLES / 2);
-    if (!slots[i]) break;
-    slotCount++;
-    xQueueSend(freeSlots, &i, 0);
-  }
+  freeSlots = xQueueCreateStatic(
+      MAX_SLOTS, sizeof(int), freeSlotsQueueStorage, &freeSlotsQueueBuffer);
+  filledSlots = xQueueCreateStatic(
+      MAX_SLOTS, sizeof(int), filledSlotsQueueStorage, &filledSlotsQueueBuffer);
+  for (int i = 0; i < slotCount; i++) xQueueSend(freeSlots, &i, 0);
   slotsPerChunk = min(SLOTS_PER_CHUNK, max(1, slotCount - 3));
   Serial.printf("Audio buffer: %d seconds, free memory %u / largest %u\n", slotCount, ESP.getFreeHeap(), ESP.getMaxAllocHeap());
 
@@ -555,7 +755,12 @@ void setup() {
     for (;;) delay(1000);
   }
 
-  xTaskCreatePinnedToCore(recorderTask, "recorder", 8192, nullptr, 2, nullptr, 0);
+  xTaskCreateStaticPinnedToCore(
+      recorderTask, "recorder", RECORDER_TASK_STACK_BYTES, nullptr, 2,
+      recorderTaskStack, &recorderTaskBuffer, 0);
+  xTaskCreateStaticPinnedToCore(
+      buttonTask, "button", BUTTON_TASK_STACK_BYTES, nullptr, 3,
+      buttonTaskStack, &buttonTaskBuffer, 1);
   Serial.println("Ready. Waiting for a call, or press BOOT to start manually.");
 }
 
@@ -565,10 +770,19 @@ void loop() {
   }
   if (wifiChanged) {
     wifiChanged = false;
+    loadNetworkSettings();
     connectWifi();
   }
+  handleNetworkProvisioning();
   reportWifi();
   if (WiFi.status() != WL_CONNECTED) return;
+
+  ManualAction manualAction = runtimeState.takePendingAction();
+  if (manualAction == ManualAction::Start && !listening) {
+    startSession("whatsapp", "Panggilan WhatsApp terdeteksi", "Kontak WhatsApp");
+  } else if (manualAction == ManualAction::Stop && listening) {
+    requestStop();
+  }
 
   if (incomingCall) {
     incomingCall = false;
@@ -584,11 +798,6 @@ void loop() {
       Serial.println("Call ended");
       requestStop();
     }
-  }
-
-  if (buttonPressed()) {
-    if (!listening) startSession("whatsapp", "Panggilan WhatsApp terdeteksi", "Kontak WhatsApp");
-    else requestStop();
   }
 
   if (!listening) {

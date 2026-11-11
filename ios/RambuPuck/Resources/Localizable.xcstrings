@@ -4769,6 +4769,96 @@
         }
       }
     },
+    "Cadangan data seluler": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Mobile data backup" } } }
+    },
+    "Gunakan hotspot iPhone saat Wi-Fi rumah tidak tersedia.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Use your iPhone hotspot when home Wi-Fi is unavailable." } } }
+    },
+    "Puck akan berpindah sendiri saat Wi-Fi utama terputus.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck switches automatically when the main Wi-Fi disconnects." } } }
+    },
+    "Atur hotspot cadangan": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Set up backup hotspot" } } }
+    },
+    "Hotspot cadangan tersimpan": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Backup hotspot saved" } } }
+    },
+    "Puck memakai hotspot ini jika Wi-Fi utama tidak tersedia.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck uses this hotspot when the main Wi-Fi is unavailable." } } }
+    },
+    "Sedang dipakai": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "In use" } } }
+    },
+    "Hotspot cadangan sedang dipakai": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Backup hotspot is in use" } } }
+    },
+    "Hotspot iPhone": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "iPhone hotspot" } } }
+    },
+    "Nyalakan hotspot": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Turn on your hotspot" } } }
+    },
+    "Buka Pengaturan > Hotspot Pribadi, lalu nyalakan Izinkan Akses.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Open Settings > Personal Hotspot, then turn on Allow Others to Join." } } }
+    },
+    "Jika ada, nyalakan juga Maksimalkan Kompatibilitas.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "If available, also turn on Maximize Compatibility." } } }
+    },
+    "Hotspot sudah menyala": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Hotspot is on" } } }
+    },
+    "Pilih hotspot Anda": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose your hotspot" } } }
+    },
+    "Pilih nama iPhone dari daftar di bawah.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Choose your iPhone name from the list below." } } }
+    },
+    "Puck sedang mencari jaringan…": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck is looking for networks…" } } }
+    },
+    "Belum ada jaringan ditemukan.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "No networks found yet." } } }
+    },
+    "Cari lagi": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Search again" } } }
+    },
+    "Kata sandi hotspot": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Hotspot password" } } }
+    },
+    "Simpan hotspot": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Save hotspot" } } }
+    },
+    "Menyimpan…": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Saving…" } } }
+    },
+    "Hotspot tersimpan. Puck akan menggunakannya saat Wi-Fi utama tidak tersedia.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Hotspot saved. Puck will use it when the main Wi-Fi is unavailable." } } }
+    },
+    "Dipilih": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Selected" } } }
+    },
+    "Nama hotspot tidak valid.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The hotspot name is not valid." } } }
+    },
+    "Kata sandi hotspot harus 8–63 karakter.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The hotspot password must be 8–63 characters." } } }
+    },
+    "Nama atau kata sandi hotspot terlalu panjang.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The hotspot name or password is too long." } } }
+    },
+    "Hotspot belum tersimpan. Coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "The hotspot was not saved. Try again." } } }
+    },
+    "Puck belum bisa mencari jaringan. Coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck could not search for networks. Try again." } } }
+    },
+    "Jawaban puck tidak dikenali. Coba lagi.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Puck returned an unknown response. Try again." } } }
+    },
+    "Perbarui firmware puck terlebih dahulu.": {
+      "localizations": { "en": { "stringUnit": { "state": "translated", "value": "Update the puck firmware first." } } }
+    },
     "family.people_count": {
       "localizations": {
         "id": {
