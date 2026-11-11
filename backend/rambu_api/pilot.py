@@ -896,7 +896,7 @@ class PilotStore:
                 self._connection.execute(
                     """
                     UPDATE protection_sessions
-                    SET status = 'error', outcome = NULL, assessment_json = NULL,
+                    SET status = 'error', outcome = NULL,
                         failure_json = ?, ended_at = ?, revision = revision + 1
                     WHERE id = ?
                     """,
@@ -1351,7 +1351,7 @@ class PilotStore:
             if row["failure_json"]
             else None
         )
-        if row["status"] == "error":
+        if row["status"] == "error" and assessment is None:
             outcome = "error"
             presentation = "unassessed"
             signals: list[str] = []

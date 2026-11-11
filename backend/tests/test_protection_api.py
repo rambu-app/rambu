@@ -415,6 +415,11 @@ def test_terminal_chunk_and_analysis_failure_end_existing_alert() -> None:
         "/api/pilot/alerts", headers=auth(failed_guardian.access_token)
     ).json()[0]
     assert failed_alert["call_ended"] is True
+    failed_history = failed_client.get(
+        "/api/pilot/history", headers=auth(failed_parent.access_token)
+    ).json()[0]
+    assert failed_history["presentation"] == "danger"
+    assert failed_history["signals"]
 
 
 def test_retried_risky_chunk_idempotently_repairs_alert_without_duplicate_push() -> None:
