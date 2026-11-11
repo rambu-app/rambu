@@ -189,8 +189,12 @@ final class FamilyViewModel {
                     alertID: alert.id
                 ))
             }
-            if previous != nil, previous?.decision == nil, let decision = alert.decision {
-                receive(.decided(alertID: alert.id, decision))
+            if let decision = alert.decision {
+                let existingAlertWasJustDecided = previous != nil && previous?.decision == nil
+                let newLiveAlertAlreadyHasDecision = previous == nil && !alert.callEnded
+                if existingAlertWasJustDecided || newLiveAlertAlreadyHasDecision {
+                    receive(.decided(alertID: alert.id, decision))
+                }
             }
         }
     }
