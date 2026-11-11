@@ -7,10 +7,21 @@ import UserNotifications
 @MainActor
 final class RambuNotifier: NSObject, UNUserNotificationCenterDelegate {
     private(set) var isAuthorized = false
-    var onOpen: ((UUID?) -> Void)?
+    var onOpen: ((UUID?) -> Void)? {
+        didSet {
+            guard let onOpen, let pendingOpen else { return }
+            self.pendingOpen = nil
+            onOpen(pendingOpen.id)
+        }
+    }
 
     private let enabled: Bool
+    private var pendingOpen: PendingOpen?
     private var center: UNUserNotificationCenter? { enabled ? .current() : nil }
+
+    private struct PendingOpen {
+        let id: UUID?
+    }
 
     init(enabled: Bool) {
         self.enabled = enabled
@@ -82,11 +93,15 @@ final class RambuNotifier: NSObject, UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse) async {
         let raw = response.notification.request.content.userInfo["alertID"] as? String
-        await open(raw.flatMap(UUID.init(uuidString:)))
+        await receiveOpen(raw.flatMap(UUID.init(uuidString:)))
     }
 
-    private func open(_ id: UUID?) {
-        onOpen?(id)
+    func receiveOpen(_ id: UUID?) {
+        guard let onOpen else {
+            pendingOpen = PendingOpen(id: id)
+            return
+        }
+        onOpen(id)
     }
 }
 
