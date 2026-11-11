@@ -70,6 +70,7 @@ final class AppState {
     var parentTab: ParentTab = .home
     var guardianTab: GuardianTab = .home
     var guardianPath: [UUID] = []
+    var historyPath: [UUID] = []
     var showDemoSheet = false
     var showProfile = false
     var showCallStatus = false

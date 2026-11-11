@@ -12,7 +12,7 @@ struct GuardianRoot: View {
                 GuardianHome()
             }
             Tab(L10n.text("Riwayat", language: model.language), systemImage: "clock.fill", value: GuardianTab.history) {
-                NavigationStack { HistoryList(forGuardian: true) }
+                NavigationStack(path: $model.historyPath) { HistoryList(forGuardian: true) }
             }
         }
     }
