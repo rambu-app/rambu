@@ -171,6 +171,34 @@ struct AppStateTests {
         ) == "Richard menandai panggilan ini sebagai penipuan")
     }
 
+    @Test("History rows lead with the verdict and keep call context secondary")
+    func historyRowContentHasScannableHierarchy() {
+        let decision = GuardianDecision(
+            by: Person(id: "dimas", name: "Dimas", initial: "D", relation: "Anak", colorHex: 0x006F63),
+            verdict: .scam,
+            at: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        let record = CallRecord(
+            id: UUID(),
+            title: "Panggilan masuk terdeteksi",
+            callerDetail: "Nomor tidak tersedia",
+            channel: .cellular,
+            startedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            duration: 42,
+            level: .danger,
+            signals: [.secretCode],
+            evidence: [],
+            decision: decision
+        )
+
+        let content = HistoryRowContent(record: record, language: .indonesian)
+
+        #expect(content.status == "Bahaya")
+        #expect(content.callTitle == "Panggilan masuk terdeteksi")
+        #expect(content.channel == "Telepon seluler")
+        #expect(content.decision == "Dimas menandai panggilan ini sebagai penipuan")
+    }
+
     @Test("Compact evidence groups contained excerpts but preserves distinct signals and original source")
     func groupsOverlappingEvidenceWithoutRewritingSource() {
         let lines = [

@@ -67,11 +67,14 @@ struct HistoryList: View {
                             HistoryRow(record: record, forGuardian: forGuardian)
                         }
                         .navigationLinkIndicatorVisibility(.hidden)
-                        .listRowInsets(EdgeInsets())
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
             }
         }
+        .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Brand.canvas)
         .navigationTitle(L10n.text("Riwayat", language: model.language))
@@ -86,55 +89,97 @@ struct HistoryList: View {
     }
 }
 
+struct HistoryRowContent: Equatable {
+    let status: String
+    let callTitle: String
+    let channel: String
+    let date: String
+    let decision: String?
+
+    init(record: CallRecord, language: AppLanguage) {
+        status = L10n.text(record.historyPresentation.title, language: language)
+        callTitle = L10n.text(record.title, language: language)
+        channel = L10n.text(record.channel.label, language: language)
+        date = Fmt.day(record.startedAt, language: language)
+        decision = record.decision.map {
+            L10n.format(
+                "history.decision.by_verdict",
+                fallback: "%@ menandai panggilan ini sebagai %@",
+                language: language,
+                $0.by.name,
+                L10n.text($0.verdict.pastTitle, language: language)
+            )
+        }
+    }
+}
 struct HistoryRow: View {
     let record: CallRecord
     let forGuardian: Bool
     @Environment(AppState.self) private var model
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(L10n.text(record.title, language: model.language))
+        let presentation = record.historyPresentation
+        let content = HistoryRowContent(record: record, language: model.language)
+
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: presentation.symbol)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(presentation.ink)
+                .frame(width: 44, height: 44)
+                .background(presentation.soft, in: .circle)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(content.status)
                         .font(.headline)
-                        .foregroundStyle(Brand.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(1)
+                        .foregroundStyle(presentation.ink)
 
                     Spacer(minLength: 8)
 
                     Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Brand.ink2)
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Brand.ink3)
                         .accessibilityHidden(true)
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HistoryRiskLabel(
-                        presentation: record.historyPresentation,
-                        language: model.language
-                    )
+                Text(content.callTitle)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Brand.ink)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Image(systemName: record.channel.symbol)
-                            .font(.footnote)
-                        Text("\(L10n.text(record.channel.label, language: model.language)) · \(Fmt.day(record.startedAt, language: model.language))")
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                Label("\(content.channel) · \(content.date)", systemImage: record.channel.symbol)
                     .font(.subheadline)
                     .foregroundStyle(Brand.ink2)
-                }
-                .padding(.top, 10)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, record.decision == nil ? 18 : 10)
+                    .labelStyle(CompactLabelStyle())
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if let decision = record.decision {
-                HistoryDecisionFooter(decision: decision, language: model.language)
+                if let decision = content.decision {
+                    Divider()
+                        .overlay(Brand.hairline)
+                        .padding(.top, 2)
+
+                    Label(
+                        decision,
+                        systemImage: record.decision?.verdict == .scam
+                            ? "hand.raised.fill" : "checkmark.circle.fill"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(
+                        record.decision?.verdict == .scam ? Brand.dangerInk : Brand.safeInk
+                    )
+                    .labelStyle(CompactLabelStyle())
+                    .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: .rect(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Brand.hairline)
+        }
         .accessibilityElement(children: .combine)
     }
 }
@@ -215,50 +260,5 @@ struct CallDetail: View {
         } else {
             ContentUnavailableView("Riwayat tidak ditemukan", systemImage: "clock.badge.xmark")
         }
-    }
-}
-
-private struct HistoryRiskLabel: View {
-    let presentation: HistoryPresentation
-    let language: AppLanguage
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: presentation.symbol)
-            Text(L10n.text(presentation.title, language: language))
-        }
-        .font(.subheadline.weight(.bold))
-        .foregroundStyle(presentation.ink)
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct HistoryDecisionFooter: View {
-    let decision: GuardianDecision
-    let language: AppLanguage
-
-    private var isScam: Bool { decision.verdict == .scam }
-
-    var body: some View {
-        Label(
-            L10n.format(
-                "history.decision.by_verdict",
-                fallback: "%@ menandai panggilan ini sebagai %@",
-                language: language,
-                decision.by.name,
-                L10n.text(decision.verdict.pastTitle, language: language)
-            ),
-            systemImage: isScam ? "hand.raised.fill" : "checkmark.circle.fill"
-        )
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(isScam ? Brand.dangerInk : Brand.safeInk)
-        .labelStyle(CompactLabelStyle())
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(isScam ? Brand.dangerSoft : Brand.safeSoft)
-        .accessibilityElement(children: .combine)
     }
 }
