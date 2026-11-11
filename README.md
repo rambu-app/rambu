@@ -63,13 +63,12 @@ sequenceDiagram
     O-->>K: Notifikasi panggilan via Bluetooth (ANCS)
     K->>B: POST /api/pucks/sessions
     Note over K: LED biru menyala, mulai merekam
-    loop Setiap ±5 detik
-        K->>B: Potongan audio ADPCM
-        B->>T: Audio + bahasa sesi
-        T-->>B: Transkrip Microsoft MAI
+    K->>B: WebSocket audio PCM16
+    B->>T: Streaming audio + bahasa sesi
+    loop Selama panggilan
+        T-->>B: Transkrip parsial Microsoft MAI
         B->>B: Samarkan data sensitif
-        B-->>K: 200 OK
-        B->>L: Transkrip tersamar
+        B->>L: Periksa transkrip terbaru tiap 4 detik
         L-->>B: JSON risiko + kutipan bukti
     end
     B->>O: Push "Bahaya: terindikasi penipuan"
@@ -77,12 +76,12 @@ sequenceDiagram
     A->>B: Keputusan "Penipuan"
     B->>O: Push "Tutup telepon sekarang"
     O-->>K: Panggilan berakhir (ANCS)
-    K->>B: Potongan terakhir (final)
+    K->>B: Audio terakhir + pesan finish
 ```
 
 Puck mulai merekam lewat tiga jalan: notifikasi panggilan masuk dari iPhone (ANCS), sesi yang dibuat aplikasi saat CallKit melihat panggilan aktif (puck mengecek server tiap satu detik), atau tombol BOOT di papan ESP32. Rekaman berhenti saat iPhone melaporkan panggilan selesai, saat aplikasi meminta berhenti, atau setelah 30 detik tanpa suara.
 
-Backend juga menyediakan jalur WebSocket untuk agen puck di Mac. Pada jalur ini audio dikirim terus-menerus, transkrip parsial diperiksa setiap empat detik, dan peringatan dapat muncul tanpa menunggu penelepon berhenti bicara. Jika streaming belum sempat siap, agen kembali ke unggahan potongan secara otomatis.
+Puck fisik dan agen puck di Mac memakai jalur WebSocket. Audio dikirim terus-menerus, transkrip parsial diperiksa setiap empat detik, dan peringatan dapat muncul tanpa menunggu penelepon berhenti bicara. Jika streaming belum sempat siap, keduanya kembali ke unggahan potongan secara otomatis.
 
 ## Arsitektur sistem
 
@@ -168,16 +167,16 @@ stateDiagram-v2
     [*] --> BelumDisetel: pertama kali menyala
     BelumDisetel --> Siaga: app mengirim Wi-Fi, server, token via BLE
     Siaga --> Merekam: ANCS panggilan masuk, sesi dari app, atau tombol BOOT
-    Merekam --> Mengunggah: tiap 5 detik audio terkumpul
-    Mengunggah --> Merekam: server membalas 200
+    Merekam --> Streaming: server transkripsi siap
+    Streaming --> Merekam: audio dikirim per 1 detik
     Merekam --> Selesai: panggilan berakhir, 30 detik hening, atau diminta app
-    Selesai --> Siaga: potongan final terkirim
+    Selesai --> Siaga: audio final dan pesan finish terkirim
 ```
 
 - **Bluetooth.** Puck tampil sebagai `Rambu Puck` dan meminta pairing terenkripsi dengan bonding. Setelah iPhone tersambung, puck berlangganan Apple Notification Center Service (ANCS) dan hanya bereaksi pada kategori panggilan masuk, panggilan aktif, dan panggilan tak terjawab. Isi notifikasi lain diabaikan.
 - **Setup dari aplikasi.** Satu karakteristik GATT menerima nama Wi-Fi, kata sandi, alamat server, dan token keluarga dari tab Puck, lalu menyimpannya di flash (NVS). Status `connecting`, `connected`, atau `failed` dikirim balik ke aplikasi lewat notifikasi BLE. Firmware yang sama dipakai untuk semua keluarga.
-- **Audio.** Mikrofon dibaca pada 16 kHz 32-bit, diturunkan ke 8 kHz, lalu dikompres IMA ADPCM 4-bit ke slot berdurasi satu detik. Buffer menampung sampai 16 detik, jadi suara tidak hilang saat jaringan lambat. Saat diunggah, audio didekode kembali menjadi WAV PCM 16-bit mono 16 kHz.
-- **Unggahan.** Tiap lima slot dikirim sebagai satu potongan ke `POST /api/pucks/sessions/{id}/chunks` dengan header `X-Rambu-Sequence` dan `X-Rambu-Final`, lewat koneksi HTTPS keep-alive dan token Bearer. Permintaan yang gagal dicoba ulang sampai tiga kali.
+- **Audio.** Mikrofon dibaca pada 16 kHz 32-bit, diturunkan ke 8 kHz, lalu dikompres IMA ADPCM 4-bit ke slot berdurasi satu detik. Buffer menampung sampai 16 detik, jadi suara tetap tertampung saat koneksi streaming sedang dibuka. Saat dikirim, audio didekode kembali menjadi PCM 16-bit mono 16 kHz.
+- **Streaming.** Setelah server mengirim status `ready`, setiap slot satu detik dikirim ke `WS /api/pucks/sessions/{id}/stream` sebagai beberapa frame PCM16 berukuran terbatas. Transkrip parsial dinilai setiap empat detik. Jika koneksi gagal sebelum `ready`, slot yang sudah tersimpan dikirim lewat endpoint potongan HTTP lama; setelah `ready`, audio tidak pernah diputar ulang lewat HTTP.
 
 | UUID | Jenis | Isi |
 |---|---|---|
@@ -227,7 +226,7 @@ Keputusan anak memakai aturan jawaban pertama yang berlaku. SQLite menjalankan t
 | `POST /api/pucks/sessions` | Puck | Membuka sesi saat telepon berdering |
 | `GET /api/pucks/sessions/active` | Puck | Mengambil sesi yang dibuka app |
 | `POST /api/pucks/sessions/{id}/chunks` | Puck | Mengunggah potongan WAV atau ADPCM |
-| `WS /api/pucks/sessions/{id}/stream` | Agen puck | Streaming PCM16 dan menerima transkrip serta peringatan selama panggilan |
+| `WS /api/pucks/sessions/{id}/stream` | Puck fisik / agen puck | Streaming PCM16 dan menerima transkrip serta peringatan selama panggilan |
 | `POST /api/protection/sessions` | App orang tua | Membuka sesi dari CallKit |
 | `GET /api/pilot/alerts`, `GET /api/pilot/history` | App | Peringatan aktif dan riwayat bersama keluarga |
 | `POST /api/pilot/alerts/{id}/decision` | App anak | Mengirim keputusan Aman atau Penipuan |
@@ -433,7 +432,7 @@ Sambungkan kabel sesuai [tabel pin](#sambungan-pin), lalu flash firmware sekali 
 
 ```bash
 arduino-cli core install esp32:esp32
-arduino-cli lib install ArduinoJson NimBLE-Arduino@2.2.3
+arduino-cli lib install ArduinoJson NimBLE-Arduino@2.2.3 WebSockets@2.7.2
 arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app hardware/puck-firmware
 arduino-cli upload  --fqbn esp32:esp32:esp32:PartitionScheme=huge_app -p /dev/cu.usbserial-0001 hardware/puck-firmware
 ```

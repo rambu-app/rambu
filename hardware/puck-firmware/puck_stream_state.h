@@ -20,9 +20,14 @@ class PuckStreamState {
 
   bool canSendAudio() const { return phase_ == PuckStreamPhase::Ready; }
 
+  bool canSendFinish() const {
+    return phase_ == PuckStreamPhase::Ready && finalAudioSent_;
+  }
+
   void begin() {
     phase_ = PuckStreamPhase::Connecting;
     wasReady_ = false;
+    finalAudioSent_ = false;
   }
 
   void ready() {
@@ -31,8 +36,12 @@ class PuckStreamState {
     wasReady_ = true;
   }
 
+  void finalAudioSent() {
+    if (phase_ == PuckStreamPhase::Ready) finalAudioSent_ = true;
+  }
+
   void beginFinish() {
-    if (phase_ == PuckStreamPhase::Ready) phase_ = PuckStreamPhase::Finishing;
+    if (canSendFinish()) phase_ = PuckStreamPhase::Finishing;
   }
 
   void complete() {
@@ -50,4 +59,5 @@ class PuckStreamState {
  private:
   PuckStreamPhase phase_ = PuckStreamPhase::Idle;
   bool wasReady_ = false;
+  bool finalAudioSent_ = false;
 };

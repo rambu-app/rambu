@@ -4,9 +4,11 @@
 #include <ESP_I2S.h>
 #include <ArduinoJson.h>
 #include <NimBLEDevice.h>
+#include <WebSocketsClient.h>
 #include <time.h>
 #include <esp_bt.h>
 #include "call_alert_subscription.h"
+#include "puck_stream_state.h"
 
 const int MIC_SCK = 32;
 const int MIC_WS = 25;
@@ -19,9 +21,11 @@ const int STORED_RATE = 8000;
 const int SLOT_SAMPLES = STORED_RATE;
 const int MAX_SLOTS = 16;
 const int SLOTS_PER_CHUNK = 5;
-const uint32_t MEMORY_FOR_HTTPS = 80000;
+const uint32_t MEMORY_FOR_HTTPS = 100000;
 const int SILENCE_LEVEL = 300;
 const int SILENT_SECONDS_TO_END = 30;
+const unsigned long STREAM_READY_TIMEOUT_MS = 10000;
+const unsigned long STREAM_FINISH_TIMEOUT_MS = 15000;
 
 const char *ANCS_SERVICE = "7905F431-B5CE-4E99-A40F-4B1E122D00D0";
 const char *ANCS_NOTIFICATION_SOURCE = "9FBF120D-6301-42D9-8C58-25E699A21DBD";
@@ -67,6 +71,15 @@ int pending[MAX_SLOTS];
 int pendingCount = 0;
 int silentSeconds = 0;
 unsigned long lastPoll = 0;
+
+WebSocketsClient streamClient;
+PuckStreamState streamState;
+bool streamActive = false;
+bool batchFallback = false;
+bool streamAbort = false;
+unsigned long streamPhaseStartedAt = 0;
+int16_t streamPreviousSample = 0;
+int16_t streamPcm[2048];
 
 NimBLEServer *bleServer;
 volatile uint16_t iphoneHandle = BLE_HS_CONN_HANDLE_NONE;
@@ -218,6 +231,118 @@ uint8_t adpcmEncode(Adpcm &state, int sample) {
 
 int16_t sampleAt(int slot, int index, Adpcm &state) {
   return adpcmDecode(state, (slots[slot][index / 2] >> ((index & 1) * 4)) & 0x0F);
+}
+
+void requestStop();
+void finishSession();
+
+void failStream(const char *reason) {
+  PuckStreamPhase phase = streamState.phase();
+  if (phase == PuckStreamPhase::Idle || phase == PuckStreamPhase::Complete ||
+      phase == PuckStreamPhase::Failed) return;
+
+  PuckStreamFailureAction action = streamState.fail();
+  streamActive = false;
+  streamClient.disconnect();
+  Serial.printf("Audio stream failed: %s\n", reason);
+  if (action == PuckStreamFailureAction::UseBatchFallback) {
+    batchFallback = true;
+    Serial.println("Using buffered HTTP upload for this call");
+  } else {
+    streamAbort = true;
+    requestStop();
+  }
+}
+
+bool streamMessageContains(const uint8_t *payload, size_t length, const char *value) {
+  size_t valueLength = strlen(value);
+  if (valueLength > length) return false;
+  for (size_t i = 0; i <= length - valueLength; i++) {
+    if (!memcmp(payload + i, value, valueLength)) return true;
+  }
+  return false;
+}
+
+void onStreamEvent(WStype_t type, uint8_t *payload, size_t length) {
+  if (type == WStype_CONNECTED) {
+    Serial.println("Audio stream connected; waiting for transcription");
+    return;
+  }
+  if (type == WStype_DISCONNECTED) {
+    failStream("connection closed");
+    return;
+  }
+  if (type == WStype_ERROR) {
+    failStream("connection error");
+    return;
+  }
+  if (type != WStype_TEXT) return;
+
+  if (streamMessageContains(payload, length, "\"type\":\"ready\"")) {
+    if (streamState.phase() == PuckStreamPhase::Connecting) {
+      streamState.ready();
+      streamPhaseStartedAt = millis();
+      Serial.println("STREAM READY: live transcription is active");
+    }
+  } else if (streamMessageContains(payload, length, "\"type\":\"snapshot\"")) {
+    if (streamMessageContains(payload, length, "\"end_requested\":true")) requestStop();
+  } else if (streamMessageContains(payload, length, "\"type\":\"complete\"")) {
+    streamState.complete();
+    Serial.println("STREAM COMPLETE");
+  } else if (streamMessageContains(payload, length, "\"type\":\"error\"")) {
+    failStream("server error");
+  }
+}
+
+void openStream() {
+  streamState.begin();
+  streamActive = true;
+  batchFallback = false;
+  streamAbort = false;
+  streamPreviousSample = 0;
+  streamPhaseStartedAt = millis();
+
+  String path = "/api/pucks/sessions/" + sessionId + "/stream";
+  String authorization = "Bearer " + puckToken;
+  streamClient.disconnect();
+  if (useHttps) streamClient.beginSSL(serverHost.c_str(), serverPort, path.c_str());
+  else streamClient.begin(serverHost.c_str(), serverPort, path.c_str());
+  streamClient.setAuthorization(authorization.c_str());
+  streamClient.enableHeartbeat(15000, 3000, 2);
+  Serial.println("Opening live audio stream...");
+}
+
+bool sendStreamSlot(int slot) {
+  Adpcm decoder;
+  int count = 0;
+  int frame = 0;
+  for (int i = 0; i < slotFill[slot]; i++) {
+    int16_t current = sampleAt(slot, i, decoder);
+    streamPcm[count++] = (streamPreviousSample + current) / 2;
+    streamPcm[count++] = current;
+    streamPreviousSample = current;
+    if (count == 2048) {
+      if (!streamClient.sendBIN((uint8_t *)streamPcm, sizeof(streamPcm))) {
+        Serial.printf("Stream frame %d failed (connected=%d, free=%u)\n",
+                      frame, streamClient.isConnected(), ESP.getFreeHeap());
+        return false;
+      }
+      frame++;
+      count = 0;
+      streamClient.loop();
+      if (!streamState.canSendAudio()) return false;
+      delay(100);
+      streamClient.loop();
+      if (!streamState.canSendAudio()) return false;
+    }
+  }
+  if (count == 0) return true;
+  bool sent = streamClient.sendBIN((uint8_t *)streamPcm, count * sizeof(int16_t));
+  if (!sent) {
+    Serial.printf("Stream final frame failed (connected=%d, free=%u)\n",
+                  streamClient.isConnected(), ESP.getFreeHeap());
+  }
+  return sent;
 }
 
 void recorderTask(void *) {
@@ -386,6 +511,9 @@ void beginListening(JsonDocument &session) {
   recording = true;
   digitalWrite(LED_PIN, HIGH);
   Serial.printf("RECORDING session %s\n", sessionId.c_str());
+  secureClient.stop();
+  plainClient.stop();
+  openStream();
 }
 
 void requestStop() {
@@ -435,7 +563,11 @@ void startSession(const char *channel, const char *title, const char *callerDeta
 }
 
 void finishSession() {
+  streamActive = false;
+  streamClient.disconnect();
   listening = false;
+  batchFallback = false;
+  streamAbort = false;
   digitalWrite(LED_PIN, LOW);
   Serial.println("Session completed. Waiting for the next call.");
 }
@@ -489,6 +621,8 @@ void connectWifi() {
 
   secureClient.stop();
   plainClient.stop();
+  streamActive = false;
+  streamClient.disconnect();
   WiFi.disconnect();
   if (ssid.isEmpty() || serverHost.isEmpty() || puckToken.isEmpty()) {
     Serial.println("Not set up yet. Pair it from the Rambu app, Puck tab.");
@@ -534,6 +668,7 @@ void setup() {
 
   WiFi.setMinSecurity(WIFI_AUTH_WPA_PSK);
   secureClient.setInsecure();
+  streamClient.onEvent(onStreamEvent);
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
   startBluetooth();
   connectWifi();
@@ -600,14 +735,68 @@ void loop() {
     return;
   }
 
+  if (streamActive) streamClient.loop();
+  if (streamState.phase() == PuckStreamPhase::Connecting) {
+    if (millis() - streamPhaseStartedAt > STREAM_READY_TIMEOUT_MS) {
+      failStream("ready timeout");
+    }
+    if (streamState.phase() == PuckStreamPhase::Connecting) return;
+  }
+  if (streamState.phase() == PuckStreamPhase::Complete) {
+    finishSession();
+    return;
+  }
+  if (streamState.phase() == PuckStreamPhase::Finishing) {
+    if (millis() - streamPhaseStartedAt > STREAM_FINISH_TIMEOUT_MS) {
+      failStream("finish timeout");
+      finishSession();
+    }
+    return;
+  }
+  if (streamAbort && stopping && !recording && !stopRequested &&
+      uxQueueMessagesWaiting(filledSlots) == 0) {
+    finishSession();
+    return;
+  }
+
   int slot;
   if (xQueueReceive(filledSlots, &slot, pdMS_TO_TICKS(100)) != pdTRUE) return;
-  pending[pendingCount++] = slot;
   silentSeconds = isSilent(slot) ? silentSeconds + 1 : 0;
   if (silentSeconds == SILENT_SECONDS_TO_END) {
     Serial.println("No call audio for 30 seconds");
     requestStop();
   }
-  if (slotFinal[slot]) uploadPending(true);
-  else if (pendingCount == slotsPerChunk) uploadPending(false);
+
+  if (batchFallback) {
+    pending[pendingCount++] = slot;
+    if (slotFinal[slot]) uploadPending(true);
+    else if (pendingCount == slotsPerChunk) uploadPending(false);
+    return;
+  }
+
+  bool final = slotFinal[slot];
+  if (streamAbort) {
+    xQueueSend(freeSlots, &slot, 0);
+    if (final) finishSession();
+    return;
+  }
+
+  if (!streamState.canSendAudio() || !sendStreamSlot(slot)) {
+    xQueueSend(freeSlots, &slot, 0);
+    failStream("audio send failed");
+    if (final) finishSession();
+    return;
+  }
+  xQueueSend(freeSlots, &slot, 0);
+  if (final) {
+    streamState.finalAudioSent();
+    if (!streamState.canSendFinish() || !streamClient.sendTXT("{\"type\":\"finish\"}")) {
+      failStream("finish send failed");
+      finishSession();
+      return;
+    }
+    streamState.beginFinish();
+    streamPhaseStartedAt = millis();
+    Serial.println("Final audio sent; waiting for transcription completion");
+  }
 }

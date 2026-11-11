@@ -17,6 +17,10 @@ int main() {
   stream.ready();
   assert(stream.phase() == PuckStreamPhase::Ready);
   assert(stream.canSendAudio());
+  assert(!stream.canSendFinish());
+
+  stream.finalAudioSent();
+  assert(stream.canSendFinish());
 
   stream.beginFinish();
   assert(stream.phase() == PuckStreamPhase::Finishing);
