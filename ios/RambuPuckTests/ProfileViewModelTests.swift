@@ -14,6 +14,31 @@ private final class RecordingUrgencyFeedback: UrgencyFeedbackProviding {
 
 @MainActor
 struct ProfileViewModelTests {
+    @Test("Cold-launch notification tap is delivered after handler registration")
+    func coldLaunchNotificationTapIsDeliveredAfterHandlerRegistration() {
+        let notifier = RambuNotifier(enabled: false)
+        let alertID = UUID()
+        var opened: [UUID?] = []
+
+        notifier.receiveOpen(alertID)
+        notifier.onOpen = { opened.append($0) }
+
+        #expect(opened == [alertID])
+    }
+
+    @Test("Warm notification taps are delivered every time")
+    func warmNotificationTapsAreDeliveredEveryTime() {
+        let notifier = RambuNotifier(enabled: false)
+        let alertID = UUID()
+        var opened: [UUID?] = []
+        notifier.onOpen = { opened.append($0) }
+
+        notifier.receiveOpen(alertID)
+        notifier.receiveOpen(alertID)
+
+        #expect(opened == [alertID, alertID])
+    }
+
     @Test("Review and danger notifications use the urgent sound")
     func urgentRiskLevelsUseCustomSound() {
         let review = Toast(id: "review", title: "Review", body: "Check", level: .review, alertID: nil)

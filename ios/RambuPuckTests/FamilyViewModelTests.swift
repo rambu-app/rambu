@@ -127,4 +127,27 @@ struct FamilyViewModelTests {
         guardianFamily.receive(.decided(alertID: other.id, GuardianDecision(by: .sinta, verdict: .scam, at: .now)))
         #expect(guardianState.hangUpAlarm == nil)
     }
+
+    @Test("Keputusan Penipuan yang baru datang dari server memicu alarm orang tua")
+    func newLiveRemoteScamDecisionRaisesParentTakeover() {
+        let (state, family) = makeFamily(persona: .ratna)
+        var remote = alert()
+        remote.decision = GuardianDecision(by: .sinta, verdict: .scam, at: .now)
+
+        family.applyRemoteAlerts([remote])
+
+        #expect(state.hangUpAlarm == HangUpAlarm(id: remote.id, deciderName: "Sinta"))
+    }
+
+    @Test("Keputusan Penipuan historis dari server tidak memicu alarm orang tua")
+    func newEndedRemoteScamDecisionDoesNotRaiseParentTakeover() {
+        let (state, family) = makeFamily(persona: .ratna)
+        var remote = alert()
+        remote.decision = GuardianDecision(by: .sinta, verdict: .scam, at: .now)
+        remote.callEnded = true
+
+        family.applyRemoteAlerts([remote])
+
+        #expect(state.hangUpAlarm == nil)
+    }
 }

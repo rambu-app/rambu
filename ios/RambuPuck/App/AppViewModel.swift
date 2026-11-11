@@ -1,6 +1,13 @@
 import Foundation
 import Observation
 
+enum NotificationDestination: Equatable {
+    case parentCallStatus
+    case guardianAlert(UUID)
+    case history(UUID)
+    case unresolved
+}
+
 /// Composition root dan routing lintas fitur. Logika fitur tinggal di ViewModel masing-masing.
 @MainActor
 @Observable
@@ -15,6 +22,7 @@ final class AppViewModel {
     @ObservationIgnored private let callActivity: (any CallActivityMonitoring)?
     @ObservationIgnored private let isProtectionConfigured: @Sendable () -> Bool
     @ObservationIgnored private var callActivityTask: Task<Void, Never>?
+    @ObservationIgnored private var notificationOpenTask: Task<Void, Never>?
 
     init(
         persona: Persona = .ratna,
@@ -170,6 +178,7 @@ final class AppViewModel {
     func switchPersona(_ persona: Persona) {
         state.persona = persona
         state.guardianPath = []
+        state.historyPath = []
         state.toast = nil
         state.showCallStatus = false
         if persona.isParent, state.session != nil { state.isCallScreenPresented = true }
@@ -187,6 +196,7 @@ final class AppViewModel {
         state.history = state.allowsDemoControls ? CallRecord.seed() : []
         state.toast = nil
         state.guardianPath = []
+        state.historyPath = []
         state.parentTab = .home
         state.guardianTab = .home
         state.persona = .ratna
@@ -244,6 +254,56 @@ final class AppViewModel {
         openFromPush(toast.alertID)
     }
 
+    func notificationDestination(for id: UUID?) -> NotificationDestination {
+        guard let id else { return .unresolved }
+        if state.history.contains(where: { $0.id == id }) { return .history(id) }
+        if state.persona.isParent {
+            if state.session?.id == id { return .parentCallStatus }
+            if state.alerts.contains(where: { $0.id == id }) { return .history(id) }
+        } else if state.alerts.contains(where: { $0.id == id }) {
+            return .guardianAlert(id)
+        }
+        return .unresolved
+    }
+
+    func routeNotification(_ destination: NotificationDestination) {
+        state.toast = nil
+        state.guardianPath = []
+        state.historyPath = []
+        state.showCallStatus = false
+
+        switch destination {
+        case .parentCallStatus:
+            state.showCallStatus = true
+        case .guardianAlert(let id):
+            state.guardianTab = .home
+            state.guardianPath = [id]
+        case .history(let id):
+            state.historyPath = [id]
+            if state.persona.isParent {
+                state.parentTab = .history
+            } else {
+                state.guardianTab = .history
+            }
+        case .unresolved:
+            if state.persona.isParent {
+                state.parentTab = .home
+            } else {
+                state.guardianTab = .home
+            }
+            state.toast = Toast(
+                id: "notification-unavailable",
+                title: L10n.text("Peringatan belum tersedia", language: state.language),
+                body: L10n.text(
+                    "Data panggilan belum dapat dibuka. Coba ketuk notifikasi lagi setelah beberapa saat.",
+                    language: state.language
+                ),
+                level: .safe,
+                alertID: nil
+            )
+        }
+    }
+
     /// Pilot decisions are submitted remotely; the local demo uses the family relay.
     @discardableResult
     func decide(_ verdict: Verdict, on alertID: UUID) -> DecisionOutcome {
@@ -259,19 +319,12 @@ final class AppViewModel {
     }
 
     func openFromPush(_ id: UUID?) {
-        state.toast = nil
-        if state.pilotConnected {
-            Task { [weak self] in
-                guard let self else { return }
-                await self.pilot.refresh()
-                guard !self.state.persona.isParent, let id else { return }
-                self.family.openAlert(id)
-            }
-        }
-        if state.persona.isParent {
-            if state.session != nil { state.showCallStatus = true } else { state.parentTab = .history }
-        } else if let id, !state.pilotConnected {
-            family.openAlert(id)
+        notificationOpenTask?.cancel()
+        notificationOpenTask = Task { [weak self] in
+            guard let self else { return }
+            if state.pilotConnected { await pilot.refresh() }
+            guard !Task.isCancelled else { return }
+            routeNotification(notificationDestination(for: id))
         }
     }
 }

@@ -10,7 +10,7 @@ struct ParentRoot: View {
                 ParentHome()
             }
             Tab(L10n.text("Riwayat", language: model.language), systemImage: "clock.fill", value: ParentTab.history) {
-                NavigationStack { HistoryList(forGuardian: false) }
+                NavigationStack(path: $model.historyPath) { HistoryList(forGuardian: false) }
             }
             Tab("Puck", systemImage: "dot.radiowaves.left.and.right", value: ParentTab.puck) {
                 PuckScreen()

@@ -7,6 +7,7 @@ import SwiftUI
 struct AlertDetail: View {
     let alertID: UUID
     @Environment(AppState.self) private var model
+    @Environment(FamilyViewModel.self) private var family
 
     var body: some View {
         if let alert = model.alerts.first(where: { $0.id == alertID }) {
@@ -31,7 +32,7 @@ struct AlertDetail: View {
                         ]
                     )
 
-                    if alert.decision == nil && !alert.signals.isEmpty {
+                    if family.canDecide(alert) && !alert.signals.isEmpty {
                         AdviceSection(items: alert.signals.map {
                             L10n.text($0.adviceForGuardian, language: model.language)
                         }.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
@@ -66,7 +67,9 @@ struct AlertDetail: View {
                 .padding(.bottom, 24)
             }
             .background(Brand.canvas)
-            .safeAreaBar(edge: .bottom) { DecisionBar(alert: alert) }
+            .safeAreaBar(edge: .bottom) {
+                if family.canDecide(alert) { DecisionBar(alert: alert) }
+            }
             .toolbar(.hidden, for: .tabBar)
             .navigationTitle("Peringatan")
             .navigationBarTitleDisplayMode(.inline)
